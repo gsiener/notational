@@ -46,8 +46,8 @@ static NSData *BodyOf(NSURLRequest *request) {
 	id payload = [reply objectForKey:@"body"];
 	NSData *data = [payload isKindOfClass:[NSData class]] ? payload :
 		(payload ? [NSJSONSerialization dataWithJSONObject:payload options:0 error:NULL] : [NSData data]);
-	NSHTTPURLResponse *response = [[[NSHTTPURLResponse alloc] initWithURL:[[self request] URL] statusCode:status
-															  HTTPVersion:@"HTTP/1.1" headerFields:[reply objectForKey:@"headers"]] autorelease];
+	NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:[[self request] URL] statusCode:status
+															  HTTPVersion:@"HTTP/1.1" headerFields:[reply objectForKey:@"headers"]];
 	[[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
 	[[self client] URLProtocol:self didLoadData:data];
 	[[self client] URLProtocolDidFinishLoading:self];
@@ -85,17 +85,14 @@ static NSDictionary *Reply(NSInteger status, id body, NSDictionary *headers) {
 }
 
 - (void)tearDown {
-	[service release];
-	[authenticator release];
-	[stubHandler release];
+	service = nil;
+	authenticator = nil;
 	stubHandler = nil;
-	[stubRequests release];
 	stubRequests = nil;
 	[super tearDown];
 }
 
 - (void)stub:(NVStubHandler)handler {
-	[stubHandler release];
 	stubHandler = [handler copy];
 }
 
@@ -131,9 +128,9 @@ static NSDictionary *QueryOf(NSURL *url) {
 	XCTAssertEqualObjects([[request URL] host], @"api.simperium.com");
 
 	XCTAssertEqual([[page notes] count], (NSUInteger)2);
-	XCTAssertEqualObjects([[[[page notes] objectAtIndex:0] data] objectForKey:@"content"], @"hello");
-	XCTAssertEqual([[[page notes] objectAtIndex:1] version], (NSInteger)9);
-	XCTAssertNil([[[page notes] objectAtIndex:1] data]);
+	XCTAssertEqualObjects([[(NVRemoteNote *)[[page notes] objectAtIndex:0] data] objectForKey:@"content"], @"hello");
+	XCTAssertEqual([(NVRemoteNote *)[[page notes] objectAtIndex:1] version], (NSInteger)9);
+	XCTAssertNil([(NVRemoteNote *)[[page notes] objectAtIndex:1] data]);
 	XCTAssertEqualObjects([page nextMark], @"MARK2");
 	XCTAssertEqualObjects([page changeVersion], @"cvXYZ");
 }
@@ -157,9 +154,9 @@ static NSDictionary *QueryOf(NSURL *url) {
 	XCTAssertEqualObjects([[[self lastRequest] URL] path], @"/1/chalk-bump-f49/note/changes");
 	XCTAssertEqualObjects(QueryOf([[self lastRequest] URL]), ([NSDictionary dictionaryWithObjectsAndKeys:@"cv1", @"cv", @"nvalt-test", @"clientid", @"0", @"wait", nil]));
 	XCTAssertEqual([changes count], (NSUInteger)2);
-	XCTAssertEqual([[changes objectAtIndex:0] version], (NSInteger)4);
+	XCTAssertEqual([(NVRemoteChange *)[changes objectAtIndex:0] version], (NSInteger)4);
 	XCTAssertFalse([[changes objectAtIndex:0] removed]);
-	XCTAssertNil([[changes objectAtIndex:0] data]);
+	XCTAssertNil([(NVRemoteChange *)[changes objectAtIndex:0] data]);
 	XCTAssertTrue([[changes objectAtIndex:1] removed]);
 	XCTAssertEqualObjects([[changes lastObject] changeVersion], @"cv3");
 }
@@ -294,7 +291,7 @@ static NSDictionary *QueryOf(NSURL *url) {
 
 - (void)testCredentialsRoundTrip {
 	NSString *serviceName = [NSString stringWithFormat:@"nvALT tests %@", [[NSProcessInfo processInfo] globallyUniqueString]];
-	NVSimplenoteCredentials *credentials = [[[NVSimplenoteCredentials alloc] initWithService:serviceName] autorelease];
+	NVSimplenoteCredentials *credentials = [[NVSimplenoteCredentials alloc] initWithService:serviceName];
 	XCTAssertNil([credentials tokenForAccount:@"me@example.com"]);
 	XCTAssertTrue([credentials setToken:@"first" forAccount:@"me@example.com"]);
 	XCTAssertTrue([credentials setToken:@"second" forAccount:@"me@example.com"]);

@@ -36,7 +36,7 @@ static NSString *const StyleHeader = @"<style>.tag strong {font-weight:normal;co
 
 - (void)testToolInterfaceConverts {
 	NSError *error = nil;
-	id<NVMarkupTool> tool = [[[NVTaskPaperMarkdown alloc] init] autorelease];
+	id<NVMarkupTool> tool = [[NVTaskPaperMarkdown alloc] init];
 	NSString *md = [tool convertText:@"Home:\n\t- eggs @today\n" error:&error];
 	XCTAssertNil(error);
 	NSString *expected = [StyleHeader stringByAppendingString:@"* **Home**\n* eggs <em class=\"tag\"><a href=\"nvalt://find/@today\">@today<strong></strong></a></em>\n"];

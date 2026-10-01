@@ -21,7 +21,7 @@ static NSString *UserAgent(void) {
 }
 
 static NSString *QueryEscape(NSString *value) {
-	NSMutableCharacterSet *allowed = [[[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy] autorelease];
+	NSMutableCharacterSet *allowed = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
 	[allowed removeCharactersInString:@"&=+?/"];
 	return [value stringByAddingPercentEncodingWithAllowedCharacters:allowed];
 }
@@ -37,17 +37,13 @@ static NSData *PerformRequest(NSURLSession *session, NSURLRequest *request, NSHT
 	__block NSError *transportError = nil;
 	dispatch_semaphore_t done = dispatch_semaphore_create(0);
 	NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *r, NSError *e) {
-		body = [data retain];
-		response = [(NSHTTPURLResponse *)r retain];
-		transportError = [e retain];
+		body = data;
+		response = (NSHTTPURLResponse *)r;
+		transportError = e;
 		dispatch_semaphore_signal(done);
 	}];
 	[task resume];
 	dispatch_semaphore_wait(done, DISPATCH_TIME_FOREVER);
-	dispatch_release(done);
-	[body autorelease];
-	[response autorelease];
-	[transportError autorelease];
 
 	if (outResponse) *outResponse = response;
 	if (transportError || !response) {
@@ -85,20 +81,15 @@ static id JSONFromData(NSData *data) {
 		clientID = [aClientID copy];
 		NSURLSessionConfiguration *config = configuration ? configuration : [NSURLSessionConfiguration ephemeralSessionConfiguration];
 		[config setTimeoutIntervalForRequest:RequestTimeout];
-		session = [[NSURLSession sessionWithConfiguration:config] retain];
-		baseURL = [(aBaseURL ? aBaseURL : [NSURL URLWithString:[NSString stringWithFormat:@"https://api.simperium.com/1/%@/%@/",
-																	SimperiumAppID, NoteBucket]]) retain];
+		session = [NSURLSession sessionWithConfiguration:config];
+		baseURL = aBaseURL ? aBaseURL : [NSURL URLWithString:[NSString stringWithFormat:@"https://api.simperium.com/1/%@/%@/",
+																	SimperiumAppID, NoteBucket]];
 	}
 	return self;
 }
 
 - (void)dealloc {
 	[session invalidateAndCancel];
-	[session release];
-	[token release];
-	[clientID release];
-	[baseURL release];
-	[super dealloc];
 }
 
 - (NSMutableURLRequest *)requestForPath:(NSString *)path query:(NSDictionary *)query {
@@ -151,7 +142,7 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 										  version:[[entry objectForKey:@"v"] integerValue]
 											 data:[data isKindOfClass:[NSDictionary class]] ? data : nil]];
 	}
-	NVIndexPage *page = [[[NVIndexPage alloc] init] autorelease];
+	NVIndexPage *page = [[NVIndexPage alloc] init];
 	[page setNotes:notes];
 	id nextMark = [json objectForKey:@"mark"];
 	[page setNextMark:[nextMark isKindOfClass:[NSString class]] && [nextMark length] ? nextMark : nil];
@@ -183,7 +174,7 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 	NSMutableArray *changes = [NSMutableArray array];
 	for (NSDictionary *entry in json) {
 		if (![entry isKindOfClass:[NSDictionary class]] || ![[entry objectForKey:@"id"] isKindOfClass:[NSString class]]) continue;
-		NVRemoteChange *change = [[[NVRemoteChange alloc] init] autorelease];
+		NVRemoteChange *change = [[NVRemoteChange alloc] init];
 		[change setNoteID:[entry objectForKey:@"id"]];
 		[change setChangeVersion:[[entry objectForKey:@"cv"] description]];
 		[change setRemoved:[@"-" isEqual:[entry objectForKey:@"o"]]];
@@ -269,17 +260,14 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 	if ((self = [super init])) {
 		NSURLSessionConfiguration *config = configuration ? configuration : [NSURLSessionConfiguration ephemeralSessionConfiguration];
 		[config setTimeoutIntervalForRequest:RequestTimeout];
-		session = [[NSURLSession sessionWithConfiguration:config] retain];
-		baseURL = [(aBaseURL ? aBaseURL : [NSURL URLWithString:@"https://app.simplenote.com/account/"]) retain];
+		session = [NSURLSession sessionWithConfiguration:config];
+		baseURL = aBaseURL ? aBaseURL : [NSURL URLWithString:@"https://app.simplenote.com/account/"];
 	}
 	return self;
 }
 
 - (void)dealloc {
 	[session invalidateAndCancel];
-	[session release];
-	[baseURL release];
-	[super dealloc];
 }
 
 - (NSDictionary *)postJSON:(NSDictionary *)payload toPath:(NSString *)path status:(NSInteger *)status error:(NSError **)error {
@@ -340,7 +328,7 @@ static NSError *SignInError(NSInteger status) {
 @implementation NVSimplenoteCredentials
 
 + (NVSimplenoteCredentials *)defaultCredentials {
-	return [[[NVSimplenoteCredentials alloc] initWithService:@"Notational Simplenote sync"] autorelease];
+	return [[NVSimplenoteCredentials alloc] initWithService:@"Notational Simplenote sync"];
 }
 
 - (id)initWithService:(NSString *)aService {
@@ -350,40 +338,34 @@ static NSError *SignInError(NSInteger status) {
 	return self;
 }
 
-- (void)dealloc {
-	[service release];
-	[super dealloc];
-}
-
 - (NSMutableDictionary *)queryForAccount:(NSString *)email {
 	return [NSMutableDictionary dictionaryWithObjectsAndKeys:
-			(id)kSecClassGenericPassword, (id)kSecClass,
-			service, (id)kSecAttrService,
-			email, (id)kSecAttrAccount, nil];
+			(__bridge id)kSecClassGenericPassword, (__bridge id)kSecClass,
+			service, (__bridge id)kSecAttrService,
+			email, (__bridge id)kSecAttrAccount, nil];
 }
 
 - (NSString *)tokenForAccount:(NSString *)email {
 	if (![email length]) return nil;
 	NSMutableDictionary *query = [self queryForAccount:email];
-	[query setObject:(id)kCFBooleanTrue forKey:(id)kSecReturnData];
-	[query setObject:(id)kSecMatchLimitOne forKey:(id)kSecMatchLimit];
+	[query setObject:(__bridge id)kCFBooleanTrue forKey:(__bridge id)kSecReturnData];
+	[query setObject:(__bridge id)kSecMatchLimitOne forKey:(__bridge id)kSecMatchLimit];
 	CFTypeRef result = NULL;
-	if (SecItemCopyMatching((CFDictionaryRef)query, &result) != errSecSuccess || !result) return nil;
-	NSString *token = [[[NSString alloc] initWithData:(NSData *)result encoding:NSUTF8StringEncoding] autorelease];
-	CFRelease(result);
-	return token;
+	if (SecItemCopyMatching((__bridge CFDictionaryRef)query, &result) != errSecSuccess || !result) return nil;
+	NSData *secret = CFBridgingRelease(result);
+	return [[NSString alloc] initWithData:secret encoding:NSUTF8StringEncoding];
 }
 
 - (BOOL)setToken:(NSString *)token forAccount:(NSString *)email {
 	if (![email length] || ![token length]) return NO;
 	NSData *secret = [token dataUsingEncoding:NSUTF8StringEncoding];
-	NSDictionary *update = [NSDictionary dictionaryWithObject:secret forKey:(id)kSecValueData];
-	OSStatus status = SecItemUpdate((CFDictionaryRef)[self queryForAccount:email], (CFDictionaryRef)update);
+	NSDictionary *update = [NSDictionary dictionaryWithObject:secret forKey:(__bridge id)kSecValueData];
+	OSStatus status = SecItemUpdate((__bridge CFDictionaryRef)[self queryForAccount:email], (__bridge CFDictionaryRef)update);
 	if (status == errSecItemNotFound) {
 		NSMutableDictionary *item = [self queryForAccount:email];
-		[item setObject:secret forKey:(id)kSecValueData];
-		[item setObject:@"Simplenote sync token used by nvALT" forKey:(id)kSecAttrDescription];
-		status = SecItemAdd((CFDictionaryRef)item, NULL);
+		[item setObject:secret forKey:(__bridge id)kSecValueData];
+		[item setObject:@"Simplenote sync token used by nvALT" forKey:(__bridge id)kSecAttrDescription];
+		status = SecItemAdd((__bridge CFDictionaryRef)item, NULL);
 	}
 	if (status != errSecSuccess) NSLog(@"NVSimplenoteCredentials: could not store token: %d", (int)status);
 	return status == errSecSuccess;
@@ -391,7 +373,7 @@ static NSError *SignInError(NSInteger status) {
 
 - (void)removeTokenForAccount:(NSString *)email {
 	if (![email length]) return;
-	SecItemDelete((CFDictionaryRef)[self queryForAccount:email]);
+	SecItemDelete((__bridge CFDictionaryRef)[self queryForAccount:email]);
 }
 
 @end

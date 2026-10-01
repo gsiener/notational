@@ -36,9 +36,9 @@ typedef enum {
 
 - (id)initWithStore:(NVNotesStore *)store service:(id<NVSimplenoteService>)service;
 
-@property (nonatomic, assign) id<NVSyncEngineDelegate> delegate;
+@property (nonatomic, weak) id<NVSyncEngineDelegate> delegate;
 //queue delegate callbacks are delivered on; main queue by default
-@property (nonatomic, assign) dispatch_queue_t delegateQueue;
+@property (nonatomic, strong) dispatch_queue_t delegateQueue;
 //seconds between automatic cycles while started; default 30
 @property (nonatomic, assign) NSTimeInterval pollInterval;
 //index page size for full syncs; default 100

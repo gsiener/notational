@@ -21,11 +21,11 @@
 @class NoteAttributeColumn;
 
 @interface FastListDataSource : NSObject {
-	id *objects;
+	__unsafe_unretained id *objects;
     NSUInteger count;
 }
 
-- (const id *)immutableObjects;
+- (const __unsafe_unretained id *)immutableObjects;
 - (NSUInteger)count;
 
 - (NSUInteger)indexOfObjectIdenticalTo:(id)address;

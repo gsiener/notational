@@ -24,7 +24,7 @@ typedef enum { StepEmail, StepCode, StepSignedIn } AccountStep;
 @synthesize accountDelegate;
 
 static NSTextField *Label(NSRect frame) {
-	NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+	NSTextField *label = [[NSTextField alloc] initWithFrame:frame];
 	[label setEditable:NO];
 	[label setSelectable:NO];
 	[label setBordered:NO];
@@ -34,9 +34,9 @@ static NSTextField *Label(NSRect frame) {
 }
 
 - (id)init {
-	NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 440, 210)
+	NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 440, 210)
 													styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
-													  backing:NSBackingStoreBuffered defer:YES] autorelease];
+													  backing:NSBackingStoreBuffered defer:YES];
 	[window setTitle:NSLocalizedString(@"Simplenote Account", nil)];
 	[window setReleasedWhenClosed:NO];
 	if ((self = [super initWithWindow:window])) {
@@ -45,11 +45,11 @@ static NSTextField *Label(NSRect frame) {
 		messageLabel = Label(NSMakeRect(20, 130, 400, 60));
 		[content addSubview:messageLabel];
 
-		emailField = [[[NSTextField alloc] initWithFrame:NSMakeRect(20, 96, 400, 24)] autorelease];
+		emailField = [[NSTextField alloc] initWithFrame:NSMakeRect(20, 96, 400, 24)];
 		[[emailField cell] setPlaceholderString:NSLocalizedString(@"Email address", nil)];
 		[content addSubview:emailField];
 
-		codeField = [[[NSTextField alloc] initWithFrame:NSMakeRect(20, 96, 400, 24)] autorelease];
+		codeField = [[NSTextField alloc] initWithFrame:NSMakeRect(20, 96, 400, 24)];
 		[[codeField cell] setPlaceholderString:NSLocalizedString(@"Code from the email", nil)];
 		[content addSubview:codeField];
 
@@ -58,20 +58,20 @@ static NSTextField *Label(NSRect frame) {
 		[statusLabel setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
 		[content addSubview:statusLabel];
 
-		primaryButton = [[[NSButton alloc] initWithFrame:NSMakeRect(270, 14, 156, 32)] autorelease];
+		primaryButton = [[NSButton alloc] initWithFrame:NSMakeRect(270, 14, 156, 32)];
 		[primaryButton setBezelStyle:NSBezelStyleRounded];
 		[primaryButton setKeyEquivalent:@"\r"];
 		[primaryButton setTarget:self];
 		[primaryButton setAction:@selector(primaryAction:)];
 		[content addSubview:primaryButton];
 
-		secondaryButton = [[[NSButton alloc] initWithFrame:NSMakeRect(120, 14, 150, 32)] autorelease];
+		secondaryButton = [[NSButton alloc] initWithFrame:NSMakeRect(120, 14, 150, 32)];
 		[secondaryButton setBezelStyle:NSBezelStyleRounded];
 		[secondaryButton setTarget:self];
 		[secondaryButton setAction:@selector(secondaryAction:)];
 		[content addSubview:secondaryButton];
 
-		spinner = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(20, 22, 16, 16)] autorelease];
+		spinner = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(20, 22, 16, 16)];
 		[spinner setStyle:NSProgressIndicatorStyleSpinning];
 		[spinner setControlSize:NSControlSizeSmall];
 		[spinner setDisplayedWhenStopped:NO];
@@ -80,11 +80,6 @@ static NSTextField *Label(NSRect frame) {
 		[window center];
 	}
 	return self;
-}
-
-- (void)dealloc {
-	[pendingEmail release];
-	[super dealloc];
 }
 
 - (void)setBusy:(BOOL)isBusy {
@@ -152,13 +147,10 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 	[statusLabel setStringValue:@""];
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		NSError *error = nil;
-		id result = [work(&error) retain];
-		[error retain];
+		id result = work(&error);
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[self setBusy:NO];
 			completion(result, error);
-			[result release];
-			[error release];
 		});
 	});
 }
@@ -172,10 +164,9 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 			return;
 		}
 		if (![accountDelegate simplenoteAccountWillSignInAs:email]) return;
-		[pendingEmail release];
 		pendingEmail = [email copy];
 		[self runInBackground:^id(NSError **error) {
-			NVSimplenoteAuthenticator *auth = [[[NVSimplenoteAuthenticator alloc] init] autorelease];
+			NVSimplenoteAuthenticator *auth = [[NVSimplenoteAuthenticator alloc] init];
 			return [auth requestCodeForEmail:email error:error] ? @YES : nil;
 		} completion:^(id result, NSError *error) {
 			if (result) [self showStep:StepCode];
@@ -183,9 +174,9 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 		}];
 	} else if (step == StepCode) {
 		NSString *code = [codeField stringValue];
-		NSString *email = [[pendingEmail copy] autorelease];
+		NSString *email = [pendingEmail copy];
 		[self runInBackground:^id(NSError **error) {
-			NVSimplenoteAuthenticator *auth = [[[NVSimplenoteAuthenticator alloc] init] autorelease];
+			NVSimplenoteAuthenticator *auth = [[NVSimplenoteAuthenticator alloc] init];
 			return [auth tokenForEmail:email code:code error:error];
 		} completion:^(id token, NSError *error) {
 			if (token) {

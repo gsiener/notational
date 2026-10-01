@@ -14,7 +14,6 @@
 
 @implementation FakeAccountApp
 @synthesize email, status, accountWindowRequests;
-- (void)dealloc { [email release]; [super dealloc]; }
 - (NSString *)simplenoteAccountEmail { return email; }
 - (NVSyncStatus)simplenoteSyncStatus { return status; }
 - (NSError *)simplenoteLastError { return nil; }
@@ -40,8 +39,8 @@
 }
 
 - (void)tearDown {
-	[controller release];
-	[app release];
+	controller = nil;
+	app = nil;
 	[super tearDown];
 }
 

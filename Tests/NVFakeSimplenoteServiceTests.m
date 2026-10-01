@@ -23,12 +23,11 @@
 }
 
 - (void)tearDown {
-	[server release];
 	[super tearDown];
 }
 
 - (NSDictionary *)dataWithContent:(NSString *)content {
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setContent:content];
 	return [record dataForPush];
 }
@@ -83,7 +82,7 @@
 	while ([page nextMark]) {
 		page = [server indexPageAfterMark:[page nextMark] limit:2 includeData:NO error:&error];
 		seen += [[page notes] count];
-		XCTAssertNil([[[page notes] lastObject] data]);
+		XCTAssertNil([(NVRemoteNote *)[[page notes] lastObject] data]);
 	}
 	XCTAssertEqual(seen, (NSUInteger)5);
 }
@@ -96,7 +95,7 @@
 	NSError *error = nil;
 	NSArray *changes = [server changesSince:start error:&error];
 	XCTAssertEqual([changes count], (NSUInteger)3);
-	XCTAssertEqual([[changes objectAtIndex:1] version], (NSInteger)2);
+	XCTAssertEqual([(NVRemoteChange *)[changes objectAtIndex:1] version], (NSInteger)2);
 	XCTAssertTrue([[changes lastObject] removed]);
 	XCTAssertEqual([[server changesSince:[server currentChangeVersion] error:&error] count], (NSUInteger)0);
 }

@@ -45,7 +45,7 @@ enum {
 @end
 
 @interface NVIndexPage : NSObject
-@property (nonatomic, retain) NSArray *notes;          //NVRemoteNote
+@property (nonatomic, strong) NSArray *notes;          //NVRemoteNote
 @property (nonatomic, copy) NSString *nextMark;        //nil on the last page
 @property (nonatomic, copy) NSString *changeVersion;   //account change version when the page was read
 @end

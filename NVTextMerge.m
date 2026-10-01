@@ -234,7 +234,7 @@ static void AppendLines(NSMutableString *out, NSArray *lines, NSRange range) {
 }
 
 + (NSArray *)updateStorage:(NSTextStorage *)storage toContent:(NSAttributedString *)content selectedRanges:(NSArray *)selectedRanges {
-	NSString *oldText = [[[storage string] copy] autorelease];
+	NSString *oldText = [[storage string] copy];
 	NSRange changed;
 	NSString *replacement = nil;
 	if ([self changeFrom:oldText to:[content string] range:&changed replacement:&replacement]) {

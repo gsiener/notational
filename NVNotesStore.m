@@ -25,7 +25,7 @@ static NSString *const SyncPointKey = @"syncPoint";
 
 @interface NVNotesStoreTransactionImpl : NSObject <NVNotesStoreTransaction> {
 @public
-	NVNotesStore *store;
+	__weak NVNotesStore *store;
 }
 @end
 
@@ -80,13 +80,13 @@ static NSString *ColumnText(sqlite3_stmt *stmt, int column) {
 	const unsigned char *bytes = sqlite3_column_text(stmt, column);
 	if (!bytes) return nil;
 	int length = sqlite3_column_bytes(stmt, column);
-	return [[[NSString alloc] initWithBytes:bytes length:length encoding:NSUTF8StringEncoding] autorelease];
+	return [[NSString alloc] initWithBytes:bytes length:length encoding:NSUTF8StringEncoding];
 }
 
 static NSString *JSONString(id object) {
 	if (!object) return nil;
 	NSData *data = [NSJSONSerialization dataWithJSONObject:object options:0 error:NULL];
-	return data ? [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease] : nil;
+	return data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : nil;
 }
 
 static id JSONObject(NSString *string) {
@@ -97,7 +97,7 @@ static id JSONObject(NSString *string) {
 static const char *NoteColumns = "id, content, tags, deleted, created, modified, server_data, confirmed_version, pending, revision";
 
 static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:ColumnText(stmt, 0)];
 	NSString *content = ColumnText(stmt, 1);
 	[record setContent:content ? content : @""];
@@ -191,7 +191,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 #pragma mark Opening
 
 + (NVNotesStore *)storeAtPath:(NSString *)aPath error:(NSError **)error {
-	NVNotesStore *store = [[[NVNotesStore alloc] initWithPath:aPath] autorelease];
+	NVNotesStore *store = [[NVNotesStore alloc] initWithPath:aPath];
 	return [store openReturningError:error] ? store : nil;
 }
 
@@ -249,11 +249,11 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 			return;
 		}
 		//not a usable store: move it aside rather than deleting anything, then start empty
-		failure = [SQLiteError(db, 0, @"open store") retain];
+		failure = SQLiteError(db, 0, @"open store");
 		sqlite3_close(db);
 		db = NULL;
 		if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
-			NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
+			NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
 			[formatter setDateFormat:@"yyyyMMdd-HHmmss"];
 			NSString *aside = [path stringByAppendingFormat:@".corrupt-%@", [formatter stringFromDate:[NSDate date]]];
 			if ([[NSFileManager defaultManager] moveItemAtPath:path toPath:aside error:NULL]) {
@@ -265,15 +265,13 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 				NSLog(@"NVNotesStore: moved unreadable store aside to %@", aside);
 				if ([self _openAndMigrate]) {
 					opened = YES;
-					[failure release];
 					failure = nil;
 					return;
 				}
 			}
 		}
 	});
-	if (!opened && error) *error = [failure autorelease];
-	else [failure release];
+	if (!opened && error) *error = failure;
 	return opened;
 }
 
@@ -283,10 +281,6 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 		sqlite3_close(db);
 		db = NULL;
 	}
-	dispatch_release(queue);
-	[path release];
-	[movedAsideCorruptFile release];
-	[super dealloc];
 }
 
 - (void)close {
@@ -306,20 +300,20 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 
 - (NSArray *)allNotes {
 	__block NSArray *records = nil;
-	dispatch_sync(queue, ^{ records = [[self _recordsWhere:NULL] retain]; });
-	return [records autorelease];
+	dispatch_sync(queue, ^{ records = [self _recordsWhere:NULL]; });
+	return records;
 }
 
 - (NSArray *)pendingNotes {
 	__block NSArray *records = nil;
-	dispatch_sync(queue, ^{ records = [[self _recordsWhere:"pending != 0"] retain]; });
-	return [records autorelease];
+	dispatch_sync(queue, ^{ records = [self _recordsWhere:"pending != 0"]; });
+	return records;
 }
 
 - (NVNoteRecord *)noteWithID:(NSString *)noteID {
 	__block NVNoteRecord *record = nil;
-	dispatch_sync(queue, ^{ record = [[self _recordWithID:noteID] retain]; });
-	return [record autorelease];
+	dispatch_sync(queue, ^{ record = [self _recordWithID:noteID]; });
+	return record;
 }
 
 - (NSUInteger)noteCount {
@@ -337,7 +331,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 #pragma mark Writing
 
 - (void)saveLocalEdit:(NVNoteRecord *)record {
-	NVNoteRecord *edit = [[record copy] autorelease];
+	NVNoteRecord *edit = [record copy];
 	dispatch_async(queue, ^{
 		NVNoteRecord *stored = [self _recordWithID:[edit noteID]];
 		NVNoteRecord *updated = stored ? stored : edit;
@@ -360,7 +354,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)putNote:(NVNoteRecord *)record {
-	NVNoteRecord *copy = [[record copy] autorelease];
+	NVNoteRecord *copy = [record copy];
 	dispatch_async(queue, ^{ [self _writeRecord:copy]; });
 }
 
@@ -374,7 +368,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)removeNoteWithID:(NSString *)noteID {
-	NSString *anID = [[noteID copy] autorelease];
+	NSString *anID = [noteID copy];
 	dispatch_async(queue, ^{ [self _deleteRecordWithID:anID]; });
 }
 
@@ -389,7 +383,6 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 		} @finally {
 			if (began) Exec(db, "COMMIT");
 			transaction->store = nil;
-			[transaction release];
 		}
 	});
 }
@@ -408,12 +401,12 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 
 - (NSString *)metadataValueForKey:(NSString *)key {
 	__block NSString *value = nil;
-	dispatch_sync(queue, ^{ value = [[self _metadataValueForKey:key] retain]; });
-	return [value autorelease];
+	dispatch_sync(queue, ^{ value = [self _metadataValueForKey:key]; });
+	return value;
 }
 
 - (void)setMetadataValue:(NSString *)value forKey:(NSString *)key {
-	NSString *v = [[value copy] autorelease], *k = [[key copy] autorelease];
+	NSString *v = [value copy], *k = [key copy];
 	dispatch_async(queue, ^{ [self _setMetadataValue:v forKey:k]; });
 }
 

@@ -98,10 +98,19 @@ typedef char _COMPILE_ASSERT_SYMBOL(__LINE__, msg) [ ((test) ? 1 : -1) ]
 #define IsYosemiteOrLater (floor(NSFoundationVersionNumber) >= NSFoundationVersionNumber10_10)
 
 #if __OBJC__
+// the pch is compiled both as MRC and (per file, -fobjc-arc) as ARC
+#if __has_feature(objc_arc)
+#define NV_AUTORELEASE(x) (x)
+#define NV_RETAIN(x) ((void)CFBridgingRetain(x))
+#else
+#define NV_AUTORELEASE(x) [(x) autorelease]
+#define NV_RETAIN(x) [(x) retain]
+#endif
+
 // stand-in for the deprecated NSRunAlertPanel family: buttons are added in default, alternate, other order
 // (NSAlertFirstButtonReturn, ...SecondButtonReturn, ...ThirdButtonReturn); a nil default title means "OK", nil/empty others mean no button
 static inline NSInteger NVRunAlert(NSAlertStyle style, NSString *title, NSString *message, NSString *defaultButton, NSString *alternateButton, NSString *otherButton) {
-	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+	NSAlert *alert = NV_AUTORELEASE([[NSAlert alloc] init]);
 	[alert setAlertStyle:style];
 	[alert setMessageText:title ? title : @""];
 	[alert setInformativeText:message ? message : @""];
@@ -121,7 +130,7 @@ static inline OSType NVOSTypeFromString(NSString *string) {
 }
 static inline NSString *NVStringFromOSType(OSType type) {
 	unsigned char bytes[4] = { (type >> 24) & 0xFF, (type >> 16) & 0xFF, (type >> 8) & 0xFF, type & 0xFF };
-	return [[[NSString alloc] initWithBytes:bytes length:4 encoding:NSMacOSRomanStringEncoding] autorelease];
+	return NV_AUTORELEASE([[NSString alloc] initWithBytes:bytes length:4 encoding:NSMacOSRomanStringEncoding]);
 }
 
 // the file paths on a pasteboard (what NSFilenamesPboardType's property list used to hold), or nil if there are none
@@ -143,7 +152,7 @@ static inline NSArray *NVFilePathsFromPasteboard(NSPasteboard *pasteboard) {
 static inline BOOL NVLoadNib(NSString *nibName, id owner) {
 	NSArray *topLevelObjects = nil;
 	if (![[NSBundle mainBundle] loadNibNamed:nibName owner:owner topLevelObjects:&topLevelObjects]) return NO;
-	[topLevelObjects retain];
+	NV_RETAIN(topLevelObjects);
 	return YES;
 }
 #endif

@@ -52,7 +52,7 @@
 }
 
 - (void)testNewNoteHasRequiredFields {
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:[NVNoteRecord newNoteID]];
 	[record setContent:@"new"];
 	NSDictionary *push = [record dataForPush];

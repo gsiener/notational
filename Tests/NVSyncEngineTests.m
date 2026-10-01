@@ -34,7 +34,7 @@
 
 - (id)initAtPath:(NSString *)path server:(NVFakeSimplenoteService *)server {
 	if ((self = [super init])) {
-		store = [[NVNotesStore storeAtPath:path error:NULL] retain];
+		store = [NVNotesStore storeAtPath:path error:NULL];
 		engine = [[NVSyncEngine alloc] initWithStore:store service:server];
 		callbacks = dispatch_queue_create("test.callbacks", DISPATCH_QUEUE_SERIAL);
 		[engine setDelegate:self];
@@ -50,14 +50,7 @@
 - (void)dealloc {
 	[engine stop];
 	[engine setDelegate:nil];
-	[engine release];
 	[store close];
-	[store release];
-	dispatch_release(callbacks);
-	[updates release];
-	[removals release];
-	[statuses release];
-	[super dealloc];
 }
 
 - (BOOL)sync {
@@ -92,7 +85,7 @@
 }
 
 - (NVNoteRecord *)createNoteWithContent:(NSString *)content {
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:[NVNoteRecord newNoteID]];
 	[record setContent:content];
 	[record setCreationDate:[[NSDate date] timeIntervalSince1970]];
@@ -113,20 +106,18 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
 	server = [[NVFakeSimplenoteService alloc] init];
 }
 
 - (void)tearDown {
 	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
-	[server release];
 	[super tearDown];
 }
 
 - (NVTestMachine *)machine:(NSString *)name {
-	return [[[NVTestMachine alloc] initAtPath:[directory stringByAppendingPathComponent:[name stringByAppendingString:@".sqlite"]]
-									   server:server] autorelease];
+	return [[NVTestMachine alloc] initAtPath:[directory stringByAppendingPathComponent:[name stringByAppendingString:@".sqlite"]]
+									   server:server];
 }
 
 - (NSString *)serverContentOf:(NSString *)noteID {
@@ -448,8 +439,9 @@
 	//changes request succeeds, first post succeeds, second fails
 	[server failNextRequestsWithCodes:[NSArray array]];
 	__block NSUInteger posts = 0;
+	__weak NVFakeSimplenoteService *weakServer = server;
 	[server setAfterPostApplied:^(NSString *postedID) {
-		if (++posts == 1) [server failNextRequestsWithCodes:[NSArray arrayWithObject:[NSNumber numberWithInteger:NVSimplenoteErrorServer]]];
+		if (++posts == 1) [weakServer failNextRequestsWithCodes:[NSArray arrayWithObject:[NSNumber numberWithInteger:NVSimplenoteErrorServer]]];
 	}];
 	XCTAssertFalse([mac sync]);
 	[server setAfterPostApplied:nil];

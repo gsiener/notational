@@ -11,7 +11,7 @@
 static const CGFloat PaneWidth = 368, Margin = 20;
 
 @interface NotationPrefsViewController () {
-	id<NVNotesPaneAccount> account;
+	__weak id<NVNotesPaneAccount> account;
 	NSView *view;
 	NSTextField *accountLabel, *statusLabel;
 	NSButton *secureTextEntryButton;
@@ -21,7 +21,7 @@ static const CGFloat PaneWidth = 368, Margin = 20;
 @implementation NotationPrefsViewController
 
 static NSTextField *Label(NSRect frame, NSString *text, NSFont *font) {
-	NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+	NSTextField *label = [[NSTextField alloc] initWithFrame:frame];
 	[label setEditable:NO];
 	[label setSelectable:NO];
 	[label setBordered:NO];
@@ -44,8 +44,6 @@ static NSTextField *Label(NSRect frame, NSString *text, NSFont *font) {
 
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[view release];
-	[super dealloc];
 }
 
 - (NSView *)view {
@@ -66,18 +64,18 @@ static NSTextField *Label(NSRect frame, NSString *text, NSFont *font) {
 	[statusLabel setTextColor:[NSColor secondaryLabelColor]];
 	[view addSubview:statusLabel];
 
-	NSButton *accountButton = [[[NSButton alloc] initWithFrame:NSMakeRect(Margin - 6, 112, 200, 32)] autorelease];
+	NSButton *accountButton = [[NSButton alloc] initWithFrame:NSMakeRect(Margin - 6, 112, 200, 32)];
 	[accountButton setBezelStyle:NSBezelStyleRounded];
 	[accountButton setTitle:NSLocalizedString(@"Simplenote Account…", nil)];
 	[accountButton setTarget:self];
 	[accountButton setAction:@selector(showAccount:)];
 	[view addSubview:accountButton];
 
-	NSBox *separator = [[[NSBox alloc] initWithFrame:NSMakeRect(Margin, 96, width, 1)] autorelease];
+	NSBox *separator = [[NSBox alloc] initWithFrame:NSMakeRect(Margin, 96, width, 1)];
 	[separator setBoxType:NSBoxSeparator];
 	[view addSubview:separator];
 
-	secureTextEntryButton = [[[NSButton alloc] initWithFrame:NSMakeRect(Margin, 62, width, 20)] autorelease];
+	secureTextEntryButton = [[NSButton alloc] initWithFrame:NSMakeRect(Margin, 62, width, 20)];
 	[secureTextEntryButton setButtonType:NSButtonTypeSwitch];
 	[secureTextEntryButton setTitle:NSLocalizedString(@"Secure Text Entry", nil)];
 	[secureTextEntryButton setTarget:self];

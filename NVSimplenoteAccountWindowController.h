@@ -25,7 +25,7 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error);
 
 @interface NVSimplenoteAccountWindowController : NSWindowController
 
-@property (nonatomic, assign) id<NVSimplenoteAccountDelegate> accountDelegate;
+@property (nonatomic, weak) id<NVSimplenoteAccountDelegate> accountDelegate;
 
 //re-read the delegate's state and show the matching step
 - (void)refresh;

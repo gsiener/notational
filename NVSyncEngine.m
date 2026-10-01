@@ -37,8 +37,8 @@
 
 - (id)initWithStore:(NVNotesStore *)aStore service:(id<NVSimplenoteService>)aService {
 	if ((self = [super init])) {
-		store = [aStore retain];
-		service = [aService retain];
+		store = aStore;
+		service = aService;
 		queue = dispatch_queue_create("net.elasticthreads.nv.sync-engine", DISPATCH_QUEUE_SERIAL);
 		delegateQueue = dispatch_get_main_queue();
 		pollInterval = 30.0;
@@ -54,17 +54,8 @@
 	//dispatch_sync onto it from here; nothing else can reach this object any more
 	if (timer) {
 		dispatch_source_cancel(timer);
-		dispatch_release(timer);
-		timer = NULL;
+		timer = nil;
 	}
-	dispatch_release(queue);
-	[store release];
-	[service release];
-	[lastError release];
-	[nextAllowedAttempt release];
-	[updatedNotes release];
-	[removedNoteIDs release];
-	[super dealloc];
 }
 
 - (NVSyncStatus)status {
@@ -75,8 +66,8 @@
 
 - (NSError *)lastError {
 	__block NSError *error = nil;
-	dispatch_sync(queue, ^{ error = [lastError retain]; });
-	return [error autorelease];
+	dispatch_sync(queue, ^{ error = lastError; });
+	return error;
 }
 
 #pragma mark Scheduling
@@ -98,8 +89,7 @@
 		running = NO;
 		if (timer) {
 			dispatch_source_cancel(timer);
-			dispatch_release(timer);
-			timer = NULL;
+			timer = nil;
 		}
 	});
 }
@@ -128,10 +118,9 @@
 	dispatch_sync(queue, ^{
 		NSError *e = nil;
 		ok = [self _runCycleReturningError:&e];
-		failure = [e retain];
+		failure = e;
 	});
-	if (error) *error = [failure autorelease];
-	else [failure release];
+	if (error) *error = failure;
 	return ok;
 }
 
@@ -148,7 +137,7 @@
 
 - (void)_noteUpdated:(NVNoteRecord *)record {
 	[removedNoteIDs removeObject:[record noteID]];
-	[updatedNotes setObject:[[record copy] autorelease] forKey:[record noteID]];
+	[updatedNotes setObject:[record copy] forKey:[record noteID]];
 }
 
 - (void)_noteRemoved:(NSString *)noteID {
@@ -158,15 +147,13 @@
 
 - (void)_deliverChanges {
 	if (![updatedNotes count] && ![removedNoteIDs count]) return;
-	NSArray *records = [[updatedNotes allValues] retain];
-	NSArray *removed = [[removedNoteIDs allObjects] retain];
+	NSArray *records = [updatedNotes allValues];
+	NSArray *removed = [removedNoteIDs allObjects];
 	[updatedNotes removeAllObjects];
 	[removedNoteIDs removeAllObjects];
 	id<NVSyncEngineDelegate> target = delegate;
 	dispatch_async(delegateQueue, ^{
 		[target syncEngine:self didUpdateNotes:records removedNoteIDs:removed];
-		[records release];
-		[removed release];
 	});
 }
 
@@ -178,11 +165,9 @@
 	BOOL ok = [self _pullReturningError:&failure] && [self _pushReturningError:&failure];
 	[self _deliverChanges];
 
-	[lastError release];
-	lastError = [failure retain];
+	lastError = failure;
 	if (ok) {
 		consecutiveFailures = 0;
-		[nextAllowedAttempt release];
 		nextAllowedAttempt = nil;
 		[self _setStatus:NVSyncStatusIdle];
 	} else if ([[failure domain] isEqualToString:NVSimplenoteErrorDomain] && [failure code] == NVSimplenoteErrorUnauthorized) {
@@ -190,8 +175,7 @@
 	} else {
 		consecutiveFailures++;
 		NSTimeInterval delay = MIN(MAX_BACKOFF, pollInterval * pow(2.0, (double)MIN(consecutiveFailures, (NSUInteger)10)));
-		[nextAllowedAttempt release];
-		nextAllowedAttempt = [[NSDate dateWithTimeIntervalSinceNow:delay] retain];
+		nextAllowedAttempt = [NSDate dateWithTimeIntervalSinceNow:delay];
 		[self _setStatus:NVSyncStatusOffline];
 	}
 	if (error) *error = failure;

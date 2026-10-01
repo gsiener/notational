@@ -14,14 +14,14 @@
 @implementation NVLegacyPreferencesTests
 
 - (id)saved:(NSString *)key {
-	return [(id)CFPreferencesCopyValue((CFStringRef)key, (CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) autorelease];
+	return CFBridgingRelease(CFPreferencesCopyValue((__bridge CFStringRef)key, (__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
 }
 
 - (void)setUp {
 	[super setUp];
 	NSString *unique = [[[NSUUID UUID] UUIDString] substringToIndex:8];
-	sourceDomain = [[NSString stringWithFormat:@"com.gsiener.notational.tests.legacy-%@", unique] retain];
-	targetSuite = [[NSString stringWithFormat:@"com.gsiener.notational.tests.target-%@", unique] retain];
+	sourceDomain = [NSString stringWithFormat:@"com.gsiener.notational.tests.legacy-%@", unique];
+	targetSuite = [NSString stringWithFormat:@"com.gsiener.notational.tests.target-%@", unique];
 	
 	NSDictionary *old = [NSDictionary dictionaryWithObjectsAndKeys:
 						 [NSNumber numberWithInt:37], @"AppActivationKeyCode",
@@ -33,21 +33,17 @@
 						 @"https://example.com/feed", @"SUFeedURL",
 						 [NSArray array], @"Bookmarks", nil];
 	for (NSString *key in old)
-		CFPreferencesSetValue((CFStringRef)key, (CFPropertyListRef)[old objectForKey:key], (CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	CFPreferencesSynchronize((CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+		CFPreferencesSetValue((__bridge CFStringRef)key, (__bridge CFPropertyListRef)[old objectForKey:key], (__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSynchronize((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 }
 
 - (void)tearDown {
-	CFArrayRef keys = CFPreferencesCopyKeyList((CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	for (NSString *key in (NSArray *)keys) CFPreferencesSetValue((CFStringRef)key, NULL, (CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	if (keys) CFRelease(keys);
-	CFPreferencesSynchronize((CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	keys = CFPreferencesCopyKeyList((CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	for (NSString *key in (NSArray *)keys) CFPreferencesSetValue((CFStringRef)key, NULL, (CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	if (keys) CFRelease(keys);
-	CFPreferencesSynchronize((CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	[sourceDomain release];
-	[targetSuite release];
+	NSArray *keys = CFBridgingRelease(CFPreferencesCopyKeyList((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
+	for (NSString *key in keys) CFPreferencesSetValue((__bridge CFStringRef)key, NULL, (__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSynchronize((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	keys = CFBridgingRelease(CFPreferencesCopyKeyList((__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
+	for (NSString *key in keys) CFPreferencesSetValue((__bridge CFStringRef)key, NULL, (__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSynchronize((__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 	[super tearDown];
 }
 
@@ -65,11 +61,11 @@
 }
 
 - (void)testRunsOnceAndNeverOverwritesExistingSettings {
-	CFPreferencesSetValue(CFSTR("TableSortColumn"), CFSTR("Title"), (CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSetValue(CFSTR("TableSortColumn"), CFSTR("Title"), (__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 	[NVLegacyPreferences importFromDomain:sourceDomain intoDomain:targetSuite];
 	XCTAssertEqualObjects([self saved:@"TableSortColumn"], @"Title");
 	
-	CFPreferencesSetValue(CFSTR("AppActivationKeyCode"), NULL, (CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSetValue(CFSTR("AppActivationKeyCode"), NULL, (__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 	XCTAssertEqual([NVLegacyPreferences importFromDomain:sourceDomain intoDomain:targetSuite], (NSUInteger)0);
 	XCTAssertNil([self saved:@"AppActivationKeyCode"]);
 }

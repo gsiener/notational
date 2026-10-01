@@ -27,7 +27,7 @@ static NSString *const ImportedKey = @"ImportedLegacyPreferences";
 //the value saved in exactly this domain; unlike CFPreferencesCopyAppValue, this ignores the
 //search list (global domain, registered defaults)
 static id SavedValue(NSString *key, NSString *domain) {
-	return [(id)CFPreferencesCopyValue((CFStringRef)key, (CFStringRef)domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) autorelease];
+	return CFBridgingRelease(CFPreferencesCopyValue((__bridge CFStringRef)key, (__bridge CFStringRef)domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
 }
 
 + (NSUInteger)importFromDomain:(NSString *)sourceDomain intoDomain:(NSString *)targetDomain {
@@ -35,19 +35,18 @@ static id SavedValue(NSString *key, NSString *domain) {
 	if ([SavedValue(ImportedKey, targetDomain) boolValue]) return 0;
 	
 	NSUInteger copied = 0;
-	CFArrayRef keys = CFPreferencesCopyKeyList((CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	for (NSString *key in (NSArray *)keys) {
+	NSArray *keys = CFBridgingRelease(CFPreferencesCopyKeyList((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
+	for (NSString *key in keys) {
 		if ([self isExcluded:key] || SavedValue(key, targetDomain)) continue;
 		id value = SavedValue(key, sourceDomain);
 		if (value) {
-			CFPreferencesSetValue((CFStringRef)key, (CFPropertyListRef)value, (CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+			CFPreferencesSetValue((__bridge CFStringRef)key, (__bridge CFPropertyListRef)value, (__bridge CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 			copied++;
 		}
 	}
-	if (keys) CFRelease(keys);
 	
-	CFPreferencesSetValue((CFStringRef)ImportedKey, kCFBooleanTrue, (CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	CFPreferencesSynchronize((CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSetValue((__bridge CFStringRef)ImportedKey, kCFBooleanTrue, (__bridge CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	CFPreferencesSynchronize((__bridge CFStringRef)targetDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 	if (copied) NSLog(@"Imported %lu preferences from %@", (unsigned long)copied, sourceDomain);
 	return copied;
 }

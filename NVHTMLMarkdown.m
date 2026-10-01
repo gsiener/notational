@@ -16,15 +16,15 @@ static NSSet *NameSet(NSString *names) {
 //elements whose content never reaches the output
 static NSSet *DroppedNames(void) {
 	static NSSet *set = nil;
-	if (!set) set = [NameSet(@"script style noscript template head title svg iframe object embed canvas select") retain];
+	if (!set) set = NameSet(@"script style noscript template head title svg iframe object embed canvas select");
 	return set;
 }
 
 //plain containers: their children are laid out as paragraphs of their own
 static NSSet *ContainerNames(void) {
 	static NSSet *set = nil;
-	if (!set) set = [NameSet(@"html body p div section article main header footer nav aside form figure figcaption "
-							 @"address fieldset dl dt dd details summary center li caption") retain];
+	if (!set) set = NameSet(@"html body p div section article main header footer nav aside form figure figcaption "
+							 @"address fieldset dl dt dd details summary center li caption");
 	return set;
 }
 
@@ -32,7 +32,7 @@ static NSSet *ContainerNames(void) {
 static NSSet *StructuralNames(void) {
 	static NSSet *set = nil;
 	if (!set) {
-		set = [[NameSet(@"h1 h2 h3 h4 h5 h6 ul ol blockquote pre hr table") setByAddingObjectsFromSet:ContainerNames()] retain];
+		set = [NameSet(@"h1 h2 h3 h4 h5 h6 ul ol blockquote pre hr table") setByAddingObjectsFromSet:ContainerNames()];
 	}
 	return set;
 }
@@ -40,7 +40,7 @@ static NSSet *StructuralNames(void) {
 //chrome removed when there is no <article> or <main> to pick
 static NSSet *ChromeNames(void) {
 	static NSSet *set = nil;
-	if (!set) set = [NameSet(@"nav header footer aside form") retain];
+	if (!set) set = NameSet(@"nav header footer aside form");
 	return set;
 }
 
@@ -61,7 +61,7 @@ static NSString *Collapse(NSString *string) {
 			inSpace = NO;
 		}
 	}
-	NSString *result = [[[NSString alloc] initWithCharacters:buffer length:out] autorelease];
+	NSString *result = [[NSString alloc] initWithCharacters:buffer length:out];
 	free(buffer);
 	return result;
 }
@@ -191,17 +191,11 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 
 - (id)initWithBaseURL:(NSURL *)url skipChrome:(BOOL)skip {
 	if ((self = [super init])) {
-		baseURL = [url retain];
+		baseURL = url;
 		skipChrome = skip;
 		run = [[NSMutableString alloc] init];
 	}
 	return self;
-}
-
-- (void)dealloc {
-	[baseURL release];
-	[run release];
-	[super dealloc];
 }
 
 //collapses spaces and trims; breaks become Markdown hard breaks when hardBreaks, else spaces
@@ -209,7 +203,7 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 	text = Collapse(text);
 	text = [text stringByReplacingOccurrencesOfString:@" " BREAK_MARK withString:BREAK_MARK];
 	text = [text stringByReplacingOccurrencesOfString:BREAK_MARK @" " withString:BREAK_MARK];
-	NSMutableCharacterSet *trim = [[[NSCharacterSet whitespaceAndNewlineCharacterSet] mutableCopy] autorelease];
+	NSMutableCharacterSet *trim = [[NSCharacterSet whitespaceAndNewlineCharacterSet] mutableCopy];
 	[trim addCharactersInString:BREAK_MARK];
 	text = [text stringByTrimmingCharactersInSet:trim];
 	if (hardBreaks) {
@@ -467,7 +461,7 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 	if (!data) return @"";
 	NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithUnsignedInteger:NSUTF8StringEncoding]
 														forKey:NSCharacterEncodingDocumentOption];
-	NSAttributedString *attributed = [[[NSAttributedString alloc] initWithHTML:data options:options documentAttributes:NULL] autorelease];
+	NSAttributedString *attributed = [[NSAttributedString alloc] initWithHTML:data options:options documentAttributes:NULL];
 	NSString *text = [[attributed string] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	return text ? text : @"";
 }
@@ -495,10 +489,10 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 	static NSRegularExpression *open = nil, *close = nil;
 	if (!open) {
 		NSString *names = @"(article|main|nav|header|footer|aside|section|figure|figcaption|details|summary|address|template)";
-		open = [[NSRegularExpression regularExpressionWithPattern:[NSString stringWithFormat:@"<%@(?=[\\s/>])", names]
-														  options:NSRegularExpressionCaseInsensitive error:NULL] retain];
-		close = [[NSRegularExpression regularExpressionWithPattern:[NSString stringWithFormat:@"</%@\\s*>", names]
-														   options:NSRegularExpressionCaseInsensitive error:NULL] retain];
+		open = [NSRegularExpression regularExpressionWithPattern:[NSString stringWithFormat:@"<%@(?=[\\s/>])", names]
+														  options:NSRegularExpressionCaseInsensitive error:NULL];
+		close = [NSRegularExpression regularExpressionWithPattern:[NSString stringWithFormat:@"</%@\\s*>", names]
+														   options:NSRegularExpressionCaseInsensitive error:NULL];
 	}
 	NSRange all = NSMakeRange(0, [html length]);
 	html = [open stringByReplacingMatchesInString:html options:0 range:all withTemplate:@"<div data-nv-tag=\"$1\""];
@@ -509,9 +503,10 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 	if (![html length]) return @"";
 	html = [self htmlWithSectioningTagsRewritten:html];
 
-	NSXMLDocument *document = [[[NSXMLDocument alloc] initWithXMLString:html
+	//precise lifetime: the nodes walked below belong to the document, which must outlive them
+	__attribute__((objc_precise_lifetime)) NSXMLDocument *document = [[NSXMLDocument alloc] initWithXMLString:html
 																options:NSXMLDocumentTidyHTML | NSXMLNodePreserveWhitespace
-																  error:NULL] autorelease];
+																  error:NULL];
 	NSXMLElement *root = [document rootElement];
 	if (!root) {
 		NSString *text = [self plainTextFromHTML:html];
@@ -528,7 +523,7 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 		else skipChrome = YES;
 	}
 
-	NVHTMLMarkdownWriter *writer = [[[NVHTMLMarkdownWriter alloc] initWithBaseURL:baseURL skipChrome:skipChrome] autorelease];
+	NVHTMLMarkdownWriter *writer = [[NVHTMLMarkdownWriter alloc] initWithBaseURL:baseURL skipChrome:skipChrome];
 	NSArray *blocks = [writer blocksForChildrenOf:content];
 
 	NSString *markdown = [blocks componentsJoinedByString:@"\n\n"];

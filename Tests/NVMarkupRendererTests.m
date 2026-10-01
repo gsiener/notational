@@ -18,11 +18,10 @@
 @implementation FakeMarkupTool
 @synthesize prefix, lastInput, fails;
 + (FakeMarkupTool *)toolWithPrefix:(NSString *)aPrefix {
-	FakeMarkupTool *tool = [[[self alloc] init] autorelease];
+	FakeMarkupTool *tool = [[self alloc] init];
 	[tool setPrefix:aPrefix];
 	return tool;
 }
-- (void)dealloc { [prefix release]; [lastInput release]; [super dealloc]; }
 - (NSString *)convertText:(NSString *)text error:(NSError **)error {
 	[self setLastInput:text];
 	if (fails) {
@@ -43,9 +42,9 @@
 
 - (void)setUp {
 	[super setUp];
-	markdown = [[FakeMarkupTool toolWithPrefix:@"md:"] retain];
-	multiMarkdown = [[FakeMarkupTool toolWithPrefix:@"mmd:"] retain];
-	taskPaper = [[FakeMarkupTool toolWithPrefix:@"tp:"] retain];
+	markdown = [FakeMarkupTool toolWithPrefix:@"md:"];
+	multiMarkdown = [FakeMarkupTool toolWithPrefix:@"mmd:"];
+	taskPaper = [FakeMarkupTool toolWithPrefix:@"tp:"];
 	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
 						   markdown, [NSNumber numberWithInteger:NVMarkupMarkdown],
 						   multiMarkdown, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
@@ -53,10 +52,6 @@
 }
 
 - (void)tearDown {
-	[renderer release];
-	[markdown release];
-	[multiMarkdown release];
-	[taskPaper release];
 	[super tearDown];
 }
 
@@ -167,8 +162,8 @@ static NSString *MultiMarkdownPath(void) {
 	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
 						   mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
 						   mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
-	NVTaskPaperMarkdown *taskPaperTool = [[[NVTaskPaperMarkdown alloc] init] autorelease];
-	return [[[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaperTool] autorelease];
+	NVTaskPaperMarkdown *taskPaperTool = [[NVTaskPaperMarkdown alloc] init];
+	return [[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaperTool];
 }
 
 - (void)assertFixture:(NSString *)name format:(NVMarkupFormat)format {

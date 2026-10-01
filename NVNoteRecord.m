@@ -16,7 +16,7 @@
 }
 
 + (NVNoteRecord *)recordWithNoteID:(NSString *)anID serverData:(NSDictionary *)data version:(NSInteger)version {
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:anID];
 	[record setServerData:data];
 	[record setConfirmedVersion:version];
@@ -31,14 +31,6 @@
 		serverData = [[NSDictionary alloc] init];
 	}
 	return self;
-}
-
-- (void)dealloc {
-	[noteID release];
-	[content release];
-	[tags release];
-	[serverData release];
-	[super dealloc];
 }
 
 - (id)copyWithZone:(NSZone *)zone {

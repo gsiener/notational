@@ -17,20 +17,14 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 @implementation NVMarkupProcessTool
 
 + (NVMarkupProcessTool *)toolWithLaunchPath:(NSString *)aLaunchPath arguments:(NSArray *)someArguments {
-	NVMarkupProcessTool *tool = [[[self alloc] init] autorelease];
+	NVMarkupProcessTool *tool = [[self alloc] init];
 	tool->launchPath = [aLaunchPath copy];
 	tool->arguments = [(someArguments ? someArguments : [NSArray array]) copy];
 	return tool;
 }
 
-- (void)dealloc {
-	[launchPath release];
-	[arguments release];
-	[super dealloc];
-}
-
 - (NSString *)convertText:(NSString *)text error:(NSError **)error {
-	NSTask *task = [[[NSTask alloc] init] autorelease];
+	NSTask *task = [[NSTask alloc] init];
 	NSPipe *input = [NSPipe pipe], *output = [NSPipe pipe];
 	[task setExecutableURL:[NSURL fileURLWithPath:launchPath]];
 	[task setArguments:arguments];
@@ -58,7 +52,6 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 	});
 	NSData *result = [[output fileHandleForReading] readDataToEndOfFile];
 	dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-	dispatch_release(group);
 	[task waitUntilExit];
 
 	if ([task terminationStatus] != 0) {
@@ -68,7 +61,7 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 														 forKey:NSLocalizedDescriptionKey]];
 		return nil;
 	}
-	NSString *string = [[[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding] autorelease];
+	NSString *string = [[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding];
 	return string ? string : @"";
 }
 
@@ -87,7 +80,7 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 	if (!renderer) {
 		NSString *resources = [[NSBundle mainBundle] resourcePath];
 		NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:[resources stringByAppendingPathComponent:@"multimarkdown"] arguments:nil];
-		NVTaskPaperMarkdown *taskPaper = [[[NVTaskPaperMarkdown alloc] init] autorelease];
+		NVTaskPaperMarkdown *taskPaper = [[NVTaskPaperMarkdown alloc] init];
 		//plain Markdown is rendered by MultiMarkdown too, as the preview always did
 		NSDictionary *byFormat = [NSDictionary dictionaryWithObjectsAndKeys:
 								  mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
@@ -100,15 +93,9 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 - (id)initWithTools:(NSDictionary *)toolsByFormat taskPaperTool:(id<NVMarkupTool>)aTaskPaperTool {
 	if ((self = [super init])) {
 		tools = [toolsByFormat copy];
-		taskPaperTool = [aTaskPaperTool retain];
+		taskPaperTool = aTaskPaperTool;
 	}
 	return self;
-}
-
-- (void)dealloc {
-	[tools release];
-	[taskPaperTool release];
-	[super dealloc];
 }
 
 + (NVMarkupFormat)formatFromInteger:(NSInteger)value {

@@ -20,13 +20,13 @@
 
 static NSCharacterSet *LineBreaks(void) {
 	static NSCharacterSet *set = nil;
-	if (!set) set = [[NSCharacterSet characterSetWithCharactersInString:
-					  [NSString stringWithFormat:@"\n\r%C%C", (unichar)0x2028, (unichar)0x2029]] retain];
+	if (!set) set = [NSCharacterSet characterSetWithCharactersInString:
+					 [NSString stringWithFormat:@"\n\r%C%C", (unichar)0x2028, (unichar)0x2029]];
 	return set;
 }
 
 + (NVNoteContent *)contentWithString:(NSString *)content {
-	return [[[NVNoteContent alloc] initWithString:content] autorelease];
+	return [[NVNoteContent alloc] initWithString:content];
 }
 
 - (id)initWithString:(NSString *)content {
@@ -68,17 +68,8 @@ static NSCharacterSet *LineBreaks(void) {
 	return self;
 }
 
-- (void)dealloc {
-	[string release];
-	[prefix release];
-	[title release];
-	[separator release];
-	[body release];
-	[super dealloc];
-}
-
 - (id)copyWithZone:(NSZone *)zone {
-	return [self retain];
+	return self;
 }
 
 - (NSString *)stringWithTitle:(NSString *)newTitle body:(NSString *)newBody {

@@ -33,16 +33,6 @@
 	return self;
 }
 
-- (void)dealloc {
-	[versions release];
-	[changeLog release];
-	[failureCodes release];
-	[requestCounts release];
-	[oldestAvailableVersion release];
-	[afterPostApplied release];
-	[super dealloc];
-}
-
 #pragma mark Helpers
 
 static NSString *ChangeVersionString(NSUInteger counter) {
@@ -64,7 +54,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 }
 
 - (void)recordChangeOfNote:(NSString *)noteID removed:(BOOL)removed {
-	NVRemoteChange *change = [[[NVRemoteChange alloc] init] autorelease];
+	NVRemoteChange *change = [[NVRemoteChange alloc] init];
 	[change setNoteID:noteID];
 	[change setChangeVersion:ChangeVersionString(++changeCounter)];
 	[change setRemoved:removed];
@@ -82,7 +72,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 		history = [NSMutableArray array];
 		[versions setObject:history forKey:noteID];
 	}
-	[history addObject:[[data copy] autorelease]];
+	[history addObject:[data copy]];
 	[self recordChangeOfNote:noteID removed:NO];
 }
 
@@ -101,7 +91,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 			NSArray *history = [versions objectForKey:noteID];
 			[notes addObject:[NVRemoteNote noteWithID:noteID version:[history count] data:includeData ? [history lastObject] : nil]];
 		}
-		NVIndexPage *page = [[[NVIndexPage alloc] init] autorelease];
+		NVIndexPage *page = [[NVIndexPage alloc] init];
 		[page setNotes:notes];
 		[page setNextMark:end < [ids count] ? [NSString stringWithFormat:@"%lu", (unsigned long)end] : nil];
 		[page setChangeVersion:ChangeVersionString(changeCounter)];
@@ -118,10 +108,10 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 			return nil;
 		}
 		NSMutableArray *changes = [NSMutableArray array];
-		for (NVRemoteChange *change in changeLog) {
+		for (__strong NVRemoteChange *change in changeLog) {
 			if (ChangeCounterOf([change changeVersion]) <= since) continue;
 			if (changesOmitData && [change data]) {
-				NVRemoteChange *bare = [[[NVRemoteChange alloc] init] autorelease];
+				NVRemoteChange *bare = [[NVRemoteChange alloc] init];
 				[bare setNoteID:[change noteID]];
 				[bare setChangeVersion:[change changeVersion]];
 				[bare setVersion:[change version]];
@@ -142,7 +132,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 			return nil;
 		}
 		if (version) *version = [history count];
-		return [[[history lastObject] copy] autorelease];
+		return [[history lastObject] copy];
 	}
 }
 
@@ -181,7 +171,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 		}
 		history = [versions objectForKey:noteID];
 		if (newVersion) *newVersion = [history count];
-		NSDictionary *result = [[[history lastObject] copy] autorelease];
+		NSDictionary *result = [[history lastObject] copy];
 		if (afterPostApplied) afterPostApplied(noteID);
 		return result;
 	}

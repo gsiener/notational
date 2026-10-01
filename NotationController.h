@@ -44,7 +44,7 @@
 	float titleColumnWidth;
 	NoteAttributeColumn* sortColumn;
 	
-    NoteObject **allNotesBuffer;
+    __unsafe_unretained NoteObject **allNotesBuffer;
 	unsigned int allNotesBufferSize;
     
     NSUInteger selectedNoteIndex;

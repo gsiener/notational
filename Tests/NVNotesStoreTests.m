@@ -17,14 +17,12 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
-	path = [[directory stringByAppendingPathComponent:@"Notes.sqlite"] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
+	path = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
 }
 
 - (void)tearDown {
 	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
-	[path release];
 	[super tearDown];
 }
 
@@ -98,7 +96,7 @@
 
 - (void)testNewLocalNote {
 	NVNotesStore *store = [self openStore];
-	NVNoteRecord *note = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *note = [[NVNoteRecord alloc] init];
 	[note setNoteID:[NVNoteRecord newNoteID]];
 	[note setContent:@"brand new"];
 	[store saveLocalEdit:note];
