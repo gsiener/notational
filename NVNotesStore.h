@@ -1,0 +1,65 @@
+//
+//  NVNotesStore.h
+//  Notation
+//
+//  The Notes store: a SQLite replica of the user's Simplenote account, plus local
+//  notes not yet pushed. See docs/adr/0001-simplenote-backed-storage.md.
+//
+//  All SQLite access happens on the store's own serial queue. Writes are queued and
+//  return immediately; reads wait for queued writes, so callers always see their own
+//  changes. Records passed in and out are copies.
+//
+
+#import <Foundation/Foundation.h>
+
+@class NVNoteRecord;
+
+extern NSString *const NVNotesStoreErrorDomain;
+
+@interface NVNotesStore : NSObject
+
+//Opens or creates the store. A file that isn't a readable store is moved aside
+//(…corrupt-<timestamp>) and replaced by an empty one; the replica can be re-synced.
++ (NVNotesStore *)storeAtPath:(NSString *)path error:(NSError **)error;
+
+//path of a file moved aside on open because it was unreadable, if any
+@property (nonatomic, readonly) NSString *movedAsideCorruptFile;
+
+#pragma mark Reading
+
+- (NSArray *)allNotes;
+- (NVNoteRecord *)noteWithID:(NSString *)noteID;
+- (NSArray *)pendingNotes;
+- (NSUInteger)noteCount;
+
+#pragma mark Local edits
+
+//Stores the record's content, tags, trash flag and dates as a local edit: marks it
+//pending and bumps its local revision. Keeps the stored server data and confirmed version.
+- (void)saveLocalEdit:(NVNoteRecord *)record;
+
+#pragma mark Sync
+
+//Runs block with a copy of the stored record (nil if absent) on the store's queue,
+//then writes the record back if the block returns YES. Atomic with respect to all
+//other store operations.
+- (void)updateNoteWithID:(NSString *)noteID usingBlock:(BOOL (^)(NVNoteRecord *record))block;
+
+//Writes a record exactly as given (used for server-confirmed notes).
+- (void)putNote:(NVNoteRecord *)record;
+- (void)removeNoteWithID:(NSString *)noteID;
+- (void)removeAllNotes;
+
+//the account change version the replica is up to date with; nil before the first full sync
+@property (nonatomic, copy) NSString *syncPoint;
+
+- (NSString *)metadataValueForKey:(NSString *)key;
+- (void)setMetadataValue:(NSString *)value forKey:(NSString *)key;
+
+#pragma mark Lifecycle
+
+//blocks until every queued write has been committed
+- (void)waitUntilWritten;
+- (void)close;
+
+@end

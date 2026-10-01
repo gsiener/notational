@@ -385,6 +385,9 @@
 		2BC7DDBD3EC5E632DA14469A /* NVTextMergeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */; };
 		2FE7AE69DBF337107D0F2D43 /* NVFakeSimplenoteServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */; };
 		F2BBF2F87D2B091406A4FCAB /* NVNoteRecordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */; };
+		D95245BE0BEA7AAEFAE9E891 /* NVNotesStore.m in Sources */ = {isa = PBXBuildFile; fileRef = AE96A7FB2841D0D684E299FE /* NVNotesStore.m */; };
+		59BC4A169D48B701CDD7477D /* NVNotesStore.m in Sources */ = {isa = PBXBuildFile; fileRef = AE96A7FB2841D0D684E299FE /* NVNotesStore.m */; };
+		C5BF8F935A2EA96BA0B76DD8 /* NVNotesStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E350B7121BD1B9AC6D871AD /* NVNotesStoreTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -943,6 +946,9 @@
 		6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTextMergeTests.m; sourceTree = "<group>"; };
 		A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVFakeSimplenoteServiceTests.m; sourceTree = "<group>"; };
 		996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVNoteRecordTests.m; sourceTree = "<group>"; };
+		2CAF42247D4469D51496B0E4 /* NVNotesStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVNotesStore.h; sourceTree = "<group>"; };
+		AE96A7FB2841D0D684E299FE /* NVNotesStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVNotesStore.m; sourceTree = "<group>"; };
+		3E350B7121BD1B9AC6D871AD /* NVNotesStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVNotesStoreTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -988,6 +994,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				AE96A7FB2841D0D684E299FE /* NVNotesStore.m */,
+				2CAF42247D4469D51496B0E4 /* NVNotesStore.h */,
 				A426D9AC0CDDD9784BD48419 /* NVTextMerge.m */,
 				0C11CF2EDC05AC987622D2D5 /* NVTextMerge.h */,
 				3C26E0D689FE970A20415A2E /* NVSimplenoteService.m */,
@@ -1562,6 +1570,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				3E350B7121BD1B9AC6D871AD /* NVNotesStoreTests.m */,
 				996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */,
 				A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */,
 				6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */,
@@ -1826,6 +1835,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D95245BE0BEA7AAEFAE9E891 /* NVNotesStore.m in Sources */,
 				7AC25EA79ED30C0F33EA17CE /* NVTextMerge.m in Sources */,
 				D04C5F134240947DFCA4C139 /* NVSimplenoteService.m in Sources */,
 				0DB3AB692E726E25067C3007 /* NVNoteRecord.m in Sources */,
@@ -1938,6 +1948,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5BF8F935A2EA96BA0B76DD8 /* NVNotesStoreTests.m in Sources */,
+				59BC4A169D48B701CDD7477D /* NVNotesStore.m in Sources */,
 				F2BBF2F87D2B091406A4FCAB /* NVNoteRecordTests.m in Sources */,
 				2FE7AE69DBF337107D0F2D43 /* NVFakeSimplenoteServiceTests.m in Sources */,
 				2BC7DDBD3EC5E632DA14469A /* NVTextMergeTests.m in Sources */,
