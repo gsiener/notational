@@ -2400,6 +2400,9 @@ terminateApp:
     [toolbar setSizeMode:NSToolbarSizeModeSmall];
 	[toolbar setDelegate:self];
 	[window setToolbar:toolbar];
+	//the field gets its own full-width row under a centred title, as before macOS 11; newer SDKs
+	//default to a unified title bar that squeezes it in beside the title (#23)
+	[window setToolbarStyle:NSWindowToolbarStyleExpanded];
 	
 	[window setShowsToolbarButton:NO];
 	titleBarButton = [[TitlebarButton alloc] initWithFrame:NSMakeRect(0, 0, 19.0, 19.0) pullsDown:YES];
