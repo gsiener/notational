@@ -186,3 +186,21 @@ node-simperium's handling: 405/440 queue a `full` change, 409/412 acknowledge, a
 37. gummipunkt/NoteIt `SimperiumClient.swift` (embedded key) — https://github.com/gummipunkt/NoteIt/blob/254b972145b46b9a5a9088dc6193c934374bb6a4/Sources/NoteItCore/Simplenote/SimperiumClient.swift
 38. This repo: `SimplenoteSession.m` (L41, L66–77, L298–345, L1092–1240), `SimplenoteEntryCollector.m` (L270–350, L400–480), `SimperiumConfig.h`
 39. Unauthenticated probes run 2026-09-30: `GET api.simperium.com/1/chalk-bump-f49/note/index` → 401; `POST auth.simperium.com/1/chalk-bump-f49/authorize/` without key → 400 "missing api key", with dummy key → 401 "invalid app credentials"; `app.simplenote.com/login-with-password/` → 200.
+
+## Spike results (2026-09-30)
+
+Tested against the maintainer's real Simplenote account, read-only, from a scratch script (not committed). Only status codes, field names and counts were recorded; no note contents and no token.
+
+| Step | Result |
+|---|---|
+| `POST app.simplenote.com/account/request-login` with `request_source: "nvalt"` (honest third-party identity, no API key) | **HTTP 200**, login code emailed |
+| `POST /account/complete-login` with the emailed code | **HTTP 200**, response keys `sync_token`, `username`; token is 32 chars |
+| `GET api.simperium.com/1/chalk-bump-f49/note/index?limit=5` with `X-Simperium-Token` | **HTTP 200**, keys `current`, `index`, `mark` |
+| Full index, paged with `mark` (limit 500) | 2,324 note IDs in 5 pages (local database has 2,094 notes; difference not yet analysed — likely trashed notes and notes added elsewhere) |
+| `GET /note/i/<id>` | **HTTP 200**, `X-Simperium-Version` header present; fields `content`, `creationDate`, `deleted`, `modificationDate`, `publishURL`, `shareURL`, `systemTags`, `tags` |
+| `note` vs `Note` bucket | Identical ID sets and identical `current` cv: **bucket names are case-insensitive** |
+
+Conclusions:
+- The UNVERIFIED `request_source` scoping concern does not block an honestly identified client: a token obtained with `request_source: "nvalt"` was accepted by the data API.
+- No API key is needed anywhere in the path. `SimperiumConfig.h` and password login can be removed.
+- Not yet tested: writes (`POST /note/i/<id>/v/<n>`), `/changes?cv=`, token lifetime, and whether Simplenote later blocks or rate-limits this identity.
