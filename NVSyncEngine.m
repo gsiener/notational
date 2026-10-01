@@ -21,6 +21,7 @@
 	NVSyncStatus status;
 	NSError *lastError;
 	BOOL cycleRequested;
+	BOOL running;
 	NSUInteger consecutiveFailures;
 	NSDate *nextAllowedAttempt;
 
@@ -49,7 +50,13 @@
 }
 
 - (void)dealloc {
-	[self stop];
+	//the last reference may be released by a block running on our own queue, so never
+	//dispatch_sync onto it from here; nothing else can reach this object any more
+	if (timer) {
+		dispatch_source_cancel(timer);
+		dispatch_release(timer);
+		timer = NULL;
+	}
 	dispatch_release(queue);
 	[store release];
 	[service release];
@@ -76,6 +83,7 @@
 
 - (void)start {
 	dispatch_async(queue, ^{
+		running = YES;
 		if (timer) return;
 		timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 		uint64_t interval = (uint64_t)(pollInterval * NSEC_PER_SEC);
@@ -87,6 +95,7 @@
 
 - (void)stop {
 	dispatch_sync(queue, ^{
+		running = NO;
 		if (timer) {
 			dispatch_source_cancel(timer);
 			dispatch_release(timer);
@@ -108,7 +117,7 @@
 }
 
 - (void)_runScheduledCycle {
-	if (status == NVSyncStatusSignedOut) return;
+	if (!running || status == NVSyncStatusSignedOut) return;
 	if (nextAllowedAttempt && [nextAllowedAttempt timeIntervalSinceNow] > 0) return;
 	[self _runCycleReturningError:NULL];
 }

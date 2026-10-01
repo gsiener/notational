@@ -43,6 +43,8 @@
 }
 
 - (void)tearDown {
+	[controller closeAllResources];
+	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
 	[controller setSyncEngine:nil];
 	[controller release];
 	[engine release];
@@ -161,6 +163,8 @@
 	[self openController];
 	[[controller notationPrefs] setConfirmsFileDeletion:NO];
 	XCTAssertTrue([controller flushAllNoteChanges]);
+	[controller closeAllResources];
+	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
 	[controller release];
 	controller = nil;
 	[self openController];

@@ -51,7 +51,7 @@ typedef enum {
 - (void)start;
 - (void)stop;
 
-//request a cycle soon, e.g. after a local edit; coalesced and subject to backoff
+//request a cycle soon, e.g. after a local edit; coalesced, subject to backoff, ignored unless started
 - (void)syncNow;
 
 //run one full cycle on the engine queue and wait for it; ignores backoff. For tests and quit.

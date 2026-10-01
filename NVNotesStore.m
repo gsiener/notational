@@ -116,6 +116,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 
 - (NSArray *)_recordsWhere:(const char *)where {
 	NSMutableArray *records = [NSMutableArray array];
+	if (!db) return records;
 	NSString *sql = [NSString stringWithFormat:@"SELECT %s FROM notes%s%s", NoteColumns, where ? " WHERE " : "", where ? where : ""];
 	sqlite3_stmt *stmt = NULL;
 	if (sqlite3_prepare_v2(db, [sql UTF8String], -1, &stmt, NULL) != SQLITE_OK) {
@@ -128,6 +129,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (NVNoteRecord *)_recordWithID:(NSString *)noteID {
+	if (!db) return nil;
 	sqlite3_stmt *stmt = NULL;
 	NSString *sql = [NSString stringWithFormat:@"SELECT %s FROM notes WHERE id = ?", NoteColumns];
 	if (sqlite3_prepare_v2(db, [sql UTF8String], -1, &stmt, NULL) != SQLITE_OK) return nil;
@@ -138,7 +140,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (BOOL)_writeRecord:(NVNoteRecord *)record {
-	if (![record noteID]) return NO;
+	if (!db || ![record noteID]) return NO;
 	static const char *sql = "INSERT OR REPLACE INTO notes (id, content, tags, deleted, created, modified, server_data, "
 		"confirmed_version, pending, revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	sqlite3_stmt *stmt = NULL;
@@ -166,6 +168,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (NSString *)_metadataValueForKey:(NSString *)key {
+	if (!db) return nil;
 	sqlite3_stmt *stmt = NULL;
 	if (sqlite3_prepare_v2(db, "SELECT value FROM metadata WHERE key = ?", -1, &stmt, NULL) != SQLITE_OK) return nil;
 	BindText(stmt, 1, key);
@@ -175,6 +178,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)_setMetadataValue:(NSString *)value forKey:(NSString *)key {
+	if (!db) return;
 	sqlite3_stmt *stmt = NULL;
 	const char *sql = value ? "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)" : "DELETE FROM metadata WHERE key = ?";
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) return;
@@ -274,7 +278,11 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)dealloc {
-	[self close];
+	//may run on our own queue (a queued block held the last reference), so close directly
+	if (db) {
+		sqlite3_close(db);
+		db = NULL;
+	}
 	dispatch_release(queue);
 	[path release];
 	[movedAsideCorruptFile release];
@@ -317,6 +325,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 - (NSUInteger)noteCount {
 	__block NSUInteger count = 0;
 	dispatch_sync(queue, ^{
+		if (!db) return;
 		sqlite3_stmt *stmt = NULL;
 		if (sqlite3_prepare_v2(db, "SELECT count(*) FROM notes", -1, &stmt, NULL) == SQLITE_OK && sqlite3_step(stmt) == SQLITE_ROW)
 			count = (NSUInteger)sqlite3_column_int64(stmt, 0);
@@ -356,6 +365,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)_deleteRecordWithID:(NSString *)noteID {
+	if (!db) return;
 	sqlite3_stmt *stmt = NULL;
 	if (sqlite3_prepare_v2(db, "DELETE FROM notes WHERE id = ?", -1, &stmt, NULL) != SQLITE_OK) return;
 	BindText(stmt, 1, noteID);
@@ -372,6 +382,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	dispatch_sync(queue, ^{
 		NVNotesStoreTransactionImpl *transaction = [[NVNotesStoreTransactionImpl alloc] init];
 		transaction->store = self;
+		if (!db) return;
 		BOOL began = Exec(db, "BEGIN IMMEDIATE");
 		@try {
 			block(transaction);
@@ -384,7 +395,7 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (void)removeAllNotes {
-	dispatch_async(queue, ^{ Exec(db, "DELETE FROM notes"); });
+	dispatch_async(queue, ^{ if (db) Exec(db, "DELETE FROM notes"); });
 }
 
 - (NSString *)syncPoint {
