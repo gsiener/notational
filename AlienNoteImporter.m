@@ -17,6 +17,7 @@
 
 
 #import "AlienNoteImporter.h"
+#import "NVHTMLMarkdown.h"
 #import "StickiesDocument.h"
 #import "BlorPasswordRetriever.h"
 #import "URLGetter.h"
@@ -361,13 +362,9 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	if (fileType == HTML_TYPE_ID || [extension isEqualToString:@"htm"] || [extension isEqualToString:@"html"] || [extension isEqualToString:@"shtml"]) {
 		//should convert to text with markdown here
         if ([[GlobalPrefs defaultPrefs] useMarkdownImport]) {
-			if ([[GlobalPrefs defaultPrefs] useReadability] || [self shouldUseReadability]) {
-				attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:[self contentUsingReadability:filename] 
-																				  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
-			} else {
-				attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:[self markdownFromHTMLFile:filename] 
-																				  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
-			}
+			BOOL articleOnly = [[GlobalPrefs defaultPrefs] useReadability] || [self shouldUseReadability];
+			NSString *markdown = [NVHTMLMarkdown markdownFromHTML:[self stringFromHTMLFile:filename] baseURL:[NSURL fileURLWithPath:filename] articleOnly:articleOnly];
+			attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:markdown attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
         } else {
 			attributedStringFromData = [[NSMutableAttributedString alloc] initWithHTML:[NSData uncachedDataFromFile:filename] 
                                                                                options:[NSDictionary optionsDictionaryWithTimeout:10.0] documentAttributes:NULL];
@@ -527,113 +524,16 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	return nil;
 }
 
-- (NSString *) contentUsingReadability: (NSString *)htmlFile
-{
-    NSBundle *bundle = [NSBundle mainBundle];
-    NSString *readabilityPath = [bundle pathForResource:@"readability" ofType:@"py"];
-//    readabilityPath = [bundle pathForAuxiliaryExecutable: @"readability.py"];
-	
-    NSTask *task = [[NSTask alloc] init];
-    [task setLaunchPath: readabilityPath];
-	
-	NSArray *arguments;
-    arguments = [NSArray arrayWithObjects: htmlFile, nil];
-    [task setArguments: arguments];
-	
-	NSPipe *rpipe;
-    rpipe = [NSPipe pipe];
-    [task setStandardOutput: rpipe];
-	
-    NSFileHandle *file;
-    file = [rpipe fileHandleForReading];
-	
-    [task launch];
-	
-    NSData *data;
-    data = [file readDataToEndOfFile];
-	
-    NSString *string;
-    string = [[[NSString alloc] initWithData: data
-								   encoding: NSUTF8StringEncoding] autorelease];
-    [task release];
-	return [self markdownFromSource:string];
+//HTML files come in all encodings: UTF-8 if it decodes, else Windows-1252, else Latin-1 (which accepts any bytes)
+- (NSString *)stringFromHTMLFile:(NSString *)filename {
+	NSData *data = [NSData uncachedDataFromFile:filename];
+	if (!data) return @"";
+	NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+	if (!string) string = [[[NSString alloc] initWithData:data encoding:NSWindowsCP1252StringEncoding] autorelease];
+	if (!string) string = [[[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding] autorelease];
+	return string ? string : @"";
 }
 
-- (NSString *) markdownFromHTMLFile: (NSString *)htmlFile
-{
-    NSBundle *bundle = [NSBundle mainBundle];
-    NSString *readabilityPath = [bundle pathForResource:@"html2text" ofType:@"py"];
-//    readabilityPath = [bundle pathForAuxiliaryExecutable: @"html2text.py"];
-	
-    NSTask *task = [[NSTask alloc] init];
-    [task setLaunchPath: readabilityPath];
-	
-	NSArray *arguments;
-    arguments = [NSArray arrayWithObjects: htmlFile, nil];
-    [task setArguments: arguments];
-	
-	NSPipe *rpipe;
-    rpipe = [NSPipe pipe];
-    [task setStandardOutput: rpipe];
-	
-    NSFileHandle *file;
-    file = [rpipe fileHandleForReading];
-	
-    [task launch];
-	
-    NSData *data;
-    data = [file readDataToEndOfFile];
-	
-    NSString *string;
-    string = [[[NSString alloc] initWithData: data
-								   encoding: NSUTF8StringEncoding] autorelease];
-	[task release];
-	return string;
-}
-
-- (NSString *) markdownFromSource: (NSString *)htmlString
-{
-    NSBundle *bundle = [NSBundle mainBundle];
-    NSString *readabilityPath = [bundle pathForResource:@"html2text" ofType:@"py"];
-//    readabilityPath = [bundle pathForAuxiliaryExecutable: @"html2text.py"];
-
-	
-    NSTask *task = [[NSTask alloc] init];
-    [task setLaunchPath: readabilityPath];
-	
-    NSPipe *readPipe = [NSPipe pipe];
-    NSFileHandle *readHandle = [readPipe fileHandleForReading];
-	
-    NSPipe *writePipe = [NSPipe pipe];
-    NSFileHandle *writeHandle = [writePipe fileHandleForWriting];
-	
-    [task setStandardInput: writePipe];
-    [task setStandardOutput: readPipe];
-	
-    [task launch];
-	
-    [writeHandle writeData: [htmlString dataUsingEncoding: NSUTF8StringEncoding]];
-    [writeHandle closeFile];
-	
-    NSMutableData *data = [[NSMutableData alloc] init];
-    NSData *readData;
-	
-    while ((readData = [readHandle availableData])
-           && [readData length]) {
-        [data appendData: readData];
-    }
-	
-    NSString *strippedString;
-    strippedString = [[NSString alloc]
-					  initWithData: data
-					  encoding: NSUTF8StringEncoding];
-	
-    [task release];
-    [data release];
-    [strippedString autorelease];
-	
-    return (strippedString);
-}
 -(BOOL)shouldUseReadability
 {
     return shouldUseReadability;
