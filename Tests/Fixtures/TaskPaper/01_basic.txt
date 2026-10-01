@@ -1,0 +1,5 @@
+Home:
+	- buy eggs @today
+	- call mom @done
+Archive:
+	- old task @done

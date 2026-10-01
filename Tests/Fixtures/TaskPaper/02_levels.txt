@@ -1,0 +1,10 @@
+Work:
+	Sprint:
+		- ship it @due(2026-10-01)
+			- sub task @p1
+				- deep @a @b(x y)
+		- other
+	Backlog:
+		- thing
+Personal:
+	- a

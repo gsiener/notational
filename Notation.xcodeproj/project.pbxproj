@@ -184,7 +184,6 @@
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		93099628138BD61000368C45 /* tp2md.rb in Resources */ = {isa = PBXBuildFile; fileRef = 93099627138BD61000368C45 /* tp2md.rb */; };
 		934C3FB214FDA069000D14BA /* custom.css in Resources */ = {isa = PBXBuildFile; fileRef = 934C3FAE14FDA069000D14BA /* custom.css */; };
 		934C3FB314FDA06A000D14BA /* customclean.css in Resources */ = {isa = PBXBuildFile; fileRef = 934C3FAF14FDA069000D14BA /* customclean.css */; };
 		934C3FB414FDA06A000D14BA /* template.html in Resources */ = {isa = PBXBuildFile; fileRef = 934C3FB014FDA069000D14BA /* template.html */; };
@@ -361,6 +360,9 @@
 		7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = B803B414643106CD651088CB /* NVMarkupRenderer.m */; };
 		EA11E9A4410D20E32F82DFB7 /* NVMarkupRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = B803B414643106CD651088CB /* NVMarkupRenderer.m */; };
 		8B6F5F6B6BF42A539B3F1F31 /* NVMarkupRendererTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */; };
+		660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */; };
+		1C22C292A48F41C818DC9528 /* NVTaskPaperMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */; };
+		2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -749,7 +751,6 @@
 		5CFF810913A536F7008A93A3 /* it */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = it; path = it.lproj/Preferences.xib; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* Notational.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notational.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		93099627138BD61000368C45 /* tp2md.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; path = tp2md.rb; sourceTree = "<group>"; };
 		9335C40C148EC7AC009CE623 /* multimarkdown */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = multimarkdown; sourceTree = "<group>"; };
 		934C3FAE14FDA069000D14BA /* custom.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = custom.css; sourceTree = "<group>"; };
 		934C3FAF14FDA069000D14BA /* customclean.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = customclean.css; sourceTree = "<group>"; };
@@ -845,6 +846,9 @@
 		0B7460D6F207276A99D3D6C7 /* NVMarkupRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMarkupRenderer.h; sourceTree = "<group>"; };
 		B803B414643106CD651088CB /* NVMarkupRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVMarkupRenderer.m; sourceTree = "<group>"; };
 		9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVMarkupRendererTests.m; sourceTree = "<group>"; };
+		042DDB46E505E2A3C035CA60 /* NVTaskPaperMarkdown.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTaskPaperMarkdown.h; sourceTree = "<group>"; };
+		A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTaskPaperMarkdown.m; sourceTree = "<group>"; };
+		9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTaskPaperMarkdownTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -890,6 +894,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */,
+				042DDB46E505E2A3C035CA60 /* NVTaskPaperMarkdown.h */,
 				B803B414643106CD651088CB /* NVMarkupRenderer.m */,
 				0B7460D6F207276A99D3D6C7 /* NVMarkupRenderer.h */,
 				B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */,
@@ -1361,7 +1367,6 @@
 			isa = PBXGroup;
 			children = (
 				9335C40C148EC7AC009CE623 /* multimarkdown */,
-				93099627138BD61000368C45 /* tp2md.rb */,
 				5C96F610131C380100A2E4AC /* Textile_2.12 */,
 			);
 			name = Markup;
@@ -1418,6 +1423,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */,
 				9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */,
 				0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */,
 				5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */,
@@ -1625,7 +1631,6 @@
 				93B3482B1371547800658F98 /* HUDIconShare.png in Resources */,
 				93B90E84138601C100BEC5FB /* LICENSE.txt in Resources */,
 				5C43669D1DA268500086FF84 /* This is the title of a note.nvhelp in Resources */,
-				93099628138BD61000368C45 /* tp2md.rb in Resources */,
 				5CE5B0081422795300FB554C /* PTKeyComboPanel.xib in Resources */,
 				5CD1B00714F4593900AC948E /* Add.tiff in Resources */,
 				934C3FB214FDA069000D14BA /* custom.css in Resources */,
@@ -1686,6 +1691,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */,
 				7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */,
 				CE445F755D155920EB6B4680 /* NVHTMLMarkdown.m in Sources */,
 				6D5DD0BE2FE833BB6D7FFD2D /* NVLegacyPreferences.m in Sources */,
@@ -1788,6 +1794,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */,
+				1C22C292A48F41C818DC9528 /* NVTaskPaperMarkdown.m in Sources */,
 				8B6F5F6B6BF42A539B3F1F31 /* NVMarkupRendererTests.m in Sources */,
 				EA11E9A4410D20E32F82DFB7 /* NVMarkupRenderer.m in Sources */,
 				EB00AAED12AAFE1703AE01F6 /* AlienNoteImporterTests.m in Sources */,

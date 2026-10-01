@@ -1,0 +1,5 @@
+Café:
+	- naïve résumé @voilà
+	- 日本語 タスク @完了 @done x
+	- emoji 🎉 @party(🎈 now)
+	note — dash “quotes”

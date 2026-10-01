@@ -1,0 +1,8 @@
+Project:
+	some note about it
+	- task one
+	another note   
+		- nested
+free note
+- top task
+  spaces note

@@ -4,6 +4,7 @@
 //
 
 #import "NVMarkupRenderer.h"
+#import "NVTaskPaperMarkdown.h"
 
 static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 
@@ -88,8 +89,7 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 		NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:[resources stringByAppendingPathComponent:@"multimarkdown"] arguments:nil];
 		NVMarkupProcessTool *textile = [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/perl" arguments:
 										[NSArray arrayWithObject:[resources stringByAppendingPathComponent:@"Textile_2.12/textilize.pl"]]];
-		NVMarkupProcessTool *taskPaper = [NVMarkupProcessTool toolWithLaunchPath:@"/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
-																	  arguments:[NSArray arrayWithObject:[resources stringByAppendingPathComponent:@"tp2md.rb"]]];
+		NVTaskPaperMarkdown *taskPaper = [[[NVTaskPaperMarkdown alloc] init] autorelease];
 		//plain Markdown is rendered by MultiMarkdown too, as the preview always did
 		NSDictionary *byFormat = [NSDictionary dictionaryWithObjectsAndKeys:
 								  mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],

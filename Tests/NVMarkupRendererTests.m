@@ -6,6 +6,7 @@
 
 #import <XCTest/XCTest.h>
 #import "NVMarkupRenderer.h"
+#import "NVTaskPaperMarkdown.h"
 
 //records what it was asked to convert and answers with a fixed prefix
 @interface FakeMarkupTool : NSObject <NVMarkupTool>
@@ -174,8 +175,7 @@ static NSString *MultiMarkdownPath(void) {
 						   mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown],
 						   [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/perl" arguments:[NSArray arrayWithObject:[repo stringByAppendingPathComponent:@"Textile_2.12/textilize.pl"]]],
 						   [NSNumber numberWithInteger:NVMarkupTextile], nil];
-	NVMarkupProcessTool *taskPaperTool = [NVMarkupProcessTool toolWithLaunchPath:@"/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
-																	  arguments:[NSArray arrayWithObject:[repo stringByAppendingPathComponent:@"tp2md.rb"]]];
+	NVTaskPaperMarkdown *taskPaperTool = [[[NVTaskPaperMarkdown alloc] init] autorelease];
 	return [[[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaperTool] autorelease];
 }
 

@@ -5,7 +5,7 @@
 //  Turns note text into HTML for the preview, Save HTML and Share (#4). Owns the markup
 //  formats, the TaskPaper pre-pass, the preview template and running the tools that do
 //  the conversion. Each tool is an adapter behind NVMarkupTool, so swapping one (e.g.
-//  replacing perl or ruby, #10/#28) touches only the tool for that format.
+//  replacing perl, #10/#28) touches only the tool for that format.
 //
 
 #import <Foundation/Foundation.h>

@@ -1,0 +1,6 @@
+Home:
+	- see [[Other Note]] and [[b @c]]
+	- mail me@x.com now
+	- colon: task
+	- - Foo: bar
+	- a @done end @done
