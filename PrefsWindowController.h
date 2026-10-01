@@ -23,7 +23,6 @@
 #endif
 {
     IBOutlet NSButton *useETScrollbarsOnLionButton;
-    IBOutlet NSPopUpButton *folderLocationsMenuButton;
     IBOutlet NSTextField *bodyTextFontField;
     IBOutlet NSMatrix *tabKeyRadioMatrix;
     IBOutlet NSPopUpButton *tableTextMenuButton;
@@ -55,7 +54,7 @@
 	BOOL fontPanelWasOpen;
 	
 	IBOutlet NSWindow *window;
-	IBOutlet NSView *editingView, *generalView, *fontsColorsView, *databaseView, *notationPrefsView;
+	IBOutlet NSView *editingView, *generalView, *fontsColorsView;
 	IBOutlet NSButton *rtlButton;
 	IBOutlet NSButton *autoPairButton;
     
@@ -76,7 +75,6 @@
 - (IBAction)changedRTL:(id)sender;
 - (void)previewNoteBodyFont;
 - (IBAction)changedNoteDeletion:(id)sender;
-- (IBAction)changedNotesFolderLocation:(id)sender;
 - (IBAction)changedQuitBehavior:(id)sender;
 - (IBAction)changedSpellChecking:(id)sender;
 - (IBAction)changedTabBehavior:(id)sender;
@@ -91,9 +89,6 @@
 - (IBAction)changedAutoPairing:(id)sender;
 - (IBAction)toggleStatusItem:(id)sender;
 - (void)_selectDefaultExternalEditor;
-
-- (NSMenu*)directorySelectionMenu;
-- (void)changeDefaultDirectory;
 
 - (NotationPrefsViewController*)notationPrefsViewController;
 - (NSView*)databaseView;

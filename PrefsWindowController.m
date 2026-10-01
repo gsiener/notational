@@ -182,10 +182,6 @@
 	[prefsController setConfirmNoteDeletion:[confirmDeletionButton state] sender:self];
 }
 
-- (IBAction)changedNotesFolderLocation:(id)sender {
-    NSLog(@"Changed notes folder menu");
-}
-
 - (IBAction)changedQuitBehavior:(id)sender {
     [prefsController setQuitWhenClosingWindow:[quitWhenClosingButton state] sender:self];
 }
@@ -256,39 +252,6 @@
 	} else if ([selectorString isEqualToString:SEL_STR(setConfirmNoteDeletion:sender:)]) {
 		[confirmDeletionButton setState:[prefsController confirmNoteDeletion]];
 	}
-}
-
-- (NSMenu*)directorySelectionMenu {
-    NSMenu *theMenu = [[[NSMenu alloc] initWithTitle:@"Note Directory Menu"] autorelease];
-    
-    FSRef targetRef = {{0}};
-    NSString *name = [prefsController displayNameForDefaultDirectoryWithFSRef:&targetRef];
-    if (!name)
-		name = NSLocalizedString(@"<Directory unknown>", nil);
-	
-	NSImage *iconImage = nil;
-	if (!IsZeros(&targetRef, sizeof(FSRef)) || [[prefsController aliasDataForDefaultDirectory] fsRefAsAlias:&targetRef])
-	    iconImage = [NSImage smallIconForFSRef:&targetRef];
-	
-    NSMenuItem *theMenuItem = [[[NSMenuItem alloc] initWithTitle:name action:nil keyEquivalent:@""] autorelease];
-    
-    if (iconImage)
-		[theMenuItem setImage:iconImage];
-    
-    [theMenu addItem:theMenuItem];
-    
-    [theMenu addItem:[NSMenuItem separatorItem]];
-    
-    theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Other...", @"title of menu item for selecting a different notes folder")
-											  action:@selector(changeDefaultDirectory) keyEquivalent:@""] autorelease];
-    [theMenuItem setTarget:self];
-    [theMenu addItem:theMenuItem];
-    
-    return theMenu;
-}
-
-- (void)changeDefaultDirectory {
-	//notes live in the Simplenote-backed store now (ADR 0001); there is no notes folder to choose
 }
 
 - (IBAction)changedRTL:(id)sender {

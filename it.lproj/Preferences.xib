@@ -16,17 +16,14 @@
                 <outlet property="checkSpellingButton" destination="276" id="293"/>
                 <outlet property="completeNoteTitlesButton" destination="175" id="265"/>
                 <outlet property="confirmDeletionButton" destination="172" id="266"/>
-                <outlet property="databaseView" destination="250" id="259"/>
                 <outlet property="editingView" destination="268" id="298"/>
                 <outlet property="externalEditorMenuButton" destination="561" id="567"/>
-                <outlet property="folderLocationsMenuButton" destination="252" id="260"/>
                 <outlet property="fontsColorsView" destination="352" id="425"/>
                 <outlet property="foregroundColorWell" destination="396" id="424"/>
                 <outlet property="generalView" destination="155" id="236"/>
                 <outlet property="highlightSearchTermsButton" destination="415" id="419"/>
                 <outlet property="makeURLsClickable" destination="311" id="312"/>
                 <outlet property="maxWidthSlider" destination="470" id="480"/>
-                <outlet property="notationPrefsView" destination="257" id="258"/>
                 <outlet property="quitWhenClosingButton" destination="174" id="267"/>
                 <outlet property="readabilityHint" destination="536" id="538"/>
                 <outlet property="rtlButton" destination="543" id="548"/>
@@ -213,43 +210,6 @@
                     <rect key="frame" x="0.0" y="39" width="482" height="5"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
-            </subviews>
-        </customView>
-        <customView misplaced="YES" id="250" userLabel="database view">
-            <rect key="frame" x="0.0" y="0.0" width="410" height="426"/>
-            <autoresizingMask key="autoresizingMask"/>
-            <subviews>
-                <customView misplaced="YES" id="257" propertyAccessControl="none">
-                    <rect key="frame" x="0.0" y="0.0" width="410" height="366"/>
-                    <autoresizingMask key="autoresizingMask"/>
-                </customView>
-                <popUpButton verticalHuggingPriority="750" misplaced="YES" id="252" propertyAccessControl="none">
-                    <rect key="frame" x="173" y="382" width="178" height="26"/>
-                    <autoresizingMask key="autoresizingMask"/>
-                    <popUpButtonCell key="cell" type="push" title="Item1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="256" id="337">
-                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
-                        <menu key="menu" title="OtherViews" id="253">
-                            <items>
-                                <menuItem title="Item1" state="on" id="256"/>
-                                <menuItem title="Item2" id="254"/>
-                                <menuItem title="Item3" id="255"/>
-                            </items>
-                        </menu>
-                    </popUpButtonCell>
-                    <connections>
-                        <action selector="changedNotesFolderLocation:" target="-2" id="263"/>
-                    </connections>
-                </popUpButton>
-                <textField verticalHuggingPriority="750" misplaced="YES" id="251" propertyAccessControl="none">
-                    <rect key="frame" x="-3" y="371" width="174" height="34"/>
-                    <autoresizingMask key="autoresizingMask"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="Leggi note dalla cartella:" id="336">
-                        <font key="font" metaFont="system"/>
-                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
             </subviews>
         </customView>
         <customView id="268" userLabel="editing view">
