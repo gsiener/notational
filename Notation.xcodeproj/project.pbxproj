@@ -33,13 +33,8 @@
 		2143D3D910E987B100127EA6 /* Pencil.png in Resources */ = {isa = PBXBuildFile; fileRef = 2143D3D810E987B100127EA6 /* Pencil.png */; };
 		214493F60ADB892C00E2A2B6 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 214493E70ADB892C00E2A2B6 /* CoreServices.framework */; };
 		214495030ADC7C8D00E2A2B6 /* SecurityInterface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 214494F80ADC7C8D00E2A2B6 /* SecurityInterface.framework */; };
-		214495130ADC8A6600E2A2B6 /* PassphrasePicker.m in Sources */ = {isa = PBXBuildFile; fileRef = 214495120ADC8A6600E2A2B6 /* PassphrasePicker.m */; };
 		21469C8C0BEBA6A10094835F /* TemporaryFileCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 21469C8A0BEBA6A10094835F /* TemporaryFileCache.m */; };
 		215309F412E4E92300AF2739 /* DiskUUIDEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 215309F312E4E92300AF2739 /* DiskUUIDEntry.m */; };
-		21544FBE0B06331800C0D1D5 /* KeyDerivationManager.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21544FB80B06331800C0D1D5 /* KeyDerivationManager.nib */; };
-		21544FC10B06332600C0D1D5 /* KeyDerivationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21544FC00B06332600C0D1D5 /* KeyDerivationManager.m */; };
-		215452080B06541800C0D1D5 /* PassphraseChanger.m in Sources */ = {isa = PBXBuildFile; fileRef = 215450F80B06509600C0D1D5 /* PassphraseChanger.m */; };
-		215453F00B067A5100C0D1D5 /* KeyDerivationDelaySlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 215453EF0B067A5100C0D1D5 /* KeyDerivationDelaySlider.m */; };
 		2155DEA6097B5F0300163A10 /* BufferUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 2155DEA5097B5F0300163A10 /* BufferUtils.c */; };
 		2155DF44097C992800163A10 /* AttributedPlainText.m in Sources */ = {isa = PBXBuildFile; fileRef = 2155DF43097C992800163A10 /* AttributedPlainText.m */; };
 		21582DC50B73F59B00711663 /* BookmarksController.m in Sources */ = {isa = PBXBuildFile; fileRef = 21582DC40B73F59A00711663 /* BookmarksController.m */; };
@@ -60,7 +55,6 @@
 		219192D409CFBC8800586B15 /* NoteAttributeColumn.m in Sources */ = {isa = PBXBuildFile; fileRef = 219192D309CFBC8700586B15 /* NoteAttributeColumn.m */; };
 		2191982209D607C600586B15 /* PrefsWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2191982109D607C600586B15 /* PrefsWindowController.m */; };
 		219588D20961D7F200972B8C /* LinkingEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 219588D10961D7F200972B8C /* LinkingEditor.m */; };
-		219739FB0AFE42A10046683E /* PassphraseRetriever.m in Sources */ = {isa = PBXBuildFile; fileRef = 219739FA0AFE42A10046683E /* PassphraseRetriever.m */; };
 		21973FF10B0060C80046683E /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21973FBC0B0060C80046683E /* Security.framework */; };
 		219D1BB3110EA66A005E7DF5 /* TBAlert.png in Resources */ = {isa = PBXBuildFile; fileRef = 219D1BB2110EA66A005E7DF5 /* TBAlert.png */; };
 		219D254A1113FE34005E7DF5 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 219D25491113FE34005E7DF5 /* SystemConfiguration.framework */; };
@@ -112,14 +106,12 @@
 		5C43669C1DA268500086FF84 /* How does this thing work?.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 5C4366971DA268500086FF84 /* How does this thing work?.nvhelp */; };
 		5C43669D1DA268500086FF84 /* This is the title of a note.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 5C4366991DA268500086FF84 /* This is the title of a note.nvhelp */; };
 		5C4366A01DA283720086FF84 /* ETNoteScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C43669F1DA283720086FF84 /* ETNoteScrollView.m */; };
-		5C48A28213A54FBD006B73DD /* PassphraseChanger.nib in Resources */ = {isa = PBXBuildFile; fileRef = 214495810ADCC07E00E2A2B6 /* PassphraseChanger.nib */; };
 		5C49E365131C5CC500696B68 /* Credits.html in Resources */ = {isa = PBXBuildFile; fileRef = 5C49E364131C5CC500696B68 /* Credits.html */; };
 		5C4B353E1307220E00014119 /* TransparentScrollerKnobTop.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C4B35361307220E00014119 /* TransparentScrollerKnobTop.tif */; };
 		5C4B35401307220E00014119 /* TransparentScrollerSlotBottom.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C4B35381307220E00014119 /* TransparentScrollerSlotBottom.tif */; };
 		5C4B35421307220E00014119 /* TransparentScrollerSlotVerticalFill.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C4B353A1307220E00014119 /* TransparentScrollerSlotVerticalFill.tif */; };
 		5C4B356A1307225000014119 /* ETTransparentScroller.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C4B35691307225000014119 /* ETTransparentScroller.m */; };
 		5C625D3A19DCAB8E00BF0492 /* ServicesMenu.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2128651C1278AF220013820A /* ServicesMenu.strings */; };
-		5C84319114229D810020E5A7 /* PassphraseRetriever.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C84319314229D810020E5A7 /* PassphraseRetriever.xib */; };
 		5C8BCF881DA2617C0036FA7E /* Contact.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 5C8BCF821DA2617C0036FA7E /* Contact.nvhelp */; };
 		5C94376F132A0C9E00B08B80 /* greyscrollervertbottom3.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C94376C132A0C9D00B08B80 /* greyscrollervertbottom3.tif */; };
 		5C943771132A0C9E00B08B80 /* greyscrollerverttop3.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C94376E132A0C9D00B08B80 /* greyscrollerverttop3.tif */; };
@@ -159,7 +151,6 @@
 		5CF01B0C132975910083D66E /* greyscrollerverttop.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5CF01B06132975910083D66E /* greyscrollerverttop.tiff */; };
 		5CF01B22132975DB0083D66E /* BTransparentScrollerSlotBottom.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5CF01B16132975DA0083D66E /* BTransparentScrollerSlotBottom.tif */; };
 		5CF33C721308B478002B5499 /* NotesTableHeaderCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CF33C711308B478002B5499 /* NotesTableHeaderCell.m */; };
-		5CF96CBD132EA1890079B3FD /* PassphrasePicker.nib in Resources */ = {isa = PBXBuildFile; fileRef = 214495740ADCC06300E2A2B6 /* PassphrasePicker.nib */; };
 		5CF96DA8132EA29D0079B3FD /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5CF96BFD132EA0300079B3FD /* MainMenu.xib */; };
 		5CF96DAA132EA29D0079B3FD /* Acknowledgments.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21813561105AF27400A0AE18 /* Acknowledgments.txt */; };
 		5CF96DBC132EA29D0079B3FD /* greyscrollervertfill3.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C94376D132A0C9D00B08B80 /* greyscrollervertfill3.tif */; };
@@ -272,11 +263,6 @@
 		56778E27B31E7CC5F9E85F49 /* DeletedNoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2181171209F311110020A252 /* DeletedNoteObject.m */; };
 		0B0A9E88D5F1B59B2DC99406 /* EncodingsManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 212DCA460A6AD28700F74E46 /* EncodingsManager.m */; };
 		73ED188C511223EF3366D23D /* NotesTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2191930209CFBEBD00586B15 /* NotesTableView.m */; };
-		7562175E844BF1C5C356D533 /* PassphrasePicker.m in Sources */ = {isa = PBXBuildFile; fileRef = 214495120ADC8A6600E2A2B6 /* PassphrasePicker.m */; };
-		2C3A458C668210D093FD3EAD /* PassphraseRetriever.m in Sources */ = {isa = PBXBuildFile; fileRef = 219739FA0AFE42A10046683E /* PassphraseRetriever.m */; };
-		63AEFB83F559DFC9CD12DFEE /* KeyDerivationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21544FC00B06332600C0D1D5 /* KeyDerivationManager.m */; };
-		BD092FF45D3D0B17675CE9C7 /* PassphraseChanger.m in Sources */ = {isa = PBXBuildFile; fileRef = 215450F80B06509600C0D1D5 /* PassphraseChanger.m */; };
-		66DFBE9B5646356F6C9AAF20 /* KeyDerivationDelaySlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 215453EF0B067A5100C0D1D5 /* KeyDerivationDelaySlider.m */; };
 		FC8FB46D2D948AF98F3E9500 /* AlienNoteImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 212089B00B0C24F500A15A69 /* AlienNoteImporter.m */; };
 		74884D2EC40DBC1BB268084D /* StickiesDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 212089D70B0C2CA500A15A69 /* StickiesDocument.m */; };
 		5C8089F8CB8211AA58914F01 /* LinkingEditor_Indentation.m in Sources */ = {isa = PBXBuildFile; fileRef = 219FD3150B2CC655004E132B /* LinkingEditor_Indentation.m */; };
@@ -464,18 +450,10 @@
 		214495040ADC7F4F00E2A2B6 /* SFPasswordAssistantInspectorController.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = SFPasswordAssistantInspectorController.h; sourceTree = "<group>"; };
 		2144950D0ADC883000E2A2B6 /* PasswordAssistantButton.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = PasswordAssistantButton.tif; path = Images/PasswordAssistantButton.tif; sourceTree = "<group>"; };
 		2144950E0ADC883000E2A2B6 /* PasswordAssistantButtonPressed.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = PasswordAssistantButtonPressed.tif; path = Images/PasswordAssistantButtonPressed.tif; sourceTree = "<group>"; };
-		214495110ADC8A6600E2A2B6 /* PassphrasePicker.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = PassphrasePicker.h; sourceTree = "<group>"; };
-		214495120ADC8A6600E2A2B6 /* PassphrasePicker.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = PassphrasePicker.m; sourceTree = "<group>"; };
-		2144987D0AE192F900E2A2B6 /* PassphraseChanger.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = PassphraseChanger.h; sourceTree = "<group>"; };
 		21469C890BEBA6A10094835F /* TemporaryFileCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TemporaryFileCache.h; sourceTree = "<group>"; };
 		21469C8A0BEBA6A10094835F /* TemporaryFileCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TemporaryFileCache.m; sourceTree = "<group>"; };
 		215309F212E4E92300AF2739 /* DiskUUIDEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiskUUIDEntry.h; sourceTree = "<group>"; };
 		215309F312E4E92300AF2739 /* DiskUUIDEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DiskUUIDEntry.m; sourceTree = "<group>"; };
-		21544FBF0B06332600C0D1D5 /* KeyDerivationManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = KeyDerivationManager.h; sourceTree = "<group>"; };
-		21544FC00B06332600C0D1D5 /* KeyDerivationManager.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = KeyDerivationManager.m; sourceTree = "<group>"; };
-		215450F80B06509600C0D1D5 /* PassphraseChanger.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = PassphraseChanger.m; sourceTree = "<group>"; };
-		215453EE0B067A5100C0D1D5 /* KeyDerivationDelaySlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeyDerivationDelaySlider.h; sourceTree = "<group>"; };
-		215453EF0B067A5100C0D1D5 /* KeyDerivationDelaySlider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KeyDerivationDelaySlider.m; sourceTree = "<group>"; };
 		2155DEA4097B5F0300163A10 /* BufferUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BufferUtils.h; sourceTree = "<group>"; };
 		2155DEA5097B5F0300163A10 /* BufferUtils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BufferUtils.c; sourceTree = "<group>"; };
 		2155DF42097C992800163A10 /* AttributedPlainText.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AttributedPlainText.h; sourceTree = "<group>"; };
@@ -524,8 +502,6 @@
 		2191982109D607C600586B15 /* PrefsWindowController.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = PrefsWindowController.m; sourceTree = "<group>"; };
 		219588D00961D7F200972B8C /* LinkingEditor.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = LinkingEditor.h; sourceTree = "<group>"; };
 		219588D10961D7F200972B8C /* LinkingEditor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LinkingEditor.m; sourceTree = "<group>"; };
-		219739F90AFE42A10046683E /* PassphraseRetriever.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = PassphraseRetriever.h; sourceTree = "<group>"; };
-		219739FA0AFE42A10046683E /* PassphraseRetriever.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = PassphraseRetriever.m; sourceTree = "<group>"; };
 		21973FBC0B0060C80046683E /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = /System/Library/Frameworks/Security.framework; sourceTree = "<absolute>"; };
 		219D1BB2110EA66A005E7DF5 /* TBAlert.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = TBAlert.png; path = Images/TBAlert.png; sourceTree = "<group>"; };
 		219D25491113FE34005E7DF5 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
@@ -624,12 +600,6 @@
 		5C4366611DA267420086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/EncodingsManager.nib; sourceTree = "<group>"; };
 		5C4366621DA2674B0086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/Preferences.xib; sourceTree = "<group>"; };
 		5C4366631DA267650086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/NotationPrefsView.nib; sourceTree = "<group>"; };
-		5C4366641DA267690086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/PassphrasePicker.nib; sourceTree = "<group>"; };
-		5C4366651DA267700086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/PassphraseChanger.nib; sourceTree = "<group>"; };
-		5C4366661DA267810086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = "pt-PT"; path = "pt-PT.lproj/PassphraseChanger.nib"; sourceTree = "<group>"; };
-		5C4366671DA267820086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/PassphraseChanger.nib; sourceTree = "<group>"; };
-		5C4366681DA267890086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = "pt-PT"; path = "pt-PT.lproj/PassphrasePicker.nib"; sourceTree = "<group>"; };
-		5C4366691DA2678B0086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/PassphrasePicker.nib; sourceTree = "<group>"; };
 		5C43666A1DA267910086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = "pt-PT"; path = "pt-PT.lproj/NotationPrefsView.nib"; sourceTree = "<group>"; };
 		5C43666B1DA267940086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/NotationPrefsView.nib; sourceTree = "<group>"; };
 		5C43666C1DA267980086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "pt-PT"; path = "pt-PT.lproj/Preferences.xib"; sourceTree = "<group>"; };
@@ -640,12 +610,6 @@
 		5C4366721DA267AC0086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/SaveHTMLPreview.nib; sourceTree = "<group>"; };
 		5C4366731DA267B20086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = fr; path = fr.lproj/MarkupPreview.xib; sourceTree = "<group>"; };
 		5C4366741DA267B60086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = fr; path = fr.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		5C4366751DA267BF0086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PassphraseRetriever.xib; sourceTree = "<group>"; };
-		5C4366761DA267C10086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "pt-PT"; path = "pt-PT.lproj/PassphraseRetriever.xib"; sourceTree = "<group>"; };
-		5C4366771DA267C20086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = fr; path = fr.lproj/PassphraseRetriever.xib; sourceTree = "<group>"; };
-		5C4366781DA267C60086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = "pt-PT"; path = "pt-PT.lproj/KeyDerivationManager.nib"; sourceTree = "<group>"; };
-		5C4366791DA267C90086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/KeyDerivationManager.nib; sourceTree = "<group>"; };
-		5C43667A1DA267CA0086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/KeyDerivationManager.nib; sourceTree = "<group>"; };
 		5C43667B1DA267CE0086FF84 /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = "pt-PT"; path = "pt-PT.lproj/BlorPasswordRetriever.nib"; sourceTree = "<group>"; };
 		5C43667C1DA267CF0086FF84 /* fr */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = fr; path = fr.lproj/BlorPasswordRetriever.nib; sourceTree = "<group>"; };
 		5C43667D1DA267D00086FF84 /* en */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = en; path = en.lproj/BlorPasswordRetriever.nib; sourceTree = "<group>"; };
@@ -678,9 +642,6 @@
 		5C43669E1DA283720086FF84 /* ETNoteScrollView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETNoteScrollView.h; sourceTree = "<group>"; };
 		5C43669F1DA283720086FF84 /* ETNoteScrollView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETNoteScrollView.m; sourceTree = "<group>"; };
 		5C4479DF17020153000AA45A /* nvaDevConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nvaDevConfig.h; sourceTree = "<group>"; };
-		5C48A28113A54FBD006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/PassphrasePicker.nib; sourceTree = "<group>"; };
-		5C48A28413A54FCA006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/PassphraseChanger.nib; sourceTree = "<group>"; };
-		5C48A28813A54FE1006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/KeyDerivationManager.nib; sourceTree = "<group>"; };
 		5C48A28A13A54FEB006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/BlorPasswordRetriever.nib; sourceTree = "<group>"; };
 		5C48A28E13A54FFC006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/ExporterManager.nib; sourceTree = "<group>"; };
 		5C48A29013A55006006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/ImporterAccessory.nib; sourceTree = "<group>"; };
@@ -688,9 +649,6 @@
 		5C48A29413A55016006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/URLGetter.nib; sourceTree = "<group>"; };
 		5C48A29613A5501F006B73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = zh; path = zh.lproj/FindPanel.nib; sourceTree = "<group>"; };
 		5C48A29713A55057006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/NotationPrefsView.nib; sourceTree = "<group>"; };
-		5C48A29913A55061006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/PassphrasePicker.nib; sourceTree = "<group>"; };
-		5C48A29B13A55078006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/PassphraseChanger.nib; sourceTree = "<group>"; };
-		5C48A29E13A5508C006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/KeyDerivationManager.nib; sourceTree = "<group>"; };
 		5C48A2A213A550B0006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/BlorPasswordRetriever.nib; sourceTree = "<group>"; };
 		5C48A2A313A550B0006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/ExporterManager.nib; sourceTree = "<group>"; };
 		5C48A2A413A550B0006B73DD /* it */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = it; path = it.lproj/FindPanel.nib; sourceTree = "<group>"; };
@@ -707,9 +665,6 @@
 		5C4B35681307225000014119 /* ETTransparentScroller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETTransparentScroller.h; sourceTree = "<group>"; };
 		5C4B35691307225000014119 /* ETTransparentScroller.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETTransparentScroller.m; sourceTree = "<group>"; };
 		5C5713F01309A42600961090 /* SplitViewDimple2.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = SplitViewDimple2.tif; sourceTree = "<group>"; };
-		5C84319714229D940020E5A7 /* de */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = de; path = de.lproj/PassphraseRetriever.xib; sourceTree = "<group>"; };
-		5C84319814229D940020E5A7 /* it */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = it; path = it.lproj/PassphraseRetriever.xib; sourceTree = "<group>"; };
-		5C84319914229D940020E5A7 /* zh */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = zh; path = zh.lproj/PassphraseRetriever.xib; sourceTree = "<group>"; };
 		5C8BCF771DA25EC40036FA7E /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-PT"; path = "pt-PT.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		5C8BCF791DA25EC40036FA7E /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "pt-PT"; path = "pt-PT.lproj/MainMenu.xib"; sourceTree = "<group>"; };
 		5C8BCF7A1DA25EC50036FA7E /* pt-PT */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "pt-PT"; path = "pt-PT.lproj/MarkupPreview.xib"; sourceTree = "<group>"; };
@@ -829,11 +784,8 @@
 		5CF96CC5132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/FindPanel.nib; sourceTree = "<group>"; };
 		5CF96CC7132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/ImporterAccessory.nib; sourceTree = "<group>"; };
 		5CF96CC8132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		5CF96CC9132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/KeyDerivationManager.nib; sourceTree = "<group>"; };
 		5CF96CCC132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5CF96CD0132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/NotationPrefsView.nib; sourceTree = "<group>"; };
-		5CF96CD1132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/PassphraseChanger.nib; sourceTree = "<group>"; };
-		5CF96CD2132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/PassphrasePicker.nib; sourceTree = "<group>"; };
 		5CF96CD4132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = de; path = de.lproj/Preferences.xib; sourceTree = "<group>"; };
 		5CF96CD6132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = de; path = de.lproj/SavedSearches.nib; sourceTree = "<group>"; };
 		5CF96CD7132EA1970079B3FD /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/ServicesMenu.strings; sourceTree = "<group>"; };
@@ -1149,14 +1101,6 @@
 			children = (
 				212DCA450A6AD28700F74E46 /* EncodingsManager.h */,
 				212DCA460A6AD28700F74E46 /* EncodingsManager.m */,
-				214495110ADC8A6600E2A2B6 /* PassphrasePicker.h */,
-				214495120ADC8A6600E2A2B6 /* PassphrasePicker.m */,
-				2144987D0AE192F900E2A2B6 /* PassphraseChanger.h */,
-				215450F80B06509600C0D1D5 /* PassphraseChanger.m */,
-				219739F90AFE42A10046683E /* PassphraseRetriever.h */,
-				219739FA0AFE42A10046683E /* PassphraseRetriever.m */,
-				21544FBF0B06332600C0D1D5 /* KeyDerivationManager.h */,
-				21544FC00B06332600C0D1D5 /* KeyDerivationManager.m */,
 				21FF94F60B5AD23B00DB6A2F /* ExporterManager.h */,
 				21FF94F50B5AD23B00DB6A2F /* ExporterManager.m */,
 			);
@@ -1208,8 +1152,6 @@
 				215DE83709ECC4FE009A710B /* HeaderViewWIthMenu.m */,
 				210A10660B66720F005BE981 /* BookmarksTable.h */,
 				210A10670B66720F005BE981 /* BookmarksTable.m */,
-				215453EE0B067A5100C0D1D5 /* KeyDerivationDelaySlider.h */,
-				215453EF0B067A5100C0D1D5 /* KeyDerivationDelaySlider.m */,
 				21C737930B50C73E0048C08A /* MultiplePageView.h */,
 				21C737940B50C73E0048C08A /* MultiplePageView.m */,
 				212C6950110E1940004DD82C /* TitlebarButton.h */,
@@ -1412,10 +1354,6 @@
 				212DCB2F0A6AE38500F74E46 /* EncodingsManager.nib */,
 				219195E409D3A20F00586B15 /* Preferences.xib */,
 				21A2FA7A09DF64E9001AF0B5 /* NotationPrefsView.nib */,
-				214495740ADCC06300E2A2B6 /* PassphrasePicker.nib */,
-				214495810ADCC07E00E2A2B6 /* PassphraseChanger.nib */,
-				5C84319314229D810020E5A7 /* PassphraseRetriever.xib */,
-				21544FB80B06331800C0D1D5 /* KeyDerivationManager.nib */,
 				211344BA0B3551BD0081B064 /* BlorPasswordRetriever.nib */,
 				5CE5B00A1422795300FB554C /* PTKeyComboPanel.xib */,
 				21FF94ED0B5AD22800DB6A2F /* ExporterManager.nib */,
@@ -1639,7 +1577,6 @@
 			files = (
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				5C625D3A19DCAB8E00BF0492 /* ServicesMenu.strings in Resources */,
-				21544FBE0B06331800C0D1D5 /* KeyDerivationManager.nib in Resources */,
 				211344C00B3551BD0081B064 /* BlorPasswordRetriever.nib in Resources */,
 				21F1CD700B3A38DB001FB5F6 /* PTKeyCodes.plist in Resources */,
 				21FF94F30B5AD22800DB6A2F /* ExporterManager.nib in Resources */,
@@ -1681,7 +1618,6 @@
 				5CF01B22132975DB0083D66E /* BTransparentScrollerSlotBottom.tif in Resources */,
 				5C94376F132A0C9E00B08B80 /* greyscrollervertbottom3.tif in Resources */,
 				5C943771132A0C9E00B08B80 /* greyscrollerverttop3.tif in Resources */,
-				5CF96CBD132EA1890079B3FD /* PassphrasePicker.nib in Resources */,
 				5CF96DA8132EA29D0079B3FD /* MainMenu.xib in Resources */,
 				5CF96DAA132EA29D0079B3FD /* Acknowledgments.txt in Resources */,
 				5CF96DBC132EA29D0079B3FD /* greyscrollervertfill3.tif in Resources */,
@@ -1739,8 +1675,6 @@
 				93B90E84138601C100BEC5FB /* LICENSE.txt in Resources */,
 				5C43669D1DA268500086FF84 /* This is the title of a note.nvhelp in Resources */,
 				93099628138BD61000368C45 /* tp2md.rb in Resources */,
-				5C48A28213A54FBD006B73DD /* PassphraseChanger.nib in Resources */,
-				5C84319114229D810020E5A7 /* PassphraseRetriever.xib in Resources */,
 				5CE5B0081422795300FB554C /* PTKeyComboPanel.xib in Resources */,
 				5CD1B00714F4593900AC948E /* Add.tiff in Resources */,
 				934C3FB214FDA069000D14BA /* custom.css in Resources */,
@@ -1840,11 +1774,6 @@
 				2181171309F311110020A252 /* DeletedNoteObject.m in Sources */,
 				212DCA470A6AD28700F74E46 /* EncodingsManager.m in Sources */,
 				218D43330AA2ABC600F36CCA /* NotesTableView.m in Sources */,
-				214495130ADC8A6600E2A2B6 /* PassphrasePicker.m in Sources */,
-				219739FB0AFE42A10046683E /* PassphraseRetriever.m in Sources */,
-				21544FC10B06332600C0D1D5 /* KeyDerivationManager.m in Sources */,
-				215452080B06541800C0D1D5 /* PassphraseChanger.m in Sources */,
-				215453F00B067A5100C0D1D5 /* KeyDerivationDelaySlider.m in Sources */,
 				212089B10B0C24F500A15A69 /* AlienNoteImporter.m in Sources */,
 				212089D80B0C2CA500A15A69 /* StickiesDocument.m in Sources */,
 				219FD3160B2CC655004E132B /* LinkingEditor_Indentation.m in Sources */,
@@ -1958,11 +1887,6 @@
 				56778E27B31E7CC5F9E85F49 /* DeletedNoteObject.m in Sources */,
 				0B0A9E88D5F1B59B2DC99406 /* EncodingsManager.m in Sources */,
 				73ED188C511223EF3366D23D /* NotesTableView.m in Sources */,
-				7562175E844BF1C5C356D533 /* PassphrasePicker.m in Sources */,
-				2C3A458C668210D093FD3EAD /* PassphraseRetriever.m in Sources */,
-				63AEFB83F559DFC9CD12DFEE /* KeyDerivationManager.m in Sources */,
-				BD092FF45D3D0B17675CE9C7 /* PassphraseChanger.m in Sources */,
-				66DFBE9B5646356F6C9AAF20 /* KeyDerivationDelaySlider.m in Sources */,
 				FC8FB46D2D948AF98F3E9500 /* AlienNoteImporter.m in Sources */,
 				74884D2EC40DBC1BB268084D /* StickiesDocument.m in Sources */,
 				5C8089F8CB8211AA58914F01 /* LinkingEditor_Indentation.m in Sources */,
@@ -2130,45 +2054,6 @@
 			name = FindPanel.nib;
 			sourceTree = "<group>";
 		};
-		214495740ADCC06300E2A2B6 /* PassphrasePicker.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5CF96CD2132EA1970079B3FD /* de */,
-				5C48A28113A54FBD006B73DD /* zh */,
-				5C48A29913A55061006B73DD /* it */,
-				5C4366641DA267690086FF84 /* en */,
-				5C4366681DA267890086FF84 /* pt-PT */,
-				5C4366691DA2678B0086FF84 /* fr */,
-			);
-			name = PassphrasePicker.nib;
-			sourceTree = "<group>";
-		};
-		214495810ADCC07E00E2A2B6 /* PassphraseChanger.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5CF96CD1132EA1970079B3FD /* de */,
-				5C48A28413A54FCA006B73DD /* zh */,
-				5C48A29B13A55078006B73DD /* it */,
-				5C4366651DA267700086FF84 /* en */,
-				5C4366661DA267810086FF84 /* pt-PT */,
-				5C4366671DA267820086FF84 /* fr */,
-			);
-			name = PassphraseChanger.nib;
-			sourceTree = "<group>";
-		};
-		21544FB80B06331800C0D1D5 /* KeyDerivationManager.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5CF96CC9132EA1970079B3FD /* de */,
-				5C48A28813A54FE1006B73DD /* zh */,
-				5C48A29E13A5508C006B73DD /* it */,
-				5C4366781DA267C60086FF84 /* pt-PT */,
-				5C4366791DA267C90086FF84 /* fr */,
-				5C43667A1DA267CA0086FF84 /* en */,
-			);
-			name = KeyDerivationManager.nib;
-			sourceTree = "<group>";
-		};
 		216BA24110746E3900F62D93 /* ImporterAccessory.nib */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -2297,19 +2182,6 @@
 				5CAB2F8F1DC799D2000AFED9 /* zh */,
 			);
 			name = "This is the title of a note.nvhelp";
-			sourceTree = "<group>";
-		};
-		5C84319314229D810020E5A7 /* PassphraseRetriever.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5C84319714229D940020E5A7 /* de */,
-				5C84319814229D940020E5A7 /* it */,
-				5C84319914229D940020E5A7 /* zh */,
-				5C4366751DA267BF0086FF84 /* en */,
-				5C4366761DA267C10086FF84 /* pt-PT */,
-				5C4366771DA267C20086FF84 /* fr */,
-			);
-			name = PassphraseRetriever.xib;
 			sourceTree = "<group>";
 		};
 		5C8BCF821DA2617C0036FA7E /* Contact.nvhelp */ = {

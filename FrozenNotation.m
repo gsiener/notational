@@ -17,7 +17,6 @@
 
 
 #import "FrozenNotation.h"
-#import "PassphraseRetriever.h"
 #import "NSData_transformations.h"
 #import "NotationPrefs.h"
 
@@ -150,71 +149,6 @@
 	return allNotes;
 }
 
-
-- (NSMutableArray*)unpackedNotesReturningError:(OSStatus*)err {
-	
-	//decrypt notesData, grabbing password from from keychain or user as necessary, then unarchive
-	
-	*err = noErr;
-	
-	if (!allNotes) {
-		
-		@try {
-			if ([prefs doesEncryption]) {
-				BOOL keychainGood = YES;
-				if (![prefs storesPasswordInKeychain] || !(keychainGood = [prefs canLoadPassphraseData:[prefs passwordDataFromKeychain]])) {
-					
-					if (!keychainGood) {
-						//reset keychain identifier in case database file was duplicated and password was changed, and this is the old DB
-						[prefs forgetKeychainIdentifier];
-					}
-					int result = [[PassphraseRetriever retrieverWithNotationPrefs:prefs] loadedUserPassphraseData];
-					
-					if (!result) {
-						//must have clicked cancel or equivalent
-						*err = kPassCanceledErr;
-						return (nil);
-					}
-					//if result is 1, passphrase should already be loaded
-				}
-				if (![prefs decryptDataWithCurrentSettings:notesData]) {
-					NSLog(@"Error decrypting data!");
-					*err = kNoAuthErr;
-					return(nil);
-				}
-			}
-			
-			//[notesData reverseBytes];
-			
-			NSMutableData *oldNotesData = notesData;
-			notesData = [[notesData uncompressedData] retain];
-			[oldNotesData autorelease];
-			
-			if (!notesData) {
-				*err = kCompressionErr;
-				NSLog(@"Error decompressing data");
-				return(nil);
-			}
-            BOOL keyedArchiveFailed = NO;
-            @try {
-                NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:notesData];
-                allNotes = [[unarchiver decodeObjectForKey:@"notes"] retain];
-                [unarchiver autorelease];
-            } @catch (NSException *e) {
-                keyedArchiveFailed = YES;
-            }
-            
-            if (keyedArchiveFailed)
-                allNotes = [[NSUnarchiver unarchiveObjectWithData:notesData] retain];
-		} @catch (NSException *e) {
-			*err = kCoderErr;
-			NSLog(@"Error unarchiving notes from data (%@, %@)", [e name], [e reason]);
-			return(nil);
-		}
-	}
-	
-	return allNotes;
-}
 
 - (NSMutableSet*)deletedNotes {
 	return deletedNoteSet;

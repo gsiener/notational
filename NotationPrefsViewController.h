@@ -19,8 +19,6 @@
 #import <Cocoa/Cocoa.h>
 
 @class NotationPrefs;
-@class PassphrasePicker;
-@class PassphraseChanger;
 
 @interface FileKindListView : NSTableView {
     IBOutlet NSPopUpButton *storageFormatPopupButton;
@@ -66,8 +64,6 @@
 	NSInteger notesStorageFormatInProgress;
     NotationPrefs *notationPrefs;
 	
-	PassphrasePicker *picker;
-	PassphraseChanger *changer;
 
 	BOOL verificationAttempted;
 	
@@ -106,12 +102,7 @@
 
 - (void)setVerificationStatus:(int)status withString:(NSString*)aString;
 
-- (void)encryptionFormatMismatchSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode 
-								contextInfo:(void *)contextInfo;
 - (IBAction)toggledEncryption:(id)sender;
-- (void)enableEncryption;
-- (void)_disableEncryption;
-- (void)disableEncryptionWithWarning:(BOOL)warning;
 
 #pragma mark nvALT Finder tagging
 - (IBAction)switchToFinderTags:(id)sender;

@@ -22,8 +22,6 @@
 #import "NotationPrefs.h"
 #import "NSString_NV.h"
 #import "NSCollection_utils.h"
-#import "PassphrasePicker.h"
-#import "PassphraseChanger.h"
 #import "NSFileManager_NV.h"
 //#import "AppController.h"
 
@@ -69,8 +67,6 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	return nil;
 }
 - (void)dealloc {
-	[picker release];
-	[changer release];
 	[notationPrefs release];
 	[postStorageFormatInvocation release];
 	
@@ -123,8 +119,6 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	if ([selectorString isEqualToString:SEL_STR(setNotationPrefs:sender:)]) {
 		
 		//force these objects to re-init with the new notationprefs
-		[changer release]; changer = nil;
-		[picker release]; picker = nil;
 		
 		[notationPrefs release];
 		notationPrefs = [[[GlobalPrefs defaultPrefs] notationPrefs] retain];
@@ -419,11 +413,7 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 }
 
 - (IBAction)changePassphrase:(id)sender {
-	
-	NSAssert([notationPrefs doesEncryption], @"Encryption must be on before the password can be changed.");
-	
-	if (!changer) changer = [[PassphraseChanger alloc] initWithNotationPrefs:notationPrefs];
-	[changer showAroundWindow:[view window]];
+	//encryption no longer applies: notes live in Simplenote (ADR 0001); the control is hidden
 }
 
 - (IBAction)visitSimplenoteSite:(id)sender {
@@ -460,91 +450,8 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	[allowedTypesTable reloadData];
 }
 
-- (void)passphrasePicker:(PassphrasePicker*)picker choseAPassphrase:(BOOL)success {
-	
-	[self setEncryptionControlsState:success];
-	[notationPrefs setDoesEncryption:success];
-	[self updateRemoveKeychainItemStatus];
-}
-
-- (void)encryptionFormatMismatchSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
-	if (returnCode == NSAlertDefaultReturn) {
-		//switching to single DB
-		[storageFormatPopupButton selectItemWithTag:SingleDatabaseFormat];
-		
-		[self performSelector:@selector(changedFileStorageFormat:) withObject:storageFormatPopupButton afterDelay:0.0];
-		
-		//need to show PW picker dialog after this ->
-		
-		//[picker showAroundWindow:[view window] resultDelegate:self];
-		
-		[postStorageFormatInvocation release];
-		
-		postStorageFormatInvocation = nil;
-	}
-}
-
-- (void)enableEncryption {
-	if (!picker) picker = [[PassphrasePicker alloc] initWithNotationPrefs:notationPrefs];
-	
-	NSInteger format = [notationPrefs notesStorageFormat];
-	if (format == SingleDatabaseFormat) {
-		
-		[picker showAroundWindow:[view window] resultDelegate:self];
-	} else {
-		NSString *formatStrings[] = { NSLocalizedString(@"(WHAT??)",@"user shouldn't see this"), 
-			NSLocalizedString(@"plain text",nil), NSLocalizedString(@"rich text",nil), NSLocalizedString(@"HTML",nil) };
-		NSAlert *alert = [NSAlert alertWithMessageText:[NSString stringWithFormat:NSLocalizedString(@"Your notes are currently stored as %@ files on disk, but encryption requires a single database. Switch to a database format?",nil), formatStrings[format]]
-										 defaultButton:NSLocalizedString(@"Use a single database file",nil) alternateButton:NSLocalizedString(@"Cancel",nil) otherButton:nil
-							 informativeTextWithFormat:NSLocalizedString(@"Notational Velocity supports encryption only for notes stored in a database file.",nil)];
-		
-		[alert beginSheetModalForWindow:[view window] modalDelegate:self 
-						 didEndSelector:@selector(encryptionFormatMismatchSheetDidEnd:returnCode:contextInfo:) contextInfo:NULL];
-	}
-}
-
-- (void)disableEncryptionWarningSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
-	if (returnCode == NSAlertDefaultReturn) {
-		[self _disableEncryption];
-	}
-}
-
-- (void)_disableEncryption {
-	[self setEncryptionControlsState:NO];
-	[notationPrefs setDoesEncryption:NO];
-	[self updateRemoveKeychainItemStatus];
-	
-	[picker release]; picker = nil;		
-}
-
-- (void)disableEncryptionWithWarning:(BOOL)warning {
-	if ([notationPrefs doesEncryption]) {
-		if (warning) {
-			NSAlert *alert = [NSAlert alertWithMessageText:NSLocalizedString(@"Disable note encryption now?",nil)
-											 defaultButton:NSLocalizedString(@"Disable Encryption",@"button title for disabling note encryption") 
-										   alternateButton:NSLocalizedString(@"Cancel",nil) otherButton:nil
-								 informativeTextWithFormat:NSLocalizedString(@"Warning: Your notes will be written to disk in clear text.",nil)];
-			
-			[alert beginSheetModalForWindow:[view window] modalDelegate:self 
-							 didEndSelector:@selector(disableEncryptionWarningSheetDidEnd:returnCode:contextInfo:) contextInfo:NULL];
-			
-		} else {
-			[self _disableEncryption];
-		}
-		
-	} else {
-		NSLog(@"Not disabling encryption because it is already off.");
-	}
-}
-
 - (IBAction)toggledEncryption:(id)sender {
-	BOOL encryptionOn = ![notationPrefs doesEncryption];
-	
-	if (encryptionOn) {
-		[self enableEncryption];
-	} else {
-		[self disableEncryptionWithWarning:YES];
-	}
+	//encryption no longer applies: notes live in Simplenote (ADR 0001); the control is hidden
 }
 
 
