@@ -155,7 +155,20 @@ static void AppendLines(NSMutableString *out, NSArray *lines, NSRange range) {
 			}
 		}
 		
-		//replay one side's hunks across the group; ours wins when both sides changed it
+		//both sides only inserted at the same point: keep both, ours first (as Simplenote's server does)
+		if (oLast == oi + 1 && tLast == ti + 1 && oursHunks[oi].start == oursHunks[oi].end &&
+			theirsHunks[ti].start == theirsHunks[ti].end && oursHunks[oi].start == theirsHunks[ti].start) {
+			AppendLines(merged, b, NSMakeRange(pos, groupStart - pos));
+			AppendLines(merged, o, oursHunks[oi].replacement);
+			NSString *ourText = [[o subarrayWithRange:oursHunks[oi].replacement] componentsJoinedByString:@""];
+			NSString *theirText = [[t subarrayWithRange:theirsHunks[ti].replacement] componentsJoinedByString:@""];
+			if (![ourText isEqualToString:theirText]) AppendLines(merged, t, theirsHunks[ti].replacement);
+			pos = groupEnd;
+			oi = oLast; ti = tLast;
+			continue;
+		}
+		
+		//replay one side's hunks across the group; ours wins when both sides changed the same lines
 		BOOL useOurs = oLast > oi;
 		NVLineHunk *side = useOurs ? oursHunks : theirsHunks;
 		NSArray *sideLines = useOurs ? o : t;

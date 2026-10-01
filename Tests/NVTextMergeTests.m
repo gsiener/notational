@@ -28,8 +28,11 @@
 - (void)testAppendsFromBothSidesBothSurvive {
 	NSString *base = @"title\n\nbase line";
 	NSString *merged = [NVTextMerge mergeBase:base ours:@"title\n\nbase line\nfrom A" theirs:@"title\n\nbase line\nfrom B"];
-	//both appended at the same point: that's a conflict, ours wins
-	XCTAssertEqualObjects(merged, @"title\n\nbase line\nfrom A");
+	//both appended at the same point: keep both, ours first (matches Simplenote's server, write spike #14)
+	XCTAssertEqualObjects(merged, @"title\n\nbase line\nfrom A\nfrom B");
+	//identical insertions aren't duplicated
+	XCTAssertEqualObjects([NVTextMerge mergeBase:base ours:@"title\n\nbase line\nsame" theirs:@"title\n\nbase line\nsame"],
+						  @"title\n\nbase line\nsame");
 
 	merged = [NVTextMerge mergeBase:base ours:@"title\nfrom A\n\nbase line" theirs:@"title\n\nbase line\nfrom B"];
 	XCTAssertEqualObjects(merged, @"title\nfrom A\n\nbase line\nfrom B");
@@ -37,6 +40,14 @@
 
 - (void)testConflictingEditsToTheSameLinePreferOurs {
 	XCTAssertEqualObjects([NVTextMerge mergeBase:@"a\nb\nc\n" ours:@"a\nours\nc\n" theirs:@"a\ntheirs\nc\n"], @"a\nours\nc\n");
+}
+
+- (void)testMatchesSimplenoteServerMergeFromWriteSpike {
+	//observed on the real server: v1 "nvALT spike\n\nbase line", A appended at v2, B posted against v1
+	NSString *merged = [NVTextMerge mergeBase:@"nvALT spike\n\nbase line"
+										 ours:@"nvALT spike\n\nbase line\nedit from machine B"
+									   theirs:@"nvALT spike\n\nbase line\nedit from machine A"];
+	XCTAssertEqualObjects(merged, @"nvALT spike\n\nbase line\nedit from machine B\nedit from machine A");
 }
 
 - (void)testInsertionsAndDeletions {

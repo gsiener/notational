@@ -15,8 +15,9 @@
 
 @interface NVTextMerge : NSObject
 
-//Three-way merge at line granularity. Changes from both sides are kept; where both
-//sides changed the same lines differently, ours wins for those lines.
+//Three-way merge at line granularity. Changes from both sides are kept, including lines
+//both sides inserted at the same point (ours first, as Simplenote's server orders them);
+//where both sides changed the same existing lines differently, ours wins for those lines.
 + (NSString *)mergeBase:(NSString *)base ours:(NSString *)ours theirs:(NSString *)theirs;
 
 //The single range of oldText that must be replaced to produce newText (common

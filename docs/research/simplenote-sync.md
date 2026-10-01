@@ -204,3 +204,25 @@ Conclusions:
 - The UNVERIFIED `request_source` scoping concern does not block an honestly identified client: a token obtained with `request_source: "nvalt"` was accepted by the data API.
 - No API key is needed anywhere in the path. `SimperiumConfig.h` and password login can be removed.
 - Not yet tested: writes (`POST /note/i/<id>/v/<n>`), `/changes?cv=`, token lifetime, and whether Simplenote later blocks or rate-limits this identity.
+
+## Write spike and end-to-end results (2026-10-01, #14)
+
+Against the maintainer's account, writing only to one throwaway note (`nvalt-spike-…`, left in the trash).
+
+| Check | Result |
+|---|---|
+| `POST note/i/<id>` (create) | 200, `X-Simperium-Version: 1`, full object echoed with `response=1` |
+| Edit at current version | 200, v2 |
+| Conflicting edit posted against stale v1 | 200, v3; **server kept both** appended lines, the stale post's first: `…base line\nedit from machine B\nedit from machine A`. All other fields preserved. |
+| Same `ccid` posted twice | 200, then **409** (duplicate change) |
+| Identical object re-posted | **412** (empty change), version unchanged |
+| `GET i/<id>/v/1` / `/v/9999` | 200 / 404 |
+| Trash (`deleted: true`) | 200, new version |
+| Bad token | 401 |
+| `GET note/changes?cv=<cv>` | **Works**: JSON array of `{ccids, clientid, cv, ev, id, o, sv, v}` (no object data). With `wait=0` returns `[]` immediately when up to date; without it, long-polls. `clientid` optional. |
+| `changes` with a change version from before a long quiet period, or a bogus one | **404** — the server forgets old change versions; clients must re-index (the adapter maps 404 → unknown change version). |
+| `index?since=<cv>` | 200, `{current, index}` with only notes changed since `cv` (a lighter alternative to re-indexing; not used yet). |
+
+End-to-end (`Tests/RealSimplenoteSyncTests.m`, opt-in): the Sync engine + HTTP adapter did a first sync of **2,325 notes in 4.3 s** (matching the server index exactly), pushed a local edit, and merged a concurrent "phone" edit server-side with both lines kept. The real app, signed in inside a throwaway home folder, synced the same 2,325 notes (229 in trash, 2,096 visible — the same count as the old database) and caught up on relaunch without re-indexing.
+
+Changes made from these results: `NVTextMerge` now keeps both sides' insertions at the same point (ours first), matching the server, and the fake server inherits that.

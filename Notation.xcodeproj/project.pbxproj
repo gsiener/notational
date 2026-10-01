@@ -366,6 +366,7 @@
 		39B30CEA86304A87C3740F6E /* AppController_Simplenote.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B79208C644415589F4DCDF /* AppController_Simplenote.m */; };
 		A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
 		3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
+		C01D6AFB846628FEAD619CB0 /* RealSimplenoteSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -878,6 +879,7 @@
 		A9B79208C644415589F4DCDF /* AppController_Simplenote.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppController_Simplenote.m; sourceTree = "<group>"; };
 		A269A5F32E0BCE7BCA7E99B0 /* NVSimplenoteAccountWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSimplenoteAccountWindowController.h; sourceTree = "<group>"; };
 		42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSimplenoteAccountWindowController.m; sourceTree = "<group>"; };
+		1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RealSimplenoteSyncTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1470,6 +1472,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */,
 				640D739DD42B87E565D21CEF /* NotationControllerStoreTests.m */,
 				78DF28F17CC6DD0157C88B76 /* NVNoteContentTests.m */,
 				849C5A399F170BC173BE0622 /* NVLegacyImporterTests.m */,
@@ -1837,6 +1840,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C01D6AFB846628FEAD619CB0 /* RealSimplenoteSyncTests.m in Sources */,
 				3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */,
 				39B30CEA86304A87C3740F6E /* AppController_Simplenote.m in Sources */,
 				C6AC8238D49FFE62AD995A64 /* NotationControllerStoreTests.m in Sources */,
