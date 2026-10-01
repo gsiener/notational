@@ -13,6 +13,7 @@
 #import "AppController.h"
 #import "AppController_Simplenote.h"
 #import "NVSyncEngine.h"
+#import "NVTextMerge.h"
 #import "NSString_CustomTruncation.h"
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
@@ -1955,16 +1956,11 @@ terminateApp:
 
 - (void)contentsUpdatedForNote:(NoteObject*)aNoteObject {
 	if (aNoteObject == currentNote) {
-		NSArray *selRanges=[textView selectedRanges];
-		[[textView textStorage] setAttributedString:[aNoteObject contentString]];
-        if (![selRanges isEqualToArray:[textView selectedRanges]]) {
-            NSRange testEnd=[[selRanges lastObject] rangeValue];
-            NSUInteger test=testEnd.location+testEnd.length;
-            
-            if (test<=[textView string].length) {
-                [textView setSelectedRanges:selRanges];
-            }
-        }
+		//apply only the part that changed (e.g. a line merged in from another device), so the
+		//selection stays with the text the user was looking at (ADR 0001 §8)
+		NSArray *moved = [NVTextMerge updateStorage:[textView textStorage] toContent:[aNoteObject contentString]
+								  selectedRanges:[textView selectedRanges]];
+		[textView setSelectedRanges:moved];
 		[self postTextUpdate];
 		[self updateWordCount:(![prefsController showWordCount])];
 	}

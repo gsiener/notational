@@ -11,7 +11,7 @@
 //  moving the selection or breaking undo.
 //
 
-#import <Foundation/Foundation.h>
+#import <Cocoa/Cocoa.h>
 
 @interface NVTextMerge : NSObject
 
@@ -26,5 +26,9 @@
 
 //Where a selection in oldText ends up after the change to newText.
 + (NSRange)selection:(NSRange)selection afterChangeFrom:(NSString *)oldText to:(NSString *)newText;
+
+//Bring storage up to date with content by replacing only the changed range, and return
+//selectedRanges (NSValue ranges) moved to follow the text they were on.
++ (NSArray *)updateStorage:(NSTextStorage *)storage toContent:(NSAttributedString *)content selectedRanges:(NSArray *)selectedRanges;
 
 @end

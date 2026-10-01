@@ -118,4 +118,20 @@
 	XCTAssertEqual(moved.location, (NSUInteger)11);
 }
 
+- (void)testUpdatingTheEditorKeepsTheCursorWithItsText {
+	NSTextStorage *storage = [[[NSTextStorage alloc] initWithString:@"line one\nline two\n"] autorelease];
+	//cursor at the start of "two"
+	NSArray *selection = [NSArray arrayWithObject:[NSValue valueWithRange:NSMakeRange(14, 0)]];
+	NSAttributedString *merged = [[[NSAttributedString alloc] initWithString:@"line zero\nline one\nline two\n"] autorelease];
+	NSArray *moved = [NVTextMerge updateStorage:storage toContent:merged selectedRanges:selection];
+	XCTAssertEqualObjects([storage string], [merged string]);
+	XCTAssertEqual([[moved lastObject] rangeValue].location, (NSUInteger)24);
+	XCTAssertEqualObjects([[storage string] substringFromIndex:24], @"two\n");
+	
+	//a change after the cursor leaves it alone
+	moved = [NVTextMerge updateStorage:storage toContent:[[[NSAttributedString alloc] initWithString:@"line zero\nline one\nline two\nline three"] autorelease]
+						selectedRanges:moved];
+	XCTAssertEqual([[moved lastObject] rangeValue].location, (NSUInteger)24);
+}
+
 @end

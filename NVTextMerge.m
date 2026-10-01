@@ -233,4 +233,21 @@ static void AppendLines(NSMutableString *out, NSArray *lines, NSRange range) {
 	return NSMakeRange(start, end - start);
 }
 
++ (NSArray *)updateStorage:(NSTextStorage *)storage toContent:(NSAttributedString *)content selectedRanges:(NSArray *)selectedRanges {
+	NSString *oldText = [[[storage string] copy] autorelease];
+	NSRange changed;
+	NSString *replacement = nil;
+	if ([self changeFrom:oldText to:[content string] range:&changed replacement:&replacement]) {
+		NSMutableArray *moved = [NSMutableArray arrayWithCapacity:[selectedRanges count]];
+		for (NSValue *value in selectedRanges)
+			[moved addObject:[NSValue valueWithRange:[self selection:[value rangeValue] afterChangeFrom:oldText to:[content string]]]];
+		[storage beginEditing];
+		[storage replaceCharactersInRange:changed withAttributedString:[content attributedSubstringFromRange:NSMakeRange(changed.location, [replacement length])]];
+		[storage endEditing];
+		return moved;
+	}
+	if (![storage isEqualToAttributedString:content]) [storage setAttributedString:content]; //same text, new styling
+	return selectedRanges;
+}
+
 @end
