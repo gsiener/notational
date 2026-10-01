@@ -364,6 +364,7 @@
 		CE445F755D155920EB6B4680 /* NVHTMLMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */; };
 		CCB5338365264BD4ADFFEB62 /* NVHTMLMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */; };
 		275E900EB1BF974391045428 /* NVHTMLMarkdownTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */; };
+		EB00AAED12AAFE1703AE01F6 /* AlienNoteImporterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -851,6 +852,7 @@
 		953BF612D2D4C16E2489B143 /* NVHTMLMarkdown.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVHTMLMarkdown.h; sourceTree = "<group>"; };
 		B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHTMLMarkdown.m; sourceTree = "<group>"; };
 		5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHTMLMarkdownTests.m; sourceTree = "<group>"; };
+		0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AlienNoteImporterTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1429,6 +1431,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */,
 				5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */,
 				21BF60B0E4EC664346E1F992 /* NotationPrefsViewControllerTests.m */,
 				80F4A621FDDB950A3FB460F0 /* NVLegacyPreferencesTests.m */,
@@ -1800,6 +1803,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB00AAED12AAFE1703AE01F6 /* AlienNoteImporterTests.m in Sources */,
 				275E900EB1BF974391045428 /* NVHTMLMarkdownTests.m in Sources */,
 				CCB5338365264BD4ADFFEB62 /* NVHTMLMarkdown.m in Sources */,
 				139A9EF47B5160A16D03BB44 /* NotationPrefsViewControllerTests.m in Sources */,

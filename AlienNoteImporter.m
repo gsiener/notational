@@ -446,7 +446,14 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 			title = processedFilename;
 			bodyLoc = 0;
 		} else {
-			title = [title stringByAppendingFormat:@" (%@)", processedFilename];
+			//the first line is the title: a note's content is its title line then its body (ADR 0001),
+			//so take that line out of the body rather than repeating it (#29)
+			NSString *text = [attributedStringFromData string];
+			NSUInteger lineEnd = 0, contentsEnd = 0;
+			[text getLineStart:NULL end:&lineEnd contentsEnd:&contentsEnd forRange:NSMakeRange(0, 0)];
+			title = [text substringToIndex:contentsEnd];
+			[attributedStringFromData deleteCharactersInRange:NSMakeRange(0, lineEnd)];
+			bodyLoc = 0;
 		}
 		if ([sourceIdentifierString length])
 			prefixedSourceLength = [[attributedStringFromData prefixWithSourceString:sourceIdentifierString] length];
