@@ -228,6 +228,11 @@
 	return nil;
 }
 
+- (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"NVSyncStatusDidChangeNotification" object:self
+													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:@"status"]];
+}
+
 //NVSyncEngineDelegate, on the main thread
 - (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
 	NSMutableDictionary *byID = [NSMutableDictionary dictionaryWithCapacity:[allNotes count]];

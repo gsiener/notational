@@ -403,6 +403,10 @@
 		C26072E2D52B16461C68BE32 /* NoteObject_NVRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AE953436E8D3CE1E6D86BCA /* NoteObject_NVRecord.m */; };
 		6D8A2D15F0D3360604752328 /* NoteObject_NVRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AE953436E8D3CE1E6D86BCA /* NoteObject_NVRecord.m */; };
 		C6AC8238D49FFE62AD995A64 /* NotationControllerStoreTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 640D739DD42B87E565D21CEF /* NotationControllerStoreTests.m */; };
+		231139226218A36B33275332 /* AppController_Simplenote.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B79208C644415589F4DCDF /* AppController_Simplenote.m */; };
+		39B30CEA86304A87C3740F6E /* AppController_Simplenote.m in Sources */ = {isa = PBXBuildFile; fileRef = A9B79208C644415589F4DCDF /* AppController_Simplenote.m */; };
+		A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
+		3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -979,6 +983,10 @@
 		A6B4FB2D6EE694263110E868 /* NoteObject_NVRecord.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NoteObject_NVRecord.h; sourceTree = "<group>"; };
 		9AE953436E8D3CE1E6D86BCA /* NoteObject_NVRecord.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NoteObject_NVRecord.m; sourceTree = "<group>"; };
 		640D739DD42B87E565D21CEF /* NotationControllerStoreTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotationControllerStoreTests.m; sourceTree = "<group>"; };
+		696F678C8A08A10D5A6FB09F /* AppController_Simplenote.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppController_Simplenote.h; sourceTree = "<group>"; };
+		A9B79208C644415589F4DCDF /* AppController_Simplenote.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppController_Simplenote.m; sourceTree = "<group>"; };
+		A269A5F32E0BCE7BCA7E99B0 /* NVSimplenoteAccountWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSimplenoteAccountWindowController.h; sourceTree = "<group>"; };
+		42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSimplenoteAccountWindowController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1024,6 +1032,10 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */,
+				A269A5F32E0BCE7BCA7E99B0 /* NVSimplenoteAccountWindowController.h */,
+				A9B79208C644415589F4DCDF /* AppController_Simplenote.m */,
+				696F678C8A08A10D5A6FB09F /* AppController_Simplenote.h */,
 				9AE953436E8D3CE1E6D86BCA /* NoteObject_NVRecord.m */,
 				A6B4FB2D6EE694263110E868 /* NoteObject_NVRecord.h */,
 				1749CAEF756E84E7BB39DCB1 /* NVNoteContent.m */,
@@ -1880,6 +1892,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */,
+				231139226218A36B33275332 /* AppController_Simplenote.m in Sources */,
 				C26072E2D52B16461C68BE32 /* NoteObject_NVRecord.m in Sources */,
 				2CE9FC13A3C2B05B2C6303C6 /* NVNoteContent.m in Sources */,
 				03F6A4079C841DD52C0481EE /* NVLegacyImporter.m in Sources */,
@@ -1998,6 +2012,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */,
+				39B30CEA86304A87C3740F6E /* AppController_Simplenote.m in Sources */,
 				C6AC8238D49FFE62AD995A64 /* NotationControllerStoreTests.m in Sources */,
 				6D8A2D15F0D3360604752328 /* NoteObject_NVRecord.m in Sources */,
 				44D44BBCD72E36EDFDD83A8B /* NVNoteContentTests.m in Sources */,
