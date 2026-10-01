@@ -367,6 +367,9 @@
 		A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
 		3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */; };
 		C01D6AFB846628FEAD619CB0 /* RealSimplenoteSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */; };
+		6D5DD0BE2FE833BB6D7FFD2D /* NVLegacyPreferences.m in Sources */ = {isa = PBXBuildFile; fileRef = 540D251378C4BAC31FE8E241 /* NVLegacyPreferences.m */; };
+		6FF9F512C0B00CE196BD0446 /* NVLegacyPreferences.m in Sources */ = {isa = PBXBuildFile; fileRef = 540D251378C4BAC31FE8E241 /* NVLegacyPreferences.m */; };
+		81745CFA6B7489973E376026 /* NVLegacyPreferencesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 80F4A621FDDB950A3FB460F0 /* NVLegacyPreferencesTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -794,7 +797,7 @@
 		5CFF810713A52EE2008A93A3 /* it */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = it; path = it.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		5CFF810913A536F7008A93A3 /* it */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = it; path = it.lproj/Preferences.xib; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8D1107320486CEB800E47090 /* nvALT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nvALT.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D1107320486CEB800E47090 /* Notational.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notational.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		93099627138BD61000368C45 /* tp2md.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; path = tp2md.rb; sourceTree = "<group>"; };
 		9335C40C148EC7AC009CE623 /* multimarkdown */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = multimarkdown; sourceTree = "<group>"; };
 		934C3FAE14FDA069000D14BA /* custom.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = custom.css; sourceTree = "<group>"; };
@@ -880,6 +883,9 @@
 		A269A5F32E0BCE7BCA7E99B0 /* NVSimplenoteAccountWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSimplenoteAccountWindowController.h; sourceTree = "<group>"; };
 		42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSimplenoteAccountWindowController.m; sourceTree = "<group>"; };
 		1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RealSimplenoteSyncTests.m; sourceTree = "<group>"; };
+		8088231A826846F5ED4E77AB /* NVLegacyPreferences.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVLegacyPreferences.h; sourceTree = "<group>"; };
+		540D251378C4BAC31FE8E241 /* NVLegacyPreferences.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVLegacyPreferences.m; sourceTree = "<group>"; };
+		80F4A621FDDB950A3FB460F0 /* NVLegacyPreferencesTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVLegacyPreferencesTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -925,6 +931,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				540D251378C4BAC31FE8E241 /* NVLegacyPreferences.m */,
+				8088231A826846F5ED4E77AB /* NVLegacyPreferences.h */,
 				42DBD0328906D5FD7ACEF222 /* NVSimplenoteAccountWindowController.m */,
 				A269A5F32E0BCE7BCA7E99B0 /* NVSimplenoteAccountWindowController.h */,
 				A9B79208C644415589F4DCDF /* AppController_Simplenote.m */,
@@ -1055,7 +1063,7 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* nvALT.app */,
+				8D1107320486CEB800E47090 /* Notational.app */,
 				C9E1D6AD973487800280D642 /* NotationTests.xctest */,
 			);
 			name = Products;
@@ -1472,6 +1480,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				80F4A621FDDB950A3FB460F0 /* NVLegacyPreferencesTests.m */,
 				1324D23DA131726D241111AD /* RealSimplenoteSyncTests.m */,
 				640D739DD42B87E565D21CEF /* NotationControllerStoreTests.m */,
 				78DF28F17CC6DD0157C88B76 /* NVNoteContentTests.m */,
@@ -1512,7 +1521,7 @@
 			name = Notation;
 			productInstallPath = "$(HOME)/Applications";
 			productName = Notation;
-			productReference = 8D1107320486CEB800E47090 /* nvALT.app */;
+			productReference = 8D1107320486CEB800E47090 /* Notational.app */;
 			productType = "com.apple.product-type.application";
 		};
 		0AAFD8FD235C4CC2A587D8DC /* NotationTests */ = {
@@ -1738,6 +1747,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D5DD0BE2FE833BB6D7FFD2D /* NVLegacyPreferences.m in Sources */,
 				A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */,
 				231139226218A36B33275332 /* AppController_Simplenote.m in Sources */,
 				C26072E2D52B16461C68BE32 /* NoteObject_NVRecord.m in Sources */,
@@ -1840,6 +1850,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				81745CFA6B7489973E376026 /* NVLegacyPreferencesTests.m in Sources */,
+				6FF9F512C0B00CE196BD0446 /* NVLegacyPreferences.m in Sources */,
 				C01D6AFB846628FEAD619CB0 /* RealSimplenoteSyncTests.m in Sources */,
 				3A7D73B8A2EDF74247E9AEA4 /* NVSimplenoteAccountWindowController.m in Sources */,
 				39B30CEA86304A87C3740F6E /* AppController_Simplenote.m in Sources */,
@@ -2264,7 +2276,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = net.elasticthreads.nv;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
 			};
 			name = Development;
 		};
@@ -2344,7 +2356,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "-pg";
 				PRIVATE_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/PrivateHeaders";
-				PRODUCT_NAME = nvALT;
+				PRODUCT_NAME = Notational;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -2422,7 +2434,7 @@
 				INFOPLIST_FILE = Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRIVATE_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/PrivateHeaders";
-				PRODUCT_NAME = nvALT;
+				PRODUCT_NAME = Notational;
 				SDKROOT = macosx;
 				SECTORDER_FLAGS = (
 					"-sectorder",
@@ -2458,7 +2470,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = net.elasticthreads.nv;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
 			};
 			name = ForBuilding;
 		};
@@ -2474,7 +2486,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				GENERATE_PROFILING_CODE = NO;
 				OTHER_CFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = net.elasticthreads.nv.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational.tests;
 				PRODUCT_NAME = NotationTests;
 				SECTORDER_FLAGS = "";
 				WARNING_LDFLAGS = "";
@@ -2494,7 +2506,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				GENERATE_PROFILING_CODE = NO;
 				OTHER_CFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = net.elasticthreads.nv.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational.tests;
 				PRODUCT_NAME = NotationTests;
 				SECTORDER_FLAGS = "";
 				WARNING_LDFLAGS = "";

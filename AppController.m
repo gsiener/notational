@@ -405,7 +405,7 @@ void outletObjectAwoke(id sender) {
 	NotationController *newNotation = [self openSimplenoteBackedNotationReturningError:&storeError];
 	if (!newNotation) {
 		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-		[alert setMessageText:NSLocalizedString(@"nvALT couldn't open its notes", nil)];
+		[alert setMessageText:NSLocalizedString(@"Notational couldn't open its notes", nil)];
 		[alert setInformativeText:[storeError localizedDescription] ? [storeError localizedDescription] : @""];
 		[alert addButtonWithTitle:NSLocalizedString(@"Quit", nil)];
 		[alert runModal];
@@ -1013,8 +1013,8 @@ terminateApp:
 		case 4:		//development site
 			[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/ttscoff/nv/wiki"]];
 			break;
-        case 5:     //nvALT home
-            [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://brettterpstra.com/project/nvalt/"]];
+        case 5:     //Notational home
+            [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/gsiener/notational"]];
             break;
         case 6:     //ElasticThreads
             [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://elasticthreads.tumblr.com/nv"]];
@@ -2450,7 +2450,7 @@ terminateApp:
     }
     //        [[NSUserDefaults standardUserDefaults] setBool:!isVis forKey:@"ToolbarHidden"];
     if (isVis) {
-        [window setTitle:@"nvALT"];
+        [window setTitle:@"Notational"];
         if (currentNote&&(![[field stringValue]isEqualToString:titleOfNote(currentNote)]))
             [field setStringValue:titleOfNote(currentNote)];
         

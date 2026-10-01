@@ -44,28 +44,28 @@ jobs:
             -scheme 'Notation Release' \
             -configuration ForBuilding \
             -derivedDataPath build/DerivedData \
-            -archivePath build/nvALT.xcarchive \
+            -archivePath build/Notational.xcarchive \
             archive
 
       - name: verify app
         run: |
-          app=build/nvALT.xcarchive/Products/Applications/nvALT.app
-          for bin in "$app/Contents/MacOS/nvALT" "$app/Contents/Resources/multimarkdown"; do
+          app=build/Notational.xcarchive/Products/Applications/Notational.app
+          for bin in "$app/Contents/MacOS/Notational" "$app/Contents/Resources/multimarkdown"; do
             archs=$(lipo -archs "$bin")
             echo "$bin: $archs"
             case " $archs " in *" arm64 "*) ;; *) echo "::error::$bin is not arm64"; exit 1 ;; esac
           done
           # only system libraries may be linked; nothing from Homebrew, nix or the build machine
-          if otool -L "$app/Contents/MacOS/nvALT" | tail -n +2 | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then
+          if otool -L "$app/Contents/MacOS/Notational" | tail -n +2 | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then
             echo "::error::unexpected non-system library dependency"; exit 1
           fi
           codesign --verify --deep --strict "$app"
-          ditto -c -k --keepParent "$app" build/nvALT.zip
+          ditto -c -k --keepParent "$app" build/Notational.zip
 
       - uses: actions/upload-artifact@v7
         with:
-          name: nvALT
-          path: build/nvALT.zip
+          name: Notational
+          path: build/Notational.zip
 
       - uses: actions/upload-artifact@v7
         if: failure()

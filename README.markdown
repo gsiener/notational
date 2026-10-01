@@ -1,11 +1,11 @@
-NB: @n8henrie's fork
+# Notational
 
-Trying to keep nvALT alive by providing a CI-built version.
+A native Apple Silicon fork of [nvALT](https://brettterpstra.com/projects/nvalt/) (itself a fork of Notational Velocity), by way of [@n8henrie's fork](https://github.com/n8henrie/nvalt).
 
-Please keep in mind:
-
-- the build is native Apple Silicon (arm64) and needs no Rosetta
-- the CI build will *not* work with SimpleNote as is
+- **Native arm64**, no Rosetta, no third-party libraries beyond what macOS ships
+- **Simplenote is the source of truth**: notes live in a local SQLite copy of your Simplenote account and sync over the Simperium API (sign in with an emailed code under *Notational → Simplenote Account…*). Works without signing in too, as a local-only notes app. See [ADR 0001](docs/adr/0001-simplenote-backed-storage.md).
+- On first launch it migrates once from an old nvALT installation (old files are never modified) and copies nvALT's look-and-feel preferences.
+- Not affiliated with Simplenote/Automattic; third-party clients can be blocked by Simplenote at any time.
 
 To build locally you only need Xcode:
 
@@ -14,7 +14,7 @@ git submodule update --init --recursive
 xcodebuild -target Notation -configuration ForBuilding build
 ```
 
-The app lands in `build/ForBuilding/nvALT.app`. Encryption, hashing and link
+The app lands in `build/ForBuilding/Notational.app`. Encryption, hashing and link
 detection use macOS's built-in CommonCrypto and Foundation APIs; MultiMarkdown is
 compiled from the `MultiMarkdown-4` submodule during the build.
 

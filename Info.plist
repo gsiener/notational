@@ -132,7 +132,7 @@
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleGetInfoString</key>
-	<string>nvALT by David Halter and Brett Terpstra, based on NV 2.0 β5 Copyright © 2010 Zachary Schneirov, All Rights Reserved.</string>
+	<string>Notational, a native Simplenote-backed fork of nvALT by David Halter and Brett Terpstra, based on NV 2.0 β5 © 2010 Zachary Schneirov.</string>
 	<key>CFBundleIconFile</key>
 	<string>Notality.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -155,11 +155,12 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>net.elasticthreads.nv</string>
+			<string>com.gsiener.notational</string>
 		</dict>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>notational</string>
 				<string>nvalt</string>
 				<string>nv</string>
 			</array>
@@ -200,12 +201,12 @@
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>nvALT: New Note from Selection</string>
+				<string>Notational: New Note from Selection</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>createFromSelection</string>
 			<key>NSPortName</key>
-			<string>nvALT</string>
+			<string>Notational</string>
 			<key>NSSendFileTypes</key>
 			<array>
 				<string>public.text</string>

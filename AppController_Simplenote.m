@@ -29,7 +29,21 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 
 + (NSString *)notesStorePath {
 	NSString *support = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-	return [[support stringByAppendingPathComponent:@"nvALT"] stringByAppendingPathComponent:@"Notes.sqlite"];
+	NSString *directory = [support stringByAppendingPathComponent:@"Notational"];
+	NSString *path = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
+	
+	//builds from before the rename kept the store in .../nvALT; move it (with its WAL files) once
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSString *earlier = [[support stringByAppendingPathComponent:@"nvALT"] stringByAppendingPathComponent:@"Notes.sqlite"];
+	if (![fm fileExistsAtPath:path] && [fm fileExistsAtPath:earlier]) {
+		[fm createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
+		for (NSString *suffix in [NSArray arrayWithObjects:@"", @"-wal", @"-shm", nil]) {
+			NSString *from = [earlier stringByAppendingString:suffix];
+			if ([fm fileExistsAtPath:from]) [fm moveItemAtPath:from toPath:[path stringByAppendingString:suffix] error:NULL];
+		}
+		NSLog(@"Moved notes store from %@ to %@", earlier, path);
+	}
+	return path;
 }
 
 - (void)migrateLegacyDatabaseIntoStore:(NVNotesStore *)store {

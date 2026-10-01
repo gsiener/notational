@@ -17,7 +17,7 @@ static NSError *SimplenoteError(NSInteger code, NSString *description) {
 
 static NSString *UserAgent(void) {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	return [NSString stringWithFormat:@"nvALT/%@", version ? version : @"dev"];
+	return [NSString stringWithFormat:@"Notational/%@", version ? version : @"dev"];
 }
 
 static NSString *QueryEscape(NSString *value) {
@@ -340,7 +340,7 @@ static NSError *SignInError(NSInteger status) {
 @implementation NVSimplenoteCredentials
 
 + (NVSimplenoteCredentials *)defaultCredentials {
-	return [[[NVSimplenoteCredentials alloc] initWithService:@"nvALT Simplenote sync"] autorelease];
+	return [[[NVSimplenoteCredentials alloc] initWithService:@"Notational Simplenote sync"] autorelease];
 }
 
 - (id)initWithService:(NSString *)aService {

@@ -18,21 +18,21 @@ jobs:
           submodules: recursive
       - name: test
         run: xcodebuild test -project Notation.xcodeproj -scheme NotationTests
-      - name: build nvalt
+      - name: build app
         run: |
           xcodebuild \
             -target Notation \
             -configuration ForBuilding \
             -scheme 'Notation Release' \
-            -archivePath ./nvalt.xcarchive \
+            -archivePath ./Notational.xcarchive \
             archive
-          ditto -c -k --keepParent nvalt.xcarchive/Products/Applications/nvALT.app nvALT.zip
+          ditto -c -k --keepParent Notational.xcarchive/Products/Applications/Notational.app Notational.zip
       - uses: actions/upload-artifact@v7
         with:
-          name: nvALT
-          path: nvALT.zip
+          name: Notational
+          path: Notational.zip
       - name: release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            nvALT.zip
+            Notational.zip

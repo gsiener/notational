@@ -1279,7 +1279,7 @@ copyRTFType:
 		return;
 	}
 	
-	if ([aLink isKindOfClass:[NSURL class]] && [[aLink scheme] isEqualToString:@"nvalt"]) {
+	if ([aLink isKindOfClass:[NSURL class]] && ([[aLink scheme] isEqualToString:@"nvalt"] || [[aLink scheme] isEqualToString:@"notational"])) {
         NSUInteger flags=[currentEvent modifierFlags];
         if (((flags&NSDeviceIndependentModifierFlagsMask)==(flags&NSCommandKeyMask))&&((flags&NSDeviceIndependentModifierFlagsMask)>0)) {
             NSString *newURLString=[[aLink lastPathComponent]stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
