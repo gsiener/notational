@@ -20,7 +20,6 @@
 #import "NotationPrefs.h"
 #import "PrefsWindowController.h"
 #import "NoteAttributeColumn.h"
-#import "NotationSyncServiceManager.h"
 #import "NotationDirectoryManager.h"
 #import "NotationFileManager.h"
 #import "NSString_NV.h"
@@ -36,9 +35,7 @@
 #import "TitlebarButton.h"
 #import "RBSplitView/RBSplitView.h"
 #import "BookmarksController.h"
-#import "SyncSessionController.h"
 #import "MultiplePageView.h"
-#import "InvocationRecorder.h"
 #import "LinearDividerShader.h"
 #import "SecureTextEntryManager.h"
 #import "TagEditingManager.h"
@@ -475,8 +472,6 @@ terminateApp:
     if (newNotation) {
 		if (notationController) {
 			[notationController closeAllResources];
-			[[NSNotificationCenter defaultCenter] removeObserver:self name:SyncSessionsChangedVisibleStatusNotification
-														  object:[notationController syncSessionController]];
 		}
 		
 		NotationController *oldNotation = notationController;
@@ -511,11 +506,6 @@ terminateApp:
 			[self _forceRegeneratePreviewsForTitleColumn];
 			[notesTableView setNeedsDisplay:YES];
 		}
-		[titleBarButton setMenu:[[notationController syncSessionController] syncStatusMenu]];
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syncSessionsChangedVisibleStatus:)
-													 name:SyncSessionsChangedVisibleStatusNotification
-												   object:[notationController syncSessionController]];
-		[notationController performSelector:@selector(startSyncServices) withObject:nil afterDelay:0.0];
 		
 		if ([[notationController notationPrefs] secureTextEntry]) {
 			[[SecureTextEntryManager sharedInstance] enableSecureTextEntry];
@@ -2031,16 +2021,6 @@ terminateApp:
 	}
 }
 
-- (void)syncSessionsChangedVisibleStatus:(NSNotification*)aNotification {
-	SyncSessionController *syncSessionController = [aNotification object];
-	if ([syncSessionController hasErrors]) {
-		[titleBarButton setStatusIconType:AlertIcon];
-	} else if ([syncSessionController hasRunningSessions]) {
-		[titleBarButton setStatusIconType:SynchronizingIcon];
-	} else {
-		[titleBarButton setStatusIconType: [[NSUserDefaults standardUserDefaults] boolForKey:@"ShowSyncMenu"] ? DownArrowIcon : NoIcon ];
-	}
-}
 
 
 - (IBAction)fixFileEncoding:(id)sender {
@@ -2065,39 +2045,14 @@ terminateApp:
     }
 }
 
-- (void)_finishSyncWait {
-	//always post to next runloop to ensure that a sleep-delay response invocation, if one is also queued, runs before this one
-	//if the app quits before the sleep-delay response posts, then obviously sleep will be delayed by quite a bit
-	[self performSelector:@selector(syncWaitQuit:) withObject:nil afterDelay:0];
-}
-
+//still connected in MainMenu.xib's old sync-wait panel
 - (IBAction)syncWaitQuit:(id)sender {
-	//need this variable to allow overriding the wait
-	waitedForUncommittedChanges = YES;
-	NSString *errMsg = [[notationController syncSessionController] changeCommittingErrorMessage];
-	if ([errMsg length]) NSRunAlertPanel(NSLocalizedString(@"Changes could not be uploaded.", nil), errMsg, @"Quit", nil, nil);
-	
 	[NSApp terminate:nil];
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-	//if a sync session is still running, then wait for it to finish before sending terminatereply
-	//otherwise, if there are unsynced notes to send, then push them right now and wait until session is no longer running
-	//use waitForUncommitedChangesWithTarget:selector: and provide a callback to send NSTerminateNow
-	
-	InvocationRecorder *invRecorder = [InvocationRecorder invocationRecorder];
-	[[invRecorder prepareWithInvocationTarget:self] _finishSyncWait];
-	
-	if (!waitedForUncommittedChanges &&
-		[[notationController syncSessionController] waitForUncommitedChangesWithInvocation:[invRecorder invocation]]) {
-		
-		[[NSApp windows] makeObjectsPerformSelector:@selector(orderOut:) withObject:nil];
-		[syncWaitPanel center];
-		[syncWaitPanel makeKeyAndOrderFront:nil];
-		[syncWaitSpinner startAnimation:nil];
-		//use NSTerminateCancel instead of NSTerminateLater because we need the runloop functioning in order to receive start/stop sync notifications
-		return NSTerminateCancel;
-	}
+	//unsynced edits are already saved in the Notes store and are pushed on the next launch,
+	//so there's nothing to wait for
 	return NSTerminateNow;
 }
 

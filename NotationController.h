@@ -38,7 +38,6 @@ typedef struct _NoteCatalogEntry {
 
 @class NoteObject;
 @class DeletedNoteObject;
-@class SyncSessionController;
 @class NotationPrefs;
 @class NoteAttributeColumn;
 @class NoteBookmark;
@@ -52,7 +51,6 @@ typedef struct _NoteCatalogEntry {
     FastListDataSource *notesListDataSource;
     LabelsListController *labelsListController;
 	GlobalPrefs *prefsController;
-	SyncSessionController *syncSessionController;
 	DeletionManager *deletionManager;
 	id delegate;
 	
@@ -114,6 +112,7 @@ typedef struct _NoteCatalogEntry {
 - (NVNotesStore *)notesStore;
 - (void)setSyncEngine:(NVSyncEngine *)engine;
 - (NVSyncEngine *)syncEngine;
+- (NoteObject *)noteForRecordID:(NSString *)recordID;
 
 - (id)init;
 - (id)initWithAliasData:(NSData*)data error:(OSStatus*)err;
@@ -204,7 +203,6 @@ typedef struct _NoteCatalogEntry {
 - (id)notesListDataSource;
 
 - (NotationPrefs*)notationPrefs;
-- (SyncSessionController*)syncSessionController;
 
 - (void)dealloc;
 

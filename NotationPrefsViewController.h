@@ -21,7 +21,6 @@
 @class NotationPrefs;
 @class PassphrasePicker;
 @class PassphraseChanger;
-@class SyncResponseFetcher;
 
 @interface FileKindListView : NSTableView {
     IBOutlet NSPopUpButton *storageFormatPopupButton;
@@ -71,7 +70,6 @@
 	PassphraseChanger *changer;
 
 	BOOL verificationAttempted;
-	SyncResponseFetcher *loginVerifier;
 	
 	NSString *disableEncryptionString, *enableEncryptionString;
     
@@ -106,8 +104,6 @@
 - (IBAction)toggledSyncing:(id)sender;
 - (IBAction)syncFrequencyChange:(id)sender;
 
-- (void)startVerifyingAfterDelay;
-- (void)startLoginVerifier;
 - (void)cancelLoginVerifier;
 - (void)setVerificationStatus:(int)status withString:(NSString*)aString;
 

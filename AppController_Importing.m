@@ -21,8 +21,6 @@
 #import "NotationFileManager.h"
 #import "BookmarksController.h"
 #import "DualField.h"
-#import "SyncSessionController.h"
-#import "NotationSyncServiceManager.h"
 #import "NotationDirectoryManager.h"
 #import "AlienNoteImporter.h"
 #import "NSString_NV.h"
@@ -174,7 +172,6 @@
 		[self searchForString:([terms length] && [terms characterAtIndex:0] == '/') ? [terms substringFromIndex:1] : terms];
 		
 		NSArray *params = [[aURL query] componentsSeparatedByString:@"&"];
-		NSArray *svcs = [[SyncSessionController class] allServiceNames];
 		NoteObject *foundNote = nil;
 		
 		for (i=0; i<[params count]; i++) {
@@ -186,14 +183,10 @@
 					goto handleFound;
 			}
 			
-			for (j=0; j<[svcs count]; j++) {
-				NSString *serviceName = [svcs objectAtIndex:j];
-				if ([idStr hasPrefix:[NSString stringWithFormat:@"%@=", serviceName]] && [idStr length] > [serviceName length] + 1) {
-					//lookup note with identical key for this service
-					NSString *key = [[idStr substringFromIndex:[serviceName length] + 1] stringByReplacingPercentEscapes];
-					if ((foundNote = [notationController noteForKey:key ofServiceClass:[[SyncSessionController allServiceClasses] objectAtIndex:j]]))
-						goto handleFound;
-				}
+			if ([idStr hasPrefix:@"SN="] && [idStr length] > 3) {
+				//Simplenote id: stable across launches and machines
+				if ((foundNote = [notationController noteForRecordID:[[idStr substringFromIndex:3] stringByReplacingPercentEscapes]]))
+					goto handleFound;
 			}
 		}
 	handleFound:

@@ -20,7 +20,6 @@
 #import "NotationPrefs.h"
 #import "BufferUtils.h"
 #import "GlobalPrefs.h"
-#import "NotationSyncServiceManager.h"
 #import "NoteObject.h"
 #import "DeletionManager.h"
 #import "NSCollection_utils.h"
@@ -372,7 +371,6 @@ void NotesDirFNSubscriptionProc(FNMessage message, OptionBits flags, void * refc
 			//in the event of a crash this change could still be recovered; 
 			
 			[aNoteObject registerModificationWithOwnedServices];
-			[self schedulePushToAllSyncServicesForNote:aNoteObject];
 			
 			[self note:aNoteObject attributeChanged:NotePreviewString]; //reverse delegate?
 			

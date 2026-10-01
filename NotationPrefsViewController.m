@@ -18,12 +18,10 @@
 
 #import "GlobalPrefs.h"
 #import "NotationPrefsViewController.h"
-#import "InvocationRecorder.h"
+#import "AppController_Simplenote.h"
 #import "NotationPrefs.h"
 #import "NSString_NV.h"
 #import "NSCollection_utils.h"
-#import "SyncResponseFetcher.h"
-#import "SimplenoteSession.h"
 #import "PassphrasePicker.h"
 #import "PassphraseChanger.h"
 #import "NSFileManager_NV.h"
@@ -147,15 +145,7 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 		[self updateRemoveKeychainItemStatus];
 		[confirmFileDeletionButton setState:[notationPrefs confirmFileDeletion]];
 		
-		[enabledSyncButton setState:[notationPrefs syncServiceIsEnabled:SimplenoteServiceName]];
-		NSString *username = [[notationPrefs syncAccountForServiceName:SimplenoteServiceName] objectForKey:@"username"];
-		NSString *password = [notationPrefs syncPasswordForServiceName:SimplenoteServiceName];
-		[syncAccountField setStringValue:username ? username : @""];
-		[syncPasswordField setStringValue:password ? password : @""];
-		
-		[syncingFrequency selectItemWithTag:[notationPrefs syncFrequencyInMinutesForServiceName:SimplenoteServiceName]];
-		
-		[self setSyncControlsState:[notationPrefs syncServiceIsEnabled:SimplenoteServiceName]];
+		[self setSyncControlsState:NO];
 		
 		[secureTextEntryButton setState:[notationPrefs secureTextEntry]];
 		
@@ -168,18 +158,26 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 }
 
 - (void)setSyncControlsState:(BOOL)syncState {
+	//Simplenote sign-in now lives in its own window (ADR 0001); the old password-based
+	//controls and the encryption and per-file storage options no longer apply
+	NSArray *obsolete = [NSArray arrayWithObjects:syncingFrequency, syncAccountField, syncPasswordField, syncEncAlertView,
+						 syncEncAlertField, verifyStatusImageView, verifyStatusField, enableEncryptionButton, changePasswordButton,
+						 passwordSettingsMatrix, keyLengthField, keyLengthStepper, removeFromKeychainButton, storageFormatPopupButton,
+						 useFinderTaggingButton, nil];
+	for (NSView *control in obsolete) [control setHidden:YES];
 	
-	if (syncState) {
-		[self startLoginVerifier];
-	} else {
-		[self cancelLoginVerifier];
+	static NSInteger AccountButtonTag = 0x534e4143; //'SNAC'
+	NSView *container = [enabledSyncButton superview];
+	if (enabledSyncButton && ![container viewWithTag:AccountButtonTag]) {
+		NSButton *account = [[[NSButton alloc] initWithFrame:NSMakeRect(NSMinX([enabledSyncButton frame]), NSMinY([enabledSyncButton frame]) - 4, 200, 30)] autorelease];
+		[account setBezelStyle:NSBezelStyleRounded];
+		[account setTitle:NSLocalizedString(@"Simplenote Account…", nil)];
+		[account setTag:AccountButtonTag];
+		[account setTarget:self];
+		[account setAction:@selector(toggledSyncing:)];
+		[container addSubview:account];
 	}
-	[self setVerificationStatus:VERIFY_NOT_ATTEMPTED withString:@""];
-	[syncingFrequency setEnabled:syncState];
-	[syncAccountField setEnabled:syncState];
-	[syncPasswordField setEnabled:syncState];
-	[syncEncAlertView setHidden:!syncState || ![notationPrefs doesEncryption]];
-	[syncEncAlertField setHidden:!syncState || ![notationPrefs doesEncryption]];
+	[enabledSyncButton setHidden:YES];
 }
 
 - (void)setEncryptionControlsState:(BOOL)encryptionState {
@@ -192,10 +190,6 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	
     [keyLengthField setEnabled:encryptionState];
     [keyLengthStepper setEnabled:encryptionState];
-	
-	BOOL syncState = [notationPrefs syncServiceIsEnabled:SimplenoteServiceName];
-	[syncEncAlertView setHidden:!syncState || !encryptionState];
-	[syncEncAlertField setHidden:!syncState || !encryptionState];
 }
 
 - (void)setSeparateFileControlsState:(BOOL)separateFileControlsState {
@@ -383,35 +377,17 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 }
 
 - (IBAction)toggledSyncing:(id)sender {
-	[notationPrefs setSyncEnabled:[enabledSyncButton state] forService:SimplenoteServiceName];
-	[self setSyncControlsState:[enabledSyncButton state]];
+	[(AppController *)[NSApp delegate] showSimplenoteAccount:sender];
 }
 
 - (IBAction)syncFrequencyChange:(id)sender {
-	if (sender) {
-		[self performSelector:_cmd withObject:nil afterDelay:0.0];
-	} else {
-		[notationPrefs setSyncFrequency:[syncingFrequency selectedTag] forService:SimplenoteServiceName];
-	}
+	//the Sync engine decides how often to sync
 }
 
 - (void)syncEditingDidEnd:(NSNotification *)aNotification {
-	if (!verificationAttempted) {
-		[self cancelLoginVerifier];
-		[self startLoginVerifier];
-	}
 }
 
 - (void)syncCredentialsDidChange:(NSNotification *)aNotification {
-	
-	if ([aNotification object] == syncAccountField) {
-		[notationPrefs removeSyncPasswordForService:SimplenoteServiceName];
-		[notationPrefs setSyncUsername:[syncAccountField stringValue] forService:SimplenoteServiceName];
-		
-		[self startVerifyingAfterDelay];
-	} else if ([aNotification object] == syncPasswordField) {
-		[self startVerifyingAfterDelay];
-	}
 }
 
 
@@ -436,48 +412,6 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	}
 	[verifyStatusImageView setHidden: VERIFY_NOT_ATTEMPTED == status];
 	[verifyStatusField setStringValue: aString ? aString : @""];
-}
-
-- (void)startVerifyingAfterDelay {
-	[self cancelLoginVerifier];
-	
-	[self performSelector:@selector(startLoginVerifier) withObject:nil afterDelay:1.5];
-}
-
-- (void)cancelLoginVerifier {
-	[loginVerifier cancel];
-	[loginVerifier autorelease];
-	loginVerifier = nil;
-	[self setVerificationStatus:VERIFY_NOT_ATTEMPTED withString:@""];
-	
-	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(startLoginVerifier) object:nil];
-}
-
-- (void)startLoginVerifier {
-	if (!loginVerifier && [[syncAccountField stringValue] length] && [[syncPasswordField stringValue] length]) {
-		NSURL *loginURL = [SimplenoteSession authURLWithPath:@"/authorize/" parameters:nil];
-		NSDictionary *headers = [NSDictionary dictionaryWithObject:kSimperiumAPIKey forKey:@"X-Simperium-API-Key"];
-		NSDictionary *login = [NSDictionary dictionaryWithObjectsAndKeys:
-							   [syncAccountField stringValue], @"username", [syncPasswordField stringValue], @"password", nil];
-
-		loginVerifier = [[SyncResponseFetcher alloc] initWithURL:loginURL POSTData:[[login jsonStringValue] dataUsingEncoding:NSUTF8StringEncoding] headers:headers contentType:@"application/json" delegate:self];
-
-		[loginVerifier start];
-		[self setVerificationStatus:VERIFY_IN_PROGRESS withString:@""];
-	}
-}
-
-- (void)syncResponseFetcher:(SyncResponseFetcher*)fetcher receivedData:(NSData*)data returningError:(NSString*)errString {
-	BOOL authFailed = errString || [fetcher statusCode] >= 400;
-	
-	[self setVerificationStatus:authFailed ? VERIFY_FAILED : VERIFY_SUCCESS withString:
-	 authFailed ? NSLocalizedString(@"Incorrect login and password", @"sync status menu msg") : errString];
-	
-	if (authFailed) {
-		[notationPrefs removeSyncPasswordForService:SimplenoteServiceName];
-	} else {
-		[notationPrefs setSyncPassword:[syncPasswordField stringValue] forService:SimplenoteServiceName];
-	}
 }
 
 - (IBAction)changedSecureTextEntry:(id)sender {
@@ -546,10 +480,7 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 		
 		[postStorageFormatInvocation release];
 		
-		//so queue it up:
-		InvocationRecorder *invRecorder = [InvocationRecorder invocationRecorder];
-		[[invRecorder prepareWithInvocationTarget:picker] showAroundWindow:[view window] resultDelegate:self];
-		postStorageFormatInvocation = [[invRecorder invocation] retain];
+		postStorageFormatInvocation = nil;
 	}
 }
 

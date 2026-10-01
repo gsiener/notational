@@ -32,9 +32,7 @@
 #import "NSFileManager_NV.h"
 #include "BufferUtils.h"
 #import "NotationFileManager.h"
-#import "NotationSyncServiceManager.h"
-#import "SyncServiceSessionProtocol.h"
-#import "SyncSessionController.h"
+#import "NoteObject_NVRecord.h"
 #import "ExternalEditorListController.h"
 #import "NSData_transformations.h"
 #import "NSCollection_utils.h"
@@ -1097,16 +1095,8 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 - (NSURL*)uniqueNoteLink {
 		
-	NSArray *svcs = [[SyncSessionController class] allServiceNames];
-	NSMutableDictionary *idsDict = [NSMutableDictionary dictionaryWithCapacity:[svcs count] + 1];
-
-	//include all identifying keys in case the title changes later
-	NSUInteger i = 0;
-	for (i=0; i<[svcs count]; i++) {
-		NSString *syncID = [[syncServicesMD objectForKey:[svcs objectAtIndex:i]]
-							objectForKey:[[[SyncSessionController allServiceClasses] objectAtIndex:i] nameOfKeyElement]];
-		if (syncID) [idsDict setObject:syncID forKey:[svcs objectAtIndex:i]];
-	}
+	//the Simplenote id is stable across launches and machines (and matches links made by older versions)
+	NSMutableDictionary *idsDict = [NSMutableDictionary dictionaryWithObject:[self noteRecordID] forKey:@"SN"];
 	[idsDict setObject:[[NSData dataWithBytes:&uniqueNoteIDBytes length:16] encodeBase64WithNewlines:NO] forKey:@"NV"];
 	
 	return [NSURL URLWithString:[@"nvalt://find/" stringByAppendingFormat:@"%@/?%@", [titleString stringWithPercentEscapes], 
@@ -1423,7 +1413,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			[self makeNoteDirtyUpdateTime:NO updateFile:NO];
 			//need to update modification time manually
 			[self registerModificationWithOwnedServices];
-			[delegate schedulePushToAllSyncServicesForNote:self];
 			//[[delegate delegate] contentsUpdatedForNote:self];
 		}
 	}
@@ -1629,7 +1618,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 - (void)registerModificationWithOwnedServices {
 	//mirror this note's current mod date to services with which it is already synced
 	//there is no point calling this method unless the modification time is 
-	[[SyncSessionController allServiceClasses] makeObjectsPerformSelector:@selector(registerLocalModificationForNote:) withObject:self];
 }
 
 - (void)removeAllSyncServiceMD {
@@ -1659,7 +1647,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		//if this is a change that affects the actual content of a note such that we would need to updateFile
 		//and the modification time was actually updated, then dirty the note with the sync services, too
 		[self registerModificationWithOwnedServices];
-		[delegate schedulePushToAllSyncServicesForNote:self];
 	}
 	
 	//queue note to be written

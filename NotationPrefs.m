@@ -19,7 +19,6 @@
 #import "NotationPrefs.h"
 #import "GlobalPrefs.h"
 #import "NSString_NV.h"
-#import "SimplenoteSession.h"
 #import "NSCollection_utils.h"
 #import "NotationPrefsViewController.h"
 #import "NSData_transformations.h"
@@ -851,7 +850,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		//this DB is syncing with a service and is storing separate files; could it be syncing with anything else, too?
 		
 		//this logic will need to be more sophisticated anyway when multiple sync services are supported
-		NSString *syncServiceTitle = [SimplenoteSession localizedServiceTitle];
+		NSString *syncServiceTitle = @"Simplenote";
 		
 		NSDictionary *stDict = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@"com.hogbaysoftware.SimpleText"];
 		NSString *simpleTextFolder = [stDict objectForKey:@"SyncedDocumentsPathKey"];

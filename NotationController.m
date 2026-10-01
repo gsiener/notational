@@ -40,9 +40,7 @@
 #import "AlienNoteImporter.h"
 #import "ODBEditor.h"
 #import "NotationFileManager.h"
-#import "NotationSyncServiceManager.h"
 #import "NotationDirectoryManager.h"
-#import "SyncSessionController.h"
 #import "BookmarksController.h"
 #import "DeletionManager.h"
 #import "nvaDevConfig.h"
@@ -222,7 +220,7 @@
 	return syncEngine;
 }
 
-- (NoteObject *)_noteWithRecordID:(NSString *)recordID {
+- (NoteObject *)noteForRecordID:(NSString *)recordID {
 	for (NoteObject *note in allNotes)
 		if ([[note noteRecordID] isEqualToString:recordID]) return note;
 	return nil;
@@ -457,7 +455,6 @@ returnResult:
 	
 	[allNotes release];
 	
-	syncSessionController = [[SyncSessionController alloc] initWithSyncDelegate:self notationPrefs:notationPrefs];
 	
 	//frozennotation will work out passwords, keychains, decryption, etc...
 	if (!(allNotes = [[frozenNotation unpackedNotesReturningError:&err] retain])) {
@@ -894,7 +891,6 @@ bail:
 	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
 	
 	[deletionManager cancelPanelReturningCode:NSRunStoppedResponse];
-	[self stopSyncServices];
 	[self stopFileNotifications];
 	if ([self flushAllNoteChanges] && !notesStore)
 		[self closeJournal];
@@ -997,7 +993,6 @@ bail:
 	[self _addNote:newNote];
 	[newNote release];
 	
-	[self schedulePushToAllSyncServicesForNote:newNote];
 	
 	directoryChangesFound = YES;
 	
@@ -1020,7 +1015,6 @@ bail:
 		
 		//absolutely ensure that this note is pushed to the rest of the services
 		[note registerModificationWithOwnedServices];
-		[self schedulePushToAllSyncServicesForNote:note];
 	}
 	if ([[self undoManager] isUndoing]) [undoManager endUndoGrouping];
 	//don't need to reverse-register undo because removeNote/s: will never use this method
@@ -1272,11 +1266,6 @@ bail:
 		NSLog(@"Couldn't log note removal");
 	}
 	
-	//a removal command will be sent to sync services if aNoteObject contains a matching syncServicesMD dict 
-	//(e.g., already been synced at least once)
-	//make sure we use the same deleted note that was added to the list of deleted notes, to simplify record-keeping
-	//if the note didn't have metadata, try to sync it anyway so that the service knows this note shouldn't be created
-	[self schedulePushToAllSyncServicesForNote: deletedNote ? deletedNote : [DeletedNoteObject deletedNoteWithNote:aNoteObject]];
     
 	[self _registerDeletionUndoForNote:aNoteObject];
 		
@@ -1746,9 +1735,6 @@ bail:
     return notesListDataSource;
 }
 
-- (SyncSessionController*)syncSessionController {
-	return syncSessionController;
-}
 
 - (void)dealloc {
  
@@ -1773,7 +1759,6 @@ bail:
     [undoManager release];
     [notesListDataSource release];
     [labelsListController release];
-	[syncSessionController release];
 	[deletionManager release];
     [allNotes release];
 	[deletedNotes release];

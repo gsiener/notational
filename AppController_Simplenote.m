@@ -12,6 +12,7 @@
 #import "NVSimplenoteHTTPService.h"
 #import "NVLegacyImporter.h"
 #import "NVSimplenoteAccountWindowController.h"
+#import "TitlebarButton.h"
 
 NSString *const NVSyncStatusDidChangeNotification = @"NVSyncStatusDidChangeNotification";
 
@@ -147,6 +148,12 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 - (void)simplenoteSyncStatusChanged:(NSNotification *)notification {
 	NVSyncStatus status = (NVSyncStatus)[[[notification userInfo] objectForKey:@"status"] intValue];
 	[accountWindow refresh];
+	switch (status) {
+		case NVSyncStatusSyncing: [titleBarButton setStatusIconType:SynchronizingIcon]; break;
+		case NVSyncStatusOffline:
+		case NVSyncStatusSignedOut: [titleBarButton setStatusIconType:AlertIcon]; break;
+		default: [titleBarButton setStatusIconType:NoIcon]; break;
+	}
 	if (status == NVSyncStatusSignedOut) {
 		//the token stopped working: ask to sign in again
 		[self showSimplenoteAccount:nil];
