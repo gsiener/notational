@@ -20,7 +20,7 @@
 
 @implementation NVFakeSimplenoteService
 
-@synthesize requestCounts, afterPostApplied;
+@synthesize requestCounts, afterPostApplied, changesOmitData;
 
 - (id)init {
 	if ((self = [super init])) {
@@ -118,8 +118,17 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 			return nil;
 		}
 		NSMutableArray *changes = [NSMutableArray array];
-		for (NVRemoteChange *change in changeLog)
-			if (ChangeCounterOf([change changeVersion]) > since) [changes addObject:change];
+		for (NVRemoteChange *change in changeLog) {
+			if (ChangeCounterOf([change changeVersion]) <= since) continue;
+			if (changesOmitData && [change data]) {
+				NVRemoteChange *bare = [[[NVRemoteChange alloc] init] autorelease];
+				[bare setNoteID:[change noteID]];
+				[bare setChangeVersion:[change changeVersion]];
+				[bare setVersion:[change version]];
+				change = bare;
+			}
+			[changes addObject:change];
+		}
 		return changes;
 	}
 }

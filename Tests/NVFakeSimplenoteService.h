@@ -19,6 +19,9 @@
 //requests served, by kind: @"index", @"changes", @"get", @"post"
 @property (nonatomic, readonly) NSCountedSet *requestCounts;
 
+//like the real HTTP feed, report changes without note data (clients fetch each note); default NO
+@property (nonatomic, assign) BOOL changesOmitData;
+
 //runs after a post has been applied and before it returns, i.e. while the push is "in flight"
 @property (nonatomic, copy) void (^afterPostApplied)(NSString *noteID);
 

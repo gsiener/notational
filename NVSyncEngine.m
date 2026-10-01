@@ -239,11 +239,46 @@
 		return NO;
 	}
 	if (![changes count]) return YES;
-
+	
+	//only the last change per note matters; the HTTP feed carries versions, not data,
+	//so fetch each changed note once (skipping our own echoes) before touching the store
+	NSMutableDictionary *latest = [NSMutableDictionary dictionary];
+	NSMutableArray *order = [NSMutableArray array];
+	for (NVRemoteChange *change in changes) {
+		if (![change noteID]) continue;
+		if (![latest objectForKey:[change noteID]]) [order addObject:[change noteID]];
+		[latest setObject:change forKey:[change noteID]];
+	}
+	NSMutableDictionary *fetched = [NSMutableDictionary dictionary];
+	for (NSString *noteID in order) {
+		NVRemoteChange *change = [latest objectForKey:noteID];
+		if ([change removed] || [change data]) continue;
+		NVNoteRecord *local = [store noteWithID:noteID];
+		if (local && ([local pending] || [change version] <= [local confirmedVersion])) continue;
+		NSInteger version = 0;
+		NSError *fetchError = nil;
+		NSDictionary *data = [service noteWithID:noteID version:&version error:&fetchError];
+		if (data) {
+			[fetched setObject:[NVRemoteNote noteWithID:noteID version:version data:data] forKey:noteID];
+		} else if ([[fetchError domain] isEqualToString:NVSimplenoteErrorDomain] && [fetchError code] == NVSimplenoteErrorNotFound) {
+			//gone again since the change was logged; a later change in the feed will say so
+		} else {
+			if (error) *error = fetchError;
+			return NO;
+		}
+	}
+	
 	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
-		for (NVRemoteChange *change in changes) {
-			if ([change removed]) [self _applyRemoteRemovalOfNote:[change noteID] transaction:t];
-			else [self _applyRemoteNote:[change noteID] data:[change data] version:[change version] transaction:t];
+		for (NSString *noteID in order) {
+			NVRemoteChange *change = [latest objectForKey:noteID];
+			if ([change removed]) {
+				[self _applyRemoteRemovalOfNote:noteID transaction:t];
+			} else if ([change data]) {
+				[self _applyRemoteNote:noteID data:[change data] version:[change version] transaction:t];
+			} else {
+				NVRemoteNote *note = [fetched objectForKey:noteID];
+				if (note) [self _applyRemoteNote:noteID data:[note data] version:[note version] transaction:t];
+			}
 		}
 	}];
 	[store setSyncPoint:[[changes lastObject] changeVersion]];

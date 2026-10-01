@@ -178,6 +178,32 @@
 	XCTAssertEqual([[server requestCounts] countForObject:@"index"], (NSUInteger)1);
 }
 
+- (void)testCatchUpFetchesNotesWhenTheFeedCarriesNoData {
+	[server setChangesOmitData:YES];
+	NSString *noteID = [server remoteCreateNoteWithContent:@"v1" tags:nil];
+	NVTestMachine *mac = [self machine:@"mac"];
+	[mac sync];
+	[server remoteSetContent:@"v2" ofNote:noteID];
+	[server remoteSetContent:@"v3" ofNote:noteID];
+	NSString *purged = [server remoteCreateNoteWithContent:@"gone" tags:nil];
+	[server remotePurgeNote:purged];
+	
+	NSUInteger getsBefore = [[server requestCounts] countForObject:@"get"];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqualObjects([[mac note:noteID] content], @"v3");
+	XCTAssertEqual([[mac note:noteID] confirmedVersion], (NSInteger)3);
+	XCTAssertNil([mac note:purged]);
+	//one fetch for the twice-edited note, none for the purged one
+	XCTAssertEqual([[server requestCounts] countForObject:@"get"] - getsBefore, (NSUInteger)1);
+	
+	//our own pushes come back in the feed without data; they must not be fetched again
+	[mac editNote:noteID content:@"v4 from nvALT"];
+	XCTAssertTrue([mac sync]);
+	getsBefore = [[server requestCounts] countForObject:@"get"];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqual([[server requestCounts] countForObject:@"get"] - getsBefore, (NSUInteger)0);
+}
+
 - (void)testQuietCycleDeliversNothing {
 	[server remoteCreateNoteWithContent:@"a" tags:nil];
 	NVTestMachine *mac = [self machine:@"mac"];
