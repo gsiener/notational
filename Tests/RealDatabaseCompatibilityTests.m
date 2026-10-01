@@ -72,6 +72,24 @@
 		if ([[[note contentString] string] length]) withBodies++;
 	}
 	NSLog(@"[compat] notes=%lu nonEmptyBodies=%lu", (unsigned long)[notes count], (unsigned long)withBodies);
+
+	//Simplenote state carried by each note: what a migration would have to push
+	NSUInteger synced = 0, neverSynced = 0, dirty = 0;
+	NSDate *newestSync = nil, *oldestDirty = nil;
+	for (NoteObject *note in notes) {
+		NSDictionary *sn = [[note syncServicesMD] objectForKey:@"SN"];
+		if (![sn objectForKey:@"key"]) { neverSynced++; continue; }
+		synced++;
+		NSNumber *modify = [sn objectForKey:@"modify"];
+		NSDate *modified = modify ? [NSDate dateWithTimeIntervalSinceReferenceDate:[modify doubleValue]] : nil;
+		if (modified && (!newestSync || [modified compare:newestSync] == NSOrderedDescending)) newestSync = modified;
+		if ([[sn objectForKey:@"dirty"] boolValue]) {
+			dirty++;
+			if (modified && (!oldestDirty || [modified compare:oldestDirty] == NSOrderedAscending)) oldestDirty = modified;
+		}
+	}
+	NSLog(@"[compat] simplenote: synced=%lu neverSynced=%lu dirty=%lu newestSyncedModify=%@ oldestDirtyModify=%@",
+		  (unsigned long)synced, (unsigned long)neverSynced, (unsigned long)dirty, newestSync, oldestDirty);
 	XCTAssertGreaterThan([notes count], (NSUInteger)0);
 
 	NSString *journalDirectory = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_JOURNAL_DIR"];
@@ -84,13 +102,17 @@
 		NSMutableSet *existingIDs = [NSMutableSet set];
 		for (NoteObject *note in notes)
 			[existingIDs addObject:[NSData dataWithBytes:[note uniqueNoteIDBytes] length:sizeof(CFUUIDBytes)]];
-		NSUInteger updated = 0, added = 0, removed = 0;
+		NSUInteger updated = 0, added = 0, removed = 0, journalSynced = 0, journalDirty = 0;
 		for (id obj in [recovered allValues]) {
 			BOOL known = [existingIDs containsObject:[NSData dataWithBytes:[obj uniqueNoteIDBytes] length:sizeof(CFUUIDBytes)]];
 			if ([obj isKindOfClass:[DeletedNoteObject class]]) removed++;
 			else if (known) updated++;
 			else added++;
+			NSDictionary *sn = [[obj syncServicesMD] objectForKey:@"SN"];
+			if ([sn objectForKey:@"key"]) journalSynced++;
+			if (![sn objectForKey:@"key"] || [[sn objectForKey:@"dirty"] boolValue]) journalDirty++;
 		}
+		NSLog(@"[compat] journal simplenote: withKey=%lu needsPush=%lu", (unsigned long)journalSynced, (unsigned long)journalDirty);
 		NSLog(@"[compat] journal records=%lu (updates to existing=%lu, new notes=%lu, deletions=%lu)",
 			  (unsigned long)[recovered count], (unsigned long)updated, (unsigned long)added, (unsigned long)removed);
 		//leave the copied journal in place so the check can be re-run
