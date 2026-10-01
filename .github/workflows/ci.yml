@@ -1,0 +1,74 @@
+---
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+
+      - name: test
+        run: |
+          xcodebuild test \
+            -project Notation.xcodeproj \
+            -scheme NotationTests \
+            -derivedDataPath build/DerivedData \
+            -resultBundlePath build/TestResults.xcresult
+
+      - name: build app
+        run: |
+          xcodebuild \
+            -project Notation.xcodeproj \
+            -scheme 'Notation Release' \
+            -configuration ForBuilding \
+            -derivedDataPath build/DerivedData \
+            -archivePath build/nvALT.xcarchive \
+            archive
+
+      - name: verify app
+        run: |
+          app=build/nvALT.xcarchive/Products/Applications/nvALT.app
+          for bin in "$app/Contents/MacOS/nvALT" "$app/Contents/Resources/multimarkdown"; do
+            archs=$(lipo -archs "$bin")
+            echo "$bin: $archs"
+            case " $archs " in *" arm64 "*) ;; *) echo "::error::$bin is not arm64"; exit 1 ;; esac
+          done
+          # only system libraries may be linked; nothing from Homebrew, nix or the build machine
+          if otool -L "$app/Contents/MacOS/nvALT" | tail -n +2 | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then
+            echo "::error::unexpected non-system library dependency"; exit 1
+          fi
+          codesign --verify --deep --strict "$app"
+          ditto -c -k --keepParent "$app" build/nvALT.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nvALT
+          path: build/nvALT.zip
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-results
+          path: build/TestResults.xcresult
