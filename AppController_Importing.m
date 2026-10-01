@@ -299,12 +299,7 @@
             [pathString hasSuffix:@"gif"]   ||
             [pathString hasSuffix:@"png"])
         {
-          currentPreviewMode = [[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"];
-          if (currentPreviewMode == NVMarkupMarkdown || currentPreviewMode == NVMarkupMultiMarkdown) {
-            linkFormat = @"![](%@)%s";
-          } else if (currentPreviewMode == NVMarkupTextile) {
-            linkFormat = @"!%@()!%s"; 
-          }
+          linkFormat = @"![](%@)%s";
         }
         [allURLsString appendFormat:linkFormat, 
          [pathString stringByReplacingOccurrencesOfString:@"file://localhost" withString:@"file://"],

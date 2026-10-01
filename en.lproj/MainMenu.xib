@@ -568,12 +568,6 @@ CA
                                     <action selector="selectPreviewMode:" target="213" id="1248"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Textile" tag="13373" id="1241">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="selectPreviewMode:" target="213" id="1252"/>
-                                </connections>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="1243"/>
                             <menuItem title="Toggle Preview Window" keyEquivalent="p" id="1244">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
@@ -736,7 +730,6 @@ CA
                 <outlet property="syncWaitSpinner" destination="1082" id="1084"/>
                 <outlet property="textScrollView" destination="1016" id="1276"/>
                 <outlet property="textView" destination="1017" id="1030"/>
-                <outlet property="textilePreview" destination="1241" id="1250"/>
                 <outlet property="window" destination="21" id="217"/>
                 <outlet property="wordCounter" destination="1270" id="1272"/>
             </connections>

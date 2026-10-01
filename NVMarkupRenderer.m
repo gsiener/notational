@@ -87,14 +87,11 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 	if (!renderer) {
 		NSString *resources = [[NSBundle mainBundle] resourcePath];
 		NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:[resources stringByAppendingPathComponent:@"multimarkdown"] arguments:nil];
-		NVMarkupProcessTool *textile = [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/perl" arguments:
-										[NSArray arrayWithObject:[resources stringByAppendingPathComponent:@"Textile_2.12/textilize.pl"]]];
 		NVTaskPaperMarkdown *taskPaper = [[[NVTaskPaperMarkdown alloc] init] autorelease];
 		//plain Markdown is rendered by MultiMarkdown too, as the preview always did
 		NSDictionary *byFormat = [NSDictionary dictionaryWithObjectsAndKeys:
 								  mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
-								  mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown],
-								  textile, [NSNumber numberWithInteger:NVMarkupTextile], nil];
+								  mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
 		renderer = [[NVMarkupRenderer alloc] initWithTools:byFormat taskPaperTool:taskPaper];
 	}
 	return renderer;
@@ -115,7 +112,7 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 }
 
 + (NVMarkupFormat)formatFromInteger:(NSInteger)value {
-	return (value == NVMarkupMarkdown || value == NVMarkupTextile) ? value : NVMarkupMultiMarkdown;
+	return value == NVMarkupMarkdown ? NVMarkupMarkdown : NVMarkupMultiMarkdown;
 }
 
 static NSString *EscapedHTML(NSString *string) {
@@ -135,7 +132,7 @@ static BOOL LooksLikeTaskPaper(NSString *text) {
 	format = [[self class] formatFromInteger:format];
 	text = text ? text : @"";
 	NSError *error = nil;
-	if (format != NVMarkupTextile && taskPaperTool && LooksLikeTaskPaper(text)) {
+	if (taskPaperTool && LooksLikeTaskPaper(text)) {
 		NSString *markdown = [taskPaperTool convertText:text error:&error];
 		if (markdown) text = markdown;
 		else NSLog(@"TaskPaper conversion failed, rendering the outline as is: %@", [error localizedDescription]);

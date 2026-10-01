@@ -4,8 +4,8 @@
 //
 //  Turns note text into HTML for the preview, Save HTML and Share (#4). Owns the markup
 //  formats, the TaskPaper pre-pass, the preview template and running the tools that do
-//  the conversion. Each tool is an adapter behind NVMarkupTool, so swapping one (e.g.
-//  replacing perl, #10/#28) touches only the tool for that format.
+//  the conversion. Each tool is an adapter behind NVMarkupTool, so swapping one touches
+//  only the tool for that format.
 //
 
 #import <Foundation/Foundation.h>
@@ -15,7 +15,7 @@
 enum {
 	NVMarkupMarkdown = 13371,
 	NVMarkupMultiMarkdown = 13372,
-	NVMarkupTextile = 13373,
+	//13373 was Textile, dropped with its perl (#28); a saved 13373 reads as MultiMarkdown
 };
 typedef NSInteger NVMarkupFormat;
 
@@ -32,7 +32,7 @@ typedef NSInteger NVMarkupFormat;
 
 @interface NVMarkupRenderer : NSObject
 
-//the tools bundled in the app's Resources
+//the bundled multimarkdown, and the native TaskPaper pass
 + (NVMarkupRenderer *)defaultRenderer;
 
 //tools for each format (NSNumber of NVMarkupFormat → id<NVMarkupTool>), and the tool that turns

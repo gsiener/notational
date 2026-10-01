@@ -34,7 +34,7 @@
 @end
 
 @interface NVMarkupRendererTests : XCTestCase {
-	FakeMarkupTool *markdown, *multiMarkdown, *textile, *taskPaper;
+	FakeMarkupTool *markdown, *multiMarkdown, *taskPaper;
 	NVMarkupRenderer *renderer;
 }
 @end
@@ -45,12 +45,10 @@
 	[super setUp];
 	markdown = [[FakeMarkupTool toolWithPrefix:@"md:"] retain];
 	multiMarkdown = [[FakeMarkupTool toolWithPrefix:@"mmd:"] retain];
-	textile = [[FakeMarkupTool toolWithPrefix:@"textile:"] retain];
 	taskPaper = [[FakeMarkupTool toolWithPrefix:@"tp:"] retain];
 	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
 						   markdown, [NSNumber numberWithInteger:NVMarkupMarkdown],
-						   multiMarkdown, [NSNumber numberWithInteger:NVMarkupMultiMarkdown],
-						   textile, [NSNumber numberWithInteger:NVMarkupTextile], nil];
+						   multiMarkdown, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
 	renderer = [[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaper];
 }
 
@@ -58,7 +56,6 @@
 	[renderer release];
 	[markdown release];
 	[multiMarkdown release];
-	[textile release];
 	[taskPaper release];
 	[super tearDown];
 }
@@ -68,21 +65,19 @@
 - (void)testEachFormatUsesItsTool {
 	XCTAssertEqualObjects([renderer htmlForText:@"x" format:NVMarkupMarkdown], @"md:x");
 	XCTAssertEqualObjects([renderer htmlForText:@"x" format:NVMarkupMultiMarkdown], @"mmd:x");
-	XCTAssertEqualObjects([renderer htmlForText:@"x" format:NVMarkupTextile], @"textile:x");
 }
 
 - (void)testUnknownFormatsAreMultiMarkdown {
 	XCTAssertEqual([NVMarkupRenderer formatFromInteger:0], (NVMarkupFormat)NVMarkupMultiMarkdown);
-	XCTAssertEqual([NVMarkupRenderer formatFromInteger:NVMarkupTextile], (NVMarkupFormat)NVMarkupTextile);
+	XCTAssertEqual([NVMarkupRenderer formatFromInteger:NVMarkupMarkdown], (NVMarkupFormat)NVMarkupMarkdown);
+	//13373 was Textile
+	XCTAssertEqual([NVMarkupRenderer formatFromInteger:13373], (NVMarkupFormat)NVMarkupMultiMarkdown);
 	XCTAssertEqualObjects([renderer htmlForText:@"x" format:42], @"mmd:x");
 }
 
 - (void)testTaskPaperOutlinesAreConvertedFirst {
 	XCTAssertEqualObjects([renderer htmlForText:@"Home:\n\t- task @taskpaper" format:NVMarkupMultiMarkdown], @"mmd:tp:Home:\n\t- task @taskpaper");
 	XCTAssertEqualObjects([renderer htmlForText:@"Archive:\n\t- done" format:NVMarkupMarkdown], @"md:tp:Archive:\n\t- done");
-	[taskPaper setLastInput:nil];
-	XCTAssertEqualObjects([renderer htmlForText:@"Archive: but Textile" format:NVMarkupTextile], @"textile:Archive: but Textile");
-	XCTAssertNil([taskPaper lastInput]);
 }
 
 - (void)testOrdinaryNotesSkipTheTaskPaperPass {
@@ -168,13 +163,10 @@ static NSString *MultiMarkdownPath(void) {
 }
 
 - (NVMarkupRenderer *)realRenderer {
-	NSString *repo = RepoPath();
 	NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:MultiMarkdownPath() arguments:nil];
 	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
 						   mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
-						   mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown],
-						   [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/perl" arguments:[NSArray arrayWithObject:[repo stringByAppendingPathComponent:@"Textile_2.12/textilize.pl"]]],
-						   [NSNumber numberWithInteger:NVMarkupTextile], nil];
+						   mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
 	NVTaskPaperMarkdown *taskPaperTool = [[[NVTaskPaperMarkdown alloc] init] autorelease];
 	return [[[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaperTool] autorelease];
 }
@@ -202,8 +194,5 @@ static NSString *MultiMarkdownPath(void) {
 	[self assertFixture:@"taskpaper" format:NVMarkupMultiMarkdown];
 }
 
-- (void)testGoldenTextile {
-	[self assertFixture:@"textile" format:NVMarkupTextile];
-}
 
 @end
