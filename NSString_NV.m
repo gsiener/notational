@@ -15,6 +15,7 @@
    - Neither the name of Notational Velocity nor the names of its contributors may be used to endorse 
      or promote products derived from this software without specific prior written permission. */
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "NSString_NV.h"
 #import "NSData_transformations.h"
 #import "NSFileManager_NV.h"
@@ -276,8 +277,7 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision) {
 - (NSString*)fourCharTypeString {
 	if ([[self dataUsingEncoding:NSMacOSRomanStringEncoding allowLossyConversion:YES] length] >= 4) {
 		//only truncate; don't return a string containing null characters for the last few bytes
-		OSType type = UTGetOSTypeFromString((CFStringRef)self);
-		return [(id)UTCreateStringForOSType(type) autorelease];
+		return NVStringFromOSType(NVOSTypeFromString(self));
 	}
 	return self;
 }
@@ -293,9 +293,9 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision) {
 - (void)copyItemToPasteboard:(id)sender {
 	
 	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
-	[pasteboard declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
+	[pasteboard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
 	[pasteboard setString:[sender isKindOfClass:[NSMenuItem class]] ? [sender representedObject] : self
-				  forType:NSStringPboardType];
+				  forType:NSPasteboardTypeString];
 }
 
 
@@ -500,7 +500,10 @@ BOOL IsHardLineBreakUnichar(unichar uchar, NSString *str, unsigned charIndex) {
 }
 
 - (NSString*)stringWithPercentEscapes {
-	return [(NSString *) CFURLCreateStringByAddingPercentEscapes(NULL, (CFStringRef)[[self mutableCopy] autorelease], NULL, CFSTR("=,!$&'()*+;@?\n\"<>#\t :/"),kCFStringEncodingUTF8) autorelease];
+	//everything but ASCII alphanumerics and the unreserved (plus bracket) characters is escaped, as before
+	static NSCharacterSet *allowedSet = nil;
+	if (!allowedSet) allowedSet = [[NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~[]"] retain];
+	return [self stringByAddingPercentEncodingWithAllowedCharacters:allowedSet];
 }
 
 + (NSString*)reasonStringFromCarbonFSError:(OSStatus)err {
@@ -518,16 +521,11 @@ BOOL IsHardLineBreakUnichar(unichar uchar, NSString *str, unsigned charIndex) {
 
 - (BOOL)UTIOfFileConformsToType:(NSString*)type {
 	
-	CFStringRef fileUTI = NULL;
-	FSRef fileRef;
-	if (FSPathMakeRef((const UInt8 *)[self fileSystemRepresentation], &fileRef, NULL) == noErr) {
-		if (LSCopyItemAttribute(&fileRef, kLSRolesAll, kLSItemContentType, (CFTypeRef*)&fileUTI) == noErr) {
-			if (fileUTI) {
-				BOOL conforms = UTTypeConformsTo(fileUTI, (CFStringRef)type);
-				CFRelease(fileUTI);
-				return conforms;
-			}
-		}
+	UTType *fileType = nil;
+	NSURL *url = [NSURL fileURLWithPath:self];
+	if ([url getResourceValue:&fileType forKey:NSURLContentTypeKey error:NULL] && fileType) {
+		UTType *otherType = [UTType typeWithIdentifier:type];
+		return otherType && [fileType conformsToType:otherType];
 	}
 	return NO;
 }

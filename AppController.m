@@ -236,9 +236,6 @@ BOOL splitViewAwoke;
     
 	//[window makeKeyAndOrderFront:self];
 	//[self setEmptyViewState:YES];
-    if (!IsYosemiteOrLater) {
-        [window useOptimizedDrawing:YES];
-    }
    
     
 	// Create elasticthreads' NSStatusItem.
@@ -249,9 +246,9 @@ BOOL splitViewAwoke;
 	//a saved mode that no longer exists (Textile) previews as MultiMarkdown
 	currentPreviewMode = [NVMarkupRenderer formatFromInteger:[[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"]];
     if (currentPreviewMode == NVMarkupMarkdown) {
-        [multiMarkdownPreview setState:NSOnState];
+        [multiMarkdownPreview setState:NSControlStateValueOn];
     } else if (currentPreviewMode == NVMarkupMultiMarkdown) {
-        [multiMarkdownPreview setState:NSOnState];
+        [multiMarkdownPreview setState:NSControlStateValueOn];
     }
 	
 	outletObjectAwoke(self);
@@ -545,7 +542,7 @@ terminateApp:
     
     if ((tag == NVMarkupMarkdown) || (tag == NVMarkupMultiMarkdown)) {
         // Allow only one Preview mode to be selected at every one time
-        [menuItem setState:((tag == currentPreviewMode) ? NSOnState : NSOffState)];
+        [menuItem setState:((tag == currentPreviewMode) ? NSControlStateValueOn : NSControlStateValueOff)];
         return YES;
     } else if (selector == @selector(printNote:) ||
                selector == @selector(deleteNote:) ||
@@ -724,7 +721,7 @@ terminateApp:
 	[self updateNoteMenus];
     
 	[notesTableView setBackgroundColor:backgrndColor];
-	[notesTableView setNeedsDisplay];
+	[notesTableView setNeedsDisplay:YES];
 }
 
 - (void)createFromSelection:(NSPasteboard *)pboard userData:(NSString *)userData error:(NSString **)error {
@@ -773,7 +770,7 @@ terminateApp:
 //			[notationController removeNote:retainedDeleteObj];
 //		}
 //		
-//		if (IsLeopardOrLater && [[alert suppressionButton] state] == NSOnState) {
+//		if (IsLeopardOrLater && [[alert suppressionButton] state] == NSControlStateValueOn) {
 //			[prefsController setConfirmNoteDeletion:NO sender:self];
 //		}
 //	}
@@ -798,18 +795,12 @@ terminateApp:
             [alert addButtonWithTitle:NSLocalizedString(@"Delete", @"name of delete button")];
             [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"name of cancel button")];
             [alert setShowsSuppressionButton:YES];
-            if (IsMavericksOrLater) {
-                [alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
-                    if (returnCode == NSAlertFirstButtonReturn) {
-                        [notationController removeNotesAtIndexes:indexes];
-                    }
-                }];
-                [alert release];
-                    
-            }else{
-                [indexes retain];
-                [alert beginSheetModalForWindow:window modalDelegate:self didEndSelector:@selector(deleteAlertDidEnd:returnCode:contextInfo:) contextInfo:indexes];
-            }
+            [alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
+                if (returnCode == NSAlertFirstButtonReturn) {
+                    [notationController removeNotesAtIndexes:indexes];
+                }
+            }];
+            [alert release];
             
 		} else {
             //just delete the notes outright
@@ -851,7 +842,7 @@ terminateApp:
     ExternalEditor *ed = [sender representedObject];
     if ([ed isKindOfClass:[ExternalEditor class]]) {
         NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-        if (kCGEventFlagMaskAlternate == ((NSUInteger)CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSDeviceIndependentModifierFlagsMask)) {
+        if (kCGEventFlagMaskAlternate == ((NSUInteger)CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSEventModifierFlagDeviceIndependentFlagsMask)) {
             //allow changing the default editor directly from Notes menu
             [[ExternalEditorListController sharedInstance] setDefaultEditor:ed];
         }
@@ -895,11 +886,7 @@ terminateApp:
         
         NSRect linkingFrame=[textScrollView convertRect:[textScrollView frame] toView:nil];
         
-        if (IsLionOrLater) {
-            linkingFrame=[window convertRectToScreen:linkingFrame];
-        }else{
-            linkingFrame.origin=[window convertBaseToScreen:linkingFrame.origin];
-        }
+        linkingFrame=[window convertRectToScreen:linkingFrame];
         NSPoint cPoint=NSMakePoint(NSMidX(linkingFrame), NSMaxY(linkingFrame));
         
         //Multiple Notes selected, use ElasticThreads' multitagging implementation
@@ -1004,8 +991,13 @@ terminateApp:
 			path = [[NSBundle mainBundle] pathForResource:NSLocalizedString(@"Excruciatingly Useful Shortcuts", nil) ofType:@"nvhelp" inDirectory:nil];
 		case 2:		//acknowledgments
 			if (!path) path = [[NSBundle mainBundle] pathForResource:@"Acknowledgments" ofType:@"txt" inDirectory:nil];
-			[[NSWorkspace sharedWorkspace] openURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:path]] withAppBundleIdentifier:@"com.apple.TextEdit"
-											options:NSWorkspaceLaunchDefault additionalEventParamDescriptor:nil launchIdentifiers:NULL];
+			{
+				NSURL *textEditURL = [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:@"com.apple.TextEdit"];
+				if (textEditURL && path) {
+					[[NSWorkspace sharedWorkspace] openURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:path]] withApplicationAtURL:textEditURL
+											  configuration:[NSWorkspaceOpenConfiguration configuration] completionHandler:nil];
+				}
+			}
 			break;
 		case 3:		//product site
 			[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:NSLocalizedString(@"SiteURL", nil)]];
@@ -1190,7 +1182,7 @@ terminateApp:
 		if (command == NSSelectorFromString(@"noop:")) {
 			//control-U is not set to anything by default, so we have to check the event itself for noops
 			NSEvent *event = [window currentEvent];
-			if ([event modifierFlags] & NSControlKeyMask) {
+			if ([event modifierFlags] & NSEventModifierFlagControl) {
 				if ([event firstCharacterIgnoringModifiers] == 'u') {
 					//in 1.1.1 this deleted the entire line, like tcsh. this is more in-line with bash
 					[aTextView deleteToBeginningOfLine:nil];
@@ -1390,9 +1382,9 @@ terminateApp:
     
 	NSEventType type = [event type];
 	//do not allow drag-selections unless a modifier is pressed
-	if (type == NSLeftMouseDragged || type == NSLeftMouseDown) {
+	if (type == NSEventTypeLeftMouseDragged || type == NSEventTypeLeftMouseDown) {
 		NSUInteger flags = [event modifierFlags];
-		if ((flags & NSShiftKeyMask) || (flags & NSCommandKeyMask)) {
+		if ((flags & NSEventModifierFlagShift) || (flags & NSEventModifierFlagCommand)) {
 			allowMultipleSelection = YES;
 		}
 	}
@@ -1427,7 +1419,7 @@ terminateApp:
     }
     self.isEditing = NO;
 	NSEventType type = [[window currentEvent] type];
-	if (type != NSKeyDown && type != NSKeyUp) {
+	if (type != NSEventTypeKeyDown && type != NSEventTypeKeyUp) {
 		[self performSelector:@selector(setTableAllowsMultipleSelection) withObject:nil afterDelay:0];
 	}
 	
@@ -2245,7 +2237,7 @@ terminateApp:
             if (([window firstResponder]==notesTableView)||(isEditing&&([notesTableView editedRow]==rowIndex))) {//([notesTableView rowHeight]>30.0)||
                 [aCell setTextColor:[NSColor whiteColor]];
                 return;
-            }else if ([[foregrndColor colorUsingColorSpaceName:NSCalibratedWhiteColorSpace] whiteComponent]>0.5) {                    
+            }else if ([[foregrndColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]>0.5) {                    
                 [aCell setTextColor:[NSColor colorWithCalibratedWhite:0.2 alpha:1.0]];
                 return;
             }
@@ -2571,7 +2563,7 @@ terminateApp:
 - (BOOL)isInFullScreen{
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
     if (IsLionOrLater) {
-        return (([window styleMask]&NSFullScreenWindowMask)>0);
+        return (([window styleMask]&NSWindowStyleMaskFullScreen)>0);
     }
 #endif
     return [mainView isInFullScreenMode];
@@ -2669,8 +2661,8 @@ terminateApp:
         userScheme=0;
         [[NSUserDefaults standardUserDefaults] setInteger:userScheme forKey:@"ColorScheme"];
         
-        [self setForegrndColor:[[NSColor colorWithCalibratedWhite:0.02f alpha:1.0f]colorUsingColorSpaceName:NSCalibratedRGBColorSpace]];
-        [self setBackgrndColor:[[NSColor colorWithCalibratedWhite:0.98f alpha:1.0f]colorUsingColorSpaceName:NSCalibratedRGBColorSpace]];
+        [self setForegrndColor:[[NSColor colorWithCalibratedWhite:0.02f alpha:1.0f]colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
+        [self setBackgrndColor:[[NSColor colorWithCalibratedWhite:0.98f alpha:1.0f]colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
         NSMenu *mainM = [NSApp mainMenu];
         NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
         mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
@@ -2857,7 +2849,7 @@ terminateApp:
     
     - (void)popWordCount:(BOOL)showIt{
         NSUInteger curEv=[[NSApp currentEvent] type];
-        if ((curEv==NSFlagsChanged)||(curEv==NSMouseMoved)||(curEv==NSMouseEntered)||(curEv==NSMouseExited)||(curEv==NSScrollWheel)){
+        if ((curEv==NSEventTypeFlagsChanged)||(curEv==NSEventTypeMouseMoved)||(curEv==NSEventTypeMouseEntered)||(curEv==NSEventTypeMouseExited)||(curEv==NSEventTypeScrollWheel)){
             if (showIt) {
                 if (([wordCounter isHidden])&&([prefsController showWordCount])) {
                     [self updateWordCount:YES];
@@ -2897,7 +2889,7 @@ terminateApp:
     - (void)flagsChanged:(NSEvent *)theEvent{
         if ((ModFlagger==0)&&(popped==0)) {            
             NSUInteger flags=[theEvent modifierFlags];
-            if (((flags&NSDeviceIndependentModifierFlagsMask)==(flags&NSAlternateKeyMask))&&((flags&NSDeviceIndependentModifierFlagsMask)>0)) { //only option key down
+            if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagOption))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) { //only option key down
                 ModFlagger = 1;
                 modifierTimer = [[NSTimer scheduledTimerWithTimeInterval:1.2
                                                                   target:self
@@ -2905,7 +2897,7 @@ terminateApp:
                                                                 userInfo:@"option"
                                                                  repeats:NO] retain];
                 return;
-            }else if (((flags&NSDeviceIndependentModifierFlagsMask)==(flags&NSControlKeyMask))&&((flags&NSDeviceIndependentModifierFlagsMask)>0)) { //only ctrl key is down
+            }else if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagControl))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) { //only ctrl key is down
                 ModFlagger = 2;
                 modifierTimer = [[NSTimer scheduledTimerWithTimeInterval:1.2
                                                                   target:self
@@ -2959,7 +2951,7 @@ terminateApp:
     
     - (void)popPreview:(BOOL)showIt{
         NSUInteger curEv=[[NSApp currentEvent] type];
-        if((curEv==NSFlagsChanged)||(curEv==NSMouseMoved)||(curEv==NSMouseEntered)||(curEv==NSMouseExited)||(curEv==NSScrollWheel)){
+        if((curEv==NSEventTypeFlagsChanged)||(curEv==NSEventTypeMouseMoved)||(curEv==NSEventTypeMouseEntered)||(curEv==NSEventTypeMouseExited)||(curEv==NSEventTypeScrollWheel)){
             if ([previewToggler state]==0) {
                 if (showIt) {
                     if (![previewController previewIsVisible]) {
@@ -3013,7 +3005,7 @@ terminateApp:
     - (IBAction)openCustomPreviewFolder:(id)sender
     {
         [PreviewController createCustomFiles];
-        [[NSWorkspace sharedWorkspace] openFile:[[NSFileManager defaultManager] applicationSupportDirectory]];
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[[NSFileManager defaultManager] applicationSupportDirectory]]];
     }
 
     - (IBAction)lockPreview:(id)sender
@@ -3172,7 +3164,10 @@ terminateApp:
 
     NSEvent *curEv=[NSApp currentEvent];
     if ((curEv.type==NSEventTypeRightMouseUp)||((NSEventModifierFlagControl&curEv.modifierFlags)!=0)) {
-        [statusItem popUpStatusItemMenu:statBarMenu];
+        //show the menu by attaching it for a single click, as popUpStatusItemMenu: did
+        statusItem.menu=statBarMenu;
+        [statusItem.button performClick:nil];
+        statusItem.menu=nil;
         //        NSPoint og=NSMakePoint(statusItem.button.frame.origin.x, 27.f);//NSMaxY(statusItem.button.frame));
         //        [self.statusMenu popUpMenuPositioningItem:nil atLocation:og inView:statusItem.button];
     }else{
@@ -3187,18 +3182,10 @@ terminateApp:
     [statusIcon setSize:NSMakeSize(16.0, 16.0)];
     [statusIcon setTemplate:YES];
     statusItem =[[NSStatusBar systemStatusBar] statusItemWithLength:24.f];
-    if (IsYosemiteOrLater) {
-        statusItem.button.image=statusIcon;
-        statusItem.button.target=self;
-        statusItem.button.action=@selector(statusItemAction:);
-        [statusItem.button sendActionOn:NSEventMaskLeftMouseUp|NSEventMaskRightMouseUp];
-    }else{
-        statusItem.image=statusIcon;
-        statusItem.target=self;
-        statusItem.action=@selector(statusItemAction:);
-         [statusItem sendActionOn:NSEventMaskLeftMouseUp|NSEventMaskRightMouseUp];
-        statusItem.highlightMode=YES;
-    }
+    statusItem.button.image=statusIcon;
+    statusItem.button.target=self;
+    statusItem.button.action=@selector(statusItemAction:);
+    [statusItem.button sendActionOn:NSEventMaskLeftMouseUp|NSEventMaskRightMouseUp];
     [statusItem retain];
 
 }

@@ -17,7 +17,7 @@
 	{
         ETTransparentButtonCell *newCell = [[ETTransparentButtonCell alloc] init];
         [newCell setBezeled:YES];
-        [newCell setBezelStyle:NSRecessedBezelStyle];
+        [newCell setBezelStyle:NSBezelStyleRecessed];
         [self setCell:newCell];
         [newCell release];
     }

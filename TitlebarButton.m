@@ -41,8 +41,8 @@
 
 	NSEventType eventType = [[[controlView window] currentEvent] type];
 	//shouldn't the cell already know when it's being pressed?
-	BOOL isHighlighted = (isHovering && (eventType == NSLeftMouseDown || eventType == NSRightMouseDown ||
-										 eventType == NSLeftMouseDragged || eventType == NSRightMouseDragged));
+	BOOL isHighlighted = (isHovering && (eventType == NSEventTypeLeftMouseDown || eventType == NSEventTypeRightMouseDown ||
+										 eventType == NSEventTypeLeftMouseDragged || eventType == NSEventTypeRightMouseDragged));
 	
 	if (isHighlighted) {
 		[[NSImage imageNamed:@"TBMousedownBG"] drawCenteredInRect:cellFrame];
@@ -71,7 +71,7 @@
 	}
 	
 	NSRect imgRect = NSMakeRect(0, 0, [img size].width, [img size].height);
-	[img drawInRect:imgRect fromRect:NSZeroRect operation:NSCompositeSourceOver 
+	[img drawInRect:imgRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver 
 		   fraction:isHovering ? 1.0 : ([[controlView window] isMainWindow] ? 0.83 : 0.5) respectFlipped:YES hints:nil];
 
 	
@@ -141,9 +141,9 @@
 		[buttonCell setTarget:[[self cell] target]];
 		[self setCell:buttonCell];
 		
-		[buttonCell setControlSize:NSSmallControlSize];
+		[buttonCell setControlSize:NSControlSizeSmall];
 		[buttonCell setPullsDown:flag];
-		[self setFont:[NSFont systemFontOfSize:[NSFont systemFontSizeForControlSize:NSSmallControlSize]]];
+		[self setFont:[NSFont systemFontOfSize:[NSFont systemFontSizeForControlSize:NSControlSizeSmall]]];
 		[self setShowsBorderOnlyWhileMouseInside:YES];
 		[self setBordered:NO];
 		[self setPullsDown:flag];
@@ -183,7 +183,7 @@
 
 		if (0 <= _initialDragPoint.x && 0 <= _initialDragPoint.y) {
 			NSWindow *win = [self window];
-			NSPoint p = [win convertBaseToScreen:[event locationInWindow]];
+			NSPoint p = [win convertRectToScreen:NSMakeRect([event locationInWindow].x, [event locationInWindow].y, 0, 0)].origin;
 			NSRect sr = [[win screen] frame];
 			NSRect wr = [win frame];
 			
@@ -203,7 +203,7 @@
 - (void)mouseDown:(NSEvent *)theEvent {
 		
 	NSRect frame = [[self window] frame];
-    _initialDragPoint = [[self window] convertBaseToScreen:[theEvent locationInWindow]];
+    _initialDragPoint = [[self window] convertRectToScreen:NSMakeRect([theEvent locationInWindow].x, [theEvent locationInWindow].y, 0, 0)].origin;
     _initialDragPoint.x -= frame.origin.x;
     _initialDragPoint.y -= frame.origin.y;
 	
@@ -214,11 +214,11 @@
 		return;
 	}
     while (1) {
-        theEvent = [[self window] nextEventMatchingMask: NSLeftMouseUpMask | NSLeftMouseDraggedMask | 
-					NSRightMouseUpMask | NSRightMouseDragged];
+        theEvent = [[self window] nextEventMatchingMask: NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDragged | 
+					NSEventMaskRightMouseUp | NSEventTypeRightMouseDragged];
 		NSEventType type = [theEvent type];
 		
-		if (type == NSLeftMouseUp || type == NSRightMouseUp) {
+		if (type == NSEventTypeLeftMouseUp || type == NSEventTypeRightMouseUp) {
 			
 			if ([self mouse:[self convertPoint:[theEvent locationInWindow] fromView:nil] inRect:[self bounds]]) {
 				[[self cell] performClickWithFrame:[self bounds] inView:self];

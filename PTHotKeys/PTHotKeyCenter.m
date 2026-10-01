@@ -71,7 +71,7 @@ static id _sharedHotKeyCenter = nil;
     }
 		
 	
-	hotKeyID.signature = UTGetOSTypeFromString(CFSTR("PTHk"));
+	hotKeyID.signature = NVOSTypeFromString(@"PTHk");
 	hotKeyID.id = mNextKeyID;
     
 	//NSLog(@"registering...");
@@ -218,7 +218,7 @@ static id _sharedHotKeyCenter = nil;
 		return err;
 	
 
-	NSAssert( hotKeyID.signature == UTGetOSTypeFromString(CFSTR("PTHk")), @"Invalid hot key id" );
+	NSAssert( hotKeyID.signature == NVOSTypeFromString(@"PTHk"), @"Invalid hot key id" );
 
     NSNumber *kid = [NSNumber numberWithUnsignedInt:hotKeyID.id];
 	hotKey = [mHotKeyMap objectForKey:kid];

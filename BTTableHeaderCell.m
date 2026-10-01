@@ -52,7 +52,7 @@
     
     [metalBg drawInRect:tempDst 
                fromRect:tempSrc 
-              operation:NSCompositeSourceOver 
+              operation:NSCompositingOperationSourceOver 
                fraction:1.0];
     
     /* Draw rest of metalBg along width of inFrame. */
@@ -64,7 +64,7 @@
     
     [metalBg drawInRect:tempDst 
                fromRect:tempSrc 
-              operation:NSCompositeSourceOver 
+              operation:NSCompositingOperationSourceOver 
                fraction:1.0];
     
     /* Draw white text centered, but offset down-left. */

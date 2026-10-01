@@ -47,7 +47,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 
 - (void)exportPanelDidEnd:(NSSavePanel *)sheet returnCode:(NSInteger)returnCode contextInfo:(void  *)contextInfo {
 	NSArray *notes = (NSArray *)contextInfo;
-	if (returnCode == NSFileHandlingPanelOKButton && notes) {
+	if (returnCode == NSModalResponseOK && notes) {
 		//write notes in chosen format
 		unsigned int i;
 		NSInteger result, storageFormat = [[formatSelectorPopup selectedItem] tag];
@@ -75,7 +75,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)directory, kCFURLPOSIXPathStyle, true);
 		[(id)url autorelease];
 		if (!url || !CFURLGetFSRef(url, &directoryRef)) {
-			NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"The notes couldn't be exported because the directory quotemark%@quotemark couldn't be accessed.",nil),
+			NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The notes couldn't be exported because the directory quotemark%@quotemark couldn't be accessed.",nil),
 				[directory stringByAbbreviatingWithTildeInPath]], @"", NSLocalizedString(@"OK",nil), nil, nil);
 			return;
 		}
@@ -92,11 +92,11 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 				//ask about overwriting
 				NSString *existingName = filename ? filename : filenameOfNote(note);
 				existingName = [[existingName stringByDeletingPathExtension] stringByAppendingPathExtension:[NotationPrefs pathExtensionForFormat:storageFormat]];
-				result = NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"A file named quotemark%@quotemark already exists.",nil), existingName],
+				result = NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"A file named quotemark%@quotemark already exists.",nil), existingName],
 										 NSLocalizedString(@"Replace its current contents with that of the note?", @"replace the file's contents?"),
-										 NSLocalizedString(@"Replace",nil), NSLocalizedString(@"Don't Replace",nil), lastNote ? NSLocalizedString(@"Replace All",nil) : nil, nil);
-				if (result == NSAlertDefaultReturn || result == NSAlertOtherReturn) {
-					if (result == NSAlertOtherReturn) overwriteNotes = YES;
+										 NSLocalizedString(@"Replace",nil), NSLocalizedString(@"Don't Replace",nil), lastNote ? NSLocalizedString(@"Replace All",nil) : nil);
+				if (result == NSAlertFirstButtonReturn || result == NSAlertThirdButtonReturn) {
+					if (result == NSAlertThirdButtonReturn) overwriteNotes = YES;
 					err = [note exportToDirectoryRef:&directoryRef withFilename:filename usingFormat:storageFormat overwrite:YES];
 				} else continue;
 			}
@@ -105,11 +105,11 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 				NSString *exportErrorTitleString = [NSString stringWithFormat:NSLocalizedString(@"The note quotemark%@quotemark couldn't be exported because %@.",nil), 
 					titleOfNote(note), [NSString reasonStringFromCarbonFSError:err]];
 				if (!lastNote) {
-					NSRunAlertPanel(exportErrorTitleString, @"%@", NSLocalizedString(@"OK",nil), nil, nil, @"");
+					NVRunAlert(NSAlertStyleWarning, exportErrorTitleString, @"", NSLocalizedString(@"OK",nil), nil, nil);
 				} else {
-					result = NSRunAlertPanel(exportErrorTitleString, NSLocalizedString(@"Continue exporting?", @"alert title for exporter interruption"), 
+					result = NVRunAlert(NSAlertStyleWarning, exportErrorTitleString, NSLocalizedString(@"Continue exporting?", @"alert title for exporter interruption"), 
 											 NSLocalizedString(@"Continue", @"(exporting notes?)"), NSLocalizedString(@"Stop Exporting", @"(notes?)"), nil);
-					if (result != NSAlertDefaultReturn) break;
+					if (result != NSAlertFirstButtonReturn) break;
 				}
 			}
 		}
@@ -123,7 +123,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 - (void)exportNotes:(NSArray*)notes forWindow:(NSWindow*)window {
 	
 	if (!accessoryView) {
-		if (![NSBundle loadNibNamed:@"ExporterManager" owner:self]) {
+		if (!NVLoadNib(@"ExporterManager", self)) {
 			NSLog(@"Failed to load ExporterManager.nib");
 			NSBeep();
 			return;
@@ -165,7 +165,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
         }];
         
 	} else {
-		NSRunAlertPanel(NSLocalizedString(@"No notes were selected for exporting.",nil), 
+		NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"No notes were selected for exporting.",nil), 
 						NSLocalizedString(@"You must select at least one note to export.",nil), NSLocalizedString(@"OK",nil), NULL, NULL);
 	}
 }

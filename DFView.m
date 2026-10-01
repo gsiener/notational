@@ -49,7 +49,7 @@
     }
     CGFloat fWhite;
 	
-	fWhite = [[inColor colorUsingColorSpaceName:NSCalibratedWhiteColorSpace] whiteComponent];
+	fWhite = [[inColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent];
 	if (fWhite < 0.75f) {
 		if (fWhite<0.25f) {
 			fWhite += 0.22f;

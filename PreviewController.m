@@ -5,6 +5,7 @@
 //  Created by Christian Tietze on 15.10.10.
 //  Copyright 2010
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "PreviewController.h"
 #import "AppController.h" // TODO for the defines only, can you get around that?
 #import "AppController_Preview.h"
@@ -166,7 +167,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     NSString *rawString = [app noteContent];
     NSPasteboard* pb = [NSPasteboard pasteboardWithName:@"mkStreamingPreview"];
     [pb clearContents];
-    [pb setString:rawString forType:(NSString*)kUTTypeUTF8PlainText];
+    [pb setString:rawString forType:UTTypeUTF8PlainText.identifier];
 
     if (![[self window] isVisible]) {
         self.isPreviewOutdated = YES;
@@ -388,13 +389,13 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 - (NSString *)savedHTMLForApp:(AppController *)app {
     NSString *html = [[NVMarkupRenderer defaultRenderer] htmlForText:[app noteContent] format:[app currentPreviewMode]];
     NSString *noteTitle = [app selectedNoteObject] ? titleOfNote([app selectedNoteObject]) : @"";
-    BOOL embed = [includeTemplate state] == NSOnState;
+    BOOL embed = [includeTemplate state] == NSControlStateValueOn;
     return [NVMarkupRenderer documentWithHTML:html title:noteTitle templateHTML:embed ? [[self class] html] : nil
                                           css:embed ? [[self class] css] : nil supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
 }
 
 - (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
-    if (returnCode == NSFileHandlingPanelOKButton) {
+    if (returnCode == NSModalResponseOK) {
 
         AppController *app = (AppController *)[[NSApplication sharedApplication] delegate];
         NSString *processedString = [self savedHTMLForApp:app];
@@ -407,7 +408,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 -(IBAction)saveHTML:(id)sender
 {
     if (!accessoryView) {
-        if (![NSBundle loadNibNamed:@"SaveHTMLPreview" owner:self]) {
+        if (!NVLoadNib(@"SaveHTMLPreview", self)) {
             NSLog(@"Failed to load SaveHTMLPreview.nib");
             NSBeep();
             return;
@@ -423,7 +424,12 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     [savePanel setCanSelectHiddenExtension:YES];
 
     NSArray *fileTypes = [[NSArray alloc] initWithObjects:@"html",@"xhtml",@"htm",nil];
-    [savePanel setAllowedFileTypes:fileTypes];
+    NSMutableArray *contentTypes = [NSMutableArray arrayWithCapacity:[fileTypes count]];
+    for (NSString *extension in fileTypes) {
+        UTType *contentType = [UTType typeWithFilenameExtension:extension];
+        if (contentType) [contentTypes addObject:contentType];
+    }
+    [savePanel setAllowedContentTypes:contentTypes];
 
 
     NSString *rawString = [app noteContent];
@@ -440,7 +446,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     //	[savePanel beginSheetForDirectory:nil file:noteTitle modalForWindow:[self window] modalDelegate:self didEndSelector:@selector(savePanelDidEnd:returnCode:contextInfo:) contextInfo:nil];
     savePanel.nameFieldStringValue=noteTitle;
     [savePanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
-        if (returnCode == NSFileHandlingPanelOKButton) {
+        if (returnCode == NSModalResponseOK) {
             NSString *processedString = [self savedHTMLForApp:app];
             NSURL *file = [savePanel URL];
             NSError *error;

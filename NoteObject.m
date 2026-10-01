@@ -1062,9 +1062,9 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 				if (onRight) {
 					[images addObject:img];
 				} else {
-//					[img compositeToPoint:nextBoxPoint operation:NSCompositeSourceOver];
+//					[img compositeToPoint:nextBoxPoint operation:NSCompositingOperationSourceOver];
                     
-                    [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f respectFlipped:YES hints:nil];
+                    [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 					nextBoxPoint.x += [img size].width + 4.0;
 				}
 			} else {
@@ -1082,8 +1082,8 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 				nextBoxPoint.x -= [img size].width + 4.0;
                 dRect.origin=nextBoxPoint;
                 dRect.size=[img size];
-//				[img compositeToPoint:nextBoxPoint operation:NSCompositeSourceOver];
-              [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f respectFlipped:YES hints:nil];
+//				[img compositeToPoint:nextBoxPoint operation:NSCompositingOperationSourceOver];
+              [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 			}
 		}
 	} else {
@@ -1745,12 +1745,19 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 - (void)previewUsingMarked {
 	NSWorkspace * ws = [NSWorkspace sharedWorkspace];
-	if ([[ws URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2"] isFileURL] || [[ws URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked-setapp"] isFileURL] || [[ws URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2.beta"] isFileURL])
-    {
-		[ws openFile:[self noteFilePath] withApplication:@"Marked 2" andDeactivate:NO];
-	} else if ([[ws URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marky"] isFileURL])
-	{
-		[ws openFile:[self noteFilePath] withApplication:@"Marked" andDeactivate:NO];
+	NSURL *markedURL = nil;
+	NSString *identifiers[] = { @"com.brettterpstra.marked2", @"com.brettterpstra.marked-setapp", @"com.brettterpstra.marked2.beta", @"com.brettterpstra.marky" };
+	int i;
+	for (i = 0; i < 4 && !markedURL; i++) {
+		NSURL *url = [ws URLForApplicationWithBundleIdentifier:identifiers[i]];
+		if ([url isFileURL]) markedURL = url;
+	}
+	
+	NSString *path = [self noteFilePath];
+	if (markedURL && path) {
+		NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
+		configuration.activates = NO; //andDeactivate:NO
+		[ws openURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:path]] withApplicationAtURL:markedURL configuration:configuration completionHandler:nil];
 	}
 }
 

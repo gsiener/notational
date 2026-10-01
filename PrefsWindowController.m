@@ -43,7 +43,7 @@
 
 - (void)showWindow:(id)sender {
 	if (!window) {
-		if (![NSBundle loadNibNamed:@"Preferences" owner:self])  {
+		if (!NVLoadNib(@"Preferences", self))  {
 			NSLog(@"Failed to load Preferences.nib");
 			return;
 		}
@@ -129,7 +129,7 @@
 
 	if (!centerStyle) {
 		centerStyle = [[NSMutableParagraphStyle alloc] init];
-		[centerStyle setAlignment:NSCenterTextAlignment];
+		[centerStyle setAlignment:NSTextAlignmentCenter];
 	}
 
 	NSFont *font = [prefsController noteBodyFont];
@@ -424,7 +424,7 @@
 	
 	//fix this math to convert between window and view coordinates for resolution independence
 	
-	float userSpaceScaleFactor = [window userSpaceScaleFactor];
+	float userSpaceScaleFactor = 1.0f; //userSpaceScaleFactor is always 1.0 without resolution independence
 	
     //to stop flicker, we make a temp blank view.
 	

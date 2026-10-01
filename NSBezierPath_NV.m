@@ -33,48 +33,17 @@
 	return path;
 }
 
-+ (NSBezierPath *)bezierPathWithLayoutManager:(NSLayoutManager*)layoutManager characterRange:(NSRange)charRange atPoint:(NSPoint)point {
-	NSRange range = [layoutManager glyphRangeForCharacterRange:charRange actualCharacterRange:NULL];
-	NSGlyph *glyphs = (NSGlyph *)malloc(sizeof(NSGlyph) * range.length * 2);
-	[layoutManager getGlyphs:glyphs range:range];
-		
-	NSBezierPath *path = [NSBezierPath bezierPath];
-	[path moveToPoint:point];
-	[path appendBezierPathWithGlyphs:glyphs count:range.length inFont:[[layoutManager textStorage] font]];
-	
-	free(glyphs);
-	
-	return path;
-}
-
 
 @end
 
 @implementation NSImage (NV)
 
-+ (NSImage*)smallIconForFSRef:(FSRef*)fsRef {
-    OSStatus err = noErr;
-    
-    if (!fsRef)
-    return nil;
-    
-    IconRef iconRef;
-    if ((err = GetIconRefFromFileInfo(fsRef, 0, NULL, 0, NULL, kIconServicesNormalUsageFlag, &iconRef, NULL)) == noErr) {
-    
-    NSImage *image = [[[NSImage alloc] initWithSize:NSMakeSize(16.0f, 16.0f)] autorelease];
-    NSRect frame = NSMakeRect(0.0f,0.0f,16.0f,16.0f);
-    
-    [image lockFocus];
-    err = PlotIconRefInContext([[NSGraphicsContext currentContext] graphicsPort], (CGRect *)&frame, 0, 0, nil, 0, iconRef);
-    [image unlockFocus];
-    
-    if (err == noErr)
-      return image;
-    }
-    
-    NSLog(@"smallIconForFSRef error: %d", err);
-    
-    return nil;
++ (NSImage*)smallIconForFileURL:(NSURL*)url {
+	if (![url isFileURL]) return nil;
+	
+	NSImage *image = [[[[NSWorkspace sharedWorkspace] iconForFile:[url path]] copy] autorelease];
+	[image setSize:NSMakeSize(16.0f, 16.0f)];
+	return image;
 }
 
 

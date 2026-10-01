@@ -38,7 +38,7 @@ static NSRect itemRect;
 	}
     NSRectFill(rect);
     
-	[[NSImage imageNamed:iconName] drawInRect:itemRect fromRect:NSZeroRect operation: NSCompositeSourceOver fraction:fract];
+	[[NSImage imageNamed:iconName] drawInRect:itemRect fromRect:NSZeroRect operation: NSCompositingOperationSourceOver fraction:fract];
 }
 
 
@@ -46,7 +46,7 @@ static NSRect itemRect;
 {
     self.sbIconType=SelectedMenuIcon;
     NSUInteger flags=[event modifierFlags];   
-    if (((flags&NSDeviceIndependentModifierFlagsMask)==(flags&NSControlKeyMask))&&((flags&NSDeviceIndependentModifierFlagsMask)>0)) {
+    if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagControl))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) {
         [[NSNotificationCenter defaultCenter]postNotificationName:@"StatusItemMenuShouldDrop" object:nil];
         self.sbIconType=DarkMenuIcon;
     }else{

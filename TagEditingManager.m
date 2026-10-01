@@ -16,7 +16,7 @@
 
 - (id)initWithDelegate:(id)del commonTags:(NSArray *)cTags atPoint:(NSPoint)centerpoint{
 	if ((self=[super init])) {
-		if (![NSBundle loadNibNamed:@"TagEditingManager" owner:self])  {
+		if (!NVLoadNib(@"TagEditingManager", self))  {
 			NSLog(@"Failed to load TagEditer.nib");
 		}else{
             isHappening = YES;

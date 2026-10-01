@@ -97,6 +97,57 @@ typedef char _COMPILE_ASSERT_SYMBOL(__LINE__, msg) [ ((test) ? 1 : -1) ]
 #define IsMavericksOrLater (floor(NSFoundationVersionNumber) >= NSFoundationVersionNumber10_9)
 #define IsYosemiteOrLater (floor(NSFoundationVersionNumber) >= NSFoundationVersionNumber10_10)
 
+#if __OBJC__
+// stand-in for the deprecated NSRunAlertPanel family: buttons are added in default, alternate, other order
+// (NSAlertFirstButtonReturn, ...SecondButtonReturn, ...ThirdButtonReturn); a nil default title means "OK", nil/empty others mean no button
+static inline NSInteger NVRunAlert(NSAlertStyle style, NSString *title, NSString *message, NSString *defaultButton, NSString *alternateButton, NSString *otherButton) {
+	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+	[alert setAlertStyle:style];
+	[alert setMessageText:title ? title : @""];
+	[alert setInformativeText:message ? message : @""];
+	[alert addButtonWithTitle:[defaultButton length] ? defaultButton : NSLocalizedString(@"OK", nil)];
+	if ([alternateButton length]) [alert addButtonWithTitle:alternateButton];
+	if ([otherButton length]) [alert addButtonWithTitle:otherButton];
+	return [alert runModal];
+}
+
+// four-character-code <-> string conversions, replacing the deprecated UTGetOSTypeFromString/UTCreateStringForOSType
+// (the first four MacRoman characters, big-endian; 0 if the string is shorter than four characters)
+static inline OSType NVOSTypeFromString(NSString *string) {
+	NSData *data = [string dataUsingEncoding:NSMacOSRomanStringEncoding allowLossyConversion:YES];
+	if ([data length] < 4) return 0;
+	const unsigned char *bytes = [data bytes];
+	return ((OSType)bytes[0] << 24) | ((OSType)bytes[1] << 16) | ((OSType)bytes[2] << 8) | (OSType)bytes[3];
+}
+static inline NSString *NVStringFromOSType(OSType type) {
+	unsigned char bytes[4] = { (type >> 24) & 0xFF, (type >> 16) & 0xFF, (type >> 8) & 0xFF, type & 0xFF };
+	return [[[NSString alloc] initWithBytes:bytes length:4 encoding:NSMacOSRomanStringEncoding] autorelease];
+}
+
+// the file paths on a pasteboard (what NSFilenamesPboardType's property list used to hold), or nil if there are none
+static inline NSArray *NVFilePathsFromPasteboard(NSPasteboard *pasteboard) {
+	NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:NSPasteboardURLReadingFileURLsOnlyKey];
+	NSArray *urls = [pasteboard readObjectsForClasses:[NSArray arrayWithObject:[NSURL class]] options:options];
+	if (![urls count]) return nil;
+	NSMutableArray *paths = [NSMutableArray arrayWithCapacity:[urls count]];
+	NSUInteger i;
+	for (i = 0; i < [urls count]; i++) {
+		NSString *path = [[urls objectAtIndex:i] path];
+		if (path) [paths addObject:path];
+	}
+	return paths;
+}
+
+// stand-in for the deprecated +[NSBundle loadNibNamed:owner:]. The old method left the nib's top-level objects retained
+// (and nothing balanced that), so the new topLevelObjects array is intentionally retained here and never released.
+static inline BOOL NVLoadNib(NSString *nibName, id owner) {
+	NSArray *topLevelObjects = nil;
+	if (![[NSBundle mainBundle] loadNibNamed:nibName owner:owner topLevelObjects:&topLevelObjects]) return NO;
+	[topLevelObjects retain];
+	return YES;
+}
+#endif
+
 #define NOTES_MENU_ID 89
 #define VIEW_MENU_ID 99
 

@@ -125,7 +125,11 @@ NSDictionary *LineTruncAttributesForTitle(void) {
 		if (ColumnIsSet(NoteDateCreatedColumn, bitmap) || ColumnIsSet(NoteDateModifiedColumn, bitmap)) {
 			//account for right-"aligned" date string, which will be relatively constant, so this can be cached
             
-            NSString *dateTest=[NSString relativeDateStringWithAbsoluteTime:CFDateGetAbsoluteTime((CFDateRef)[NSDate dateWithNaturalLanguageString:@"April 1, 2013"])];
+            NSDateComponents *aprilFirstComponents = [[[NSDateComponents alloc] init] autorelease];
+            [aprilFirstComponents setYear:2013];
+            [aprilFirstComponents setMonth:4];
+            [aprilFirstComponents setDay:1];
+            NSString *dateTest=[NSString relativeDateStringWithAbsoluteTime:CFDateGetAbsoluteTime((CFDateRef)[[NSCalendar currentCalendar] dateFromComponents:aprilFirstComponents])];
             CGFloat multiplier=-4.7;
             if (dateTest&&(dateTest.length>8)) {
                 multiplier=-6.1;

@@ -41,7 +41,6 @@
        minKnobHeight = knobTop.size.height + knobVerticalFill.size.height + knobBottom.size.height + 20.0;
         slotAlpha=0.45f;
         knobAlpha=0.45f;
-		[self setArrowsPosition:NSScrollerArrowsNone];
         
 //        isOverlay=NO;        
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
@@ -120,7 +119,7 @@
 
 - (void)drawKnobSlotInRect:(NSRect)slotRect highlight:(BOOL)flag{  
    
-    NSDrawThreePartImage(slotRect, slotTop, slotVerticalFill, slotBottom, YES, NSCompositeSourceOver, slotAlpha, NO);
+    NSDrawThreePartImage(slotRect, slotTop, slotVerticalFill, slotBottom, YES, NSCompositingOperationSourceOver, slotAlpha, NO);
    
 }
 
@@ -128,7 +127,7 @@
 {
 	NSRect knobRect = [self rectForPart:NSScrollerKnob];
 
-	NSDrawThreePartImage(knobRect, knobTop, knobVerticalFill, knobBottom, YES, NSCompositeSourceOver, knobAlpha, NO);
+	NSDrawThreePartImage(knobRect, knobTop, knobVerticalFill, knobBottom, YES, NSCompositingOperationSourceOver, knobAlpha, NO);
    
 }
 //

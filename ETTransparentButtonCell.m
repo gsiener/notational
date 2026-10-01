@@ -42,9 +42,9 @@ static NSColor *disabledColor, *enabledColor;
 	cellFrame.size.height = buttonFillN.size.height;
 	
 	if ([self isHighlighted])
-		NSDrawThreePartImage(cellFrame, buttonLeftP, buttonFillP, buttonRightP, NO, NSCompositeSourceOver, 1, YES);
+		NSDrawThreePartImage(cellFrame, buttonLeftP, buttonFillP, buttonRightP, NO, NSCompositingOperationSourceOver, 1, YES);
 	else
-		NSDrawThreePartImage(cellFrame, buttonLeftN, buttonFillN, buttonRightN, NO, NSCompositeSourceOver, 1, YES);	
+		NSDrawThreePartImage(cellFrame, buttonLeftN, buttonFillN, buttonRightN, NO, NSCompositingOperationSourceOver, 1, YES);	
      
 }
 
@@ -93,7 +93,7 @@ static NSColor *disabledColor, *enabledColor;
 
 - (NSControlSize)controlSize
 {
-	return NSSmallControlSize;
+	return NSControlSizeSmall;
 }
 
 - (void)setControlSize:(NSControlSize)size
@@ -112,7 +112,7 @@ static NSColor *disabledColor, *enabledColor;
 	[copiedImage lockFocus];
 	
 	[tint set];
-	NSRectFillUsingOperation(imageBounds, NSCompositeSourceAtop);
+	NSRectFillUsingOperation(imageBounds, NSCompositingOperationSourceAtop);
 	
 	[copiedImage unlockFocus];  
 	

@@ -23,11 +23,10 @@
 
 + (NSBezierPath *)bezierPathWithRoundRectInRect:(NSRect)aRect radius:(float)radius;
 
-+ (NSBezierPath *)bezierPathWithLayoutManager:(NSLayoutManager*)layoutManager characterRange:(NSRange)charRange atPoint:(NSPoint)point;
 
 @end
 
 @interface NSImage (NV)
 
-+ (NSImage*)smallIconForFSRef:(FSRef*)fsRef;
++ (NSImage*)smallIconForFileURL:(NSURL*)url;
 @end

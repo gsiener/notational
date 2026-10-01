@@ -128,32 +128,25 @@ static SecureTextEntryManager *sharedInstance = nil;
 	
 	NSSet *identifiers = [self _bundleIdentifiersOfIncompatibleApps];
 
-	ProcessSerialNumber PSN = { 0, kNoProcess };
-	
-	//walk through processes using the carbon process manager, because this is what NSWorkspace's launchedApplications method does, anyway, and we get hidden processes as well
-	while (GetNextProcess(&PSN) == noErr) {
-		CFDictionaryRef infoDict = ProcessInformationCopyDictionary(&PSN, kProcessDictionaryIncludeAllInformationMask);
-		if (infoDict != NULL) {
+	NSRunningApplication *runningApp;
+	NSEnumerator *enumerator = [[[NSWorkspace sharedWorkspace] runningApplications] objectEnumerator];
+	while ((runningApp = [enumerator nextObject])) {
+		
+		NSString *identifier = [runningApp bundleIdentifier];
+		if (identifier && [identifiers containsObject:identifier]) {
 			
-			CFTypeRef identifier = CFDictionaryGetValue(infoDict, kCFBundleIdentifierKey);
-			if ((identifier != NULL) && [identifiers containsObject:(id)identifier]) {
-				
-				CFStringRef offendingAppName = CFDictionaryGetValue(infoDict, kCFBundleNameKey);
-				NSAlert *alert = [NSAlert alertWithMessageText:
-								  [NSString stringWithFormat:NSLocalizedString(@"Secure Text Entry will prevent %@, which is currently installed on this computer, from working in Notational Velocity.", 
-																			   @"for warning about incompatibility with TextExpander, Typinator, etc."), offendingAppName] 
-												 defaultButton:NSLocalizedString(@"OK", nil) alternateButton:nil otherButton:nil informativeTextWithFormat:@""];
-				if (IsLeopardOrLater) {
-					[alert setShowsSuppressionButton:YES];
-				}
-				[alert runModal];
-				if (IsLeopardOrLater && [[alert suppressionButton] state] == NSOnState) {
-					[[NSUserDefaults standardUserDefaults] setBool:YES forKey:ShouldHideSecureTextEntryWarningKey];
-				}
-				CFRelease(infoDict);
-				break;
+			NSString *offendingAppName = [[NSBundle bundleWithURL:[runningApp bundleURL]] objectForInfoDictionaryKey:(NSString *)kCFBundleNameKey];
+			if (!offendingAppName) offendingAppName = [runningApp localizedName];
+			NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Secure Text Entry will prevent %@, which is currently installed on this computer, from working in Notational Velocity.", 
+																		   @"for warning about incompatibility with TextExpander, Typinator, etc."), offendingAppName]];
+			[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
+			[alert setShowsSuppressionButton:YES];
+			[alert runModal];
+			if ([[alert suppressionButton] state] == NSControlStateValueOn) {
+				[[NSUserDefaults standardUserDefaults] setBool:YES forKey:ShouldHideSecureTextEntryWarningKey];
 			}
-			CFRelease(infoDict);
+			break;
 		}
 	}
 }

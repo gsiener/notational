@@ -23,10 +23,10 @@ NSColor *tColor;
 
 + (void)initialize{
     if (!bColor) {
-        bColor = [[[NSColor whiteColor] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] retain];
+        bColor = [[[NSColor whiteColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
     }
     if (!tColor) {
-        tColor = [[[NSColor blackColor] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] retain];
+        tColor = [[[NSColor blackColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
     }
 }
 
@@ -79,7 +79,7 @@ NSColor *tColor;
 
 - (void)highlight:(BOOL)hBool withFrame:(NSRect)inFrame inView:(NSView *)controlView{
     NSColor *theBack;
-    if ([[bColor colorUsingColorSpaceName:NSCalibratedWhiteColorSpace] whiteComponent]<0.5f) {
+    if ([[bColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]<0.5f) {
         theBack=[bColor highlightWithLevel:kSelectedCellEmphasisLevel];
         [self setTextColor:[tColor highlightWithLevel:kSelectedCellTextEmphasisLevel]];
 	}else {
@@ -99,19 +99,19 @@ NSColor *tColor;
     if (bColor) {
         [bColor release];
     }
-	bColor = [[inColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace] retain];
+	bColor = [[inColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
 }
 
 + (void)setTxtColor:(NSColor *)inColor{
     if (tColor) {
         [tColor release];
     }
-    if ([[inColor colorUsingColorSpaceName:NSCalibratedWhiteColorSpace] whiteComponent]>0.5f) {
+    if ([[inColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]>0.5f) {
         inColor=[inColor highlightWithLevel:kSelectedCellEmphasisLevel];
     }else{
         inColor=[inColor shadowWithLevel:kSelectedCellEmphasisLevel];
     }
-    inColor=[inColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    inColor=[inColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 	tColor = [inColor retain];
 }
 
@@ -149,10 +149,10 @@ NSColor *tColor;
 
 - (void)_drawGradientFromColor:(NSColor *)baseColor inRect:(NSRect)cellFrame{
     
-    baseColor = [baseColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];//[bColor    
-    NSColor *startColor = [baseColor blendedColorWithFraction:0.25f ofColor:[[NSColor colorWithCalibratedWhite:0.9f alpha:1.0f] colorUsingColorSpaceName:NSCalibratedRGBColorSpace]];
+    baseColor = [baseColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];//[bColor    
+    NSColor *startColor = [baseColor blendedColorWithFraction:0.25f ofColor:[[NSColor colorWithCalibratedWhite:0.9f alpha:1.0f] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
     
-    NSColor *endColor = [baseColor blendedColorWithFraction:0.4f ofColor:[[NSColor colorWithCalibratedWhite:0.1f alpha:1.0f] colorUsingColorSpaceName:NSCalibratedRGBColorSpace]];
+    NSColor *endColor = [baseColor blendedColorWithFraction:0.4f ofColor:[[NSColor colorWithCalibratedWhite:0.1f alpha:1.0f] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
  
     
     NSGradient *theGrad = [[NSGradient alloc] initWithColorsAndLocations: startColor, 0.14f,

@@ -2187,7 +2187,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu89;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-framework UniformTypeIdentifiers";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
 				WARNING_CFLAGS = (
 					"$(inherited)",
@@ -2386,7 +2386,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = "-framework UniformTypeIdentifiers";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
 				WARNING_CFLAGS = (
 					"$(inherited)",
@@ -2409,6 +2409,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				GENERATE_PROFILING_CODE = NO;
 				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-framework UniformTypeIdentifiers";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational.tests;
 				PRODUCT_NAME = NotationTests;
 				SECTORDER_FLAGS = "";
@@ -2435,6 +2436,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				GENERATE_PROFILING_CODE = NO;
 				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-framework UniformTypeIdentifiers";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational.tests;
 				PRODUCT_NAME = NotationTests;
 				SECTORDER_FLAGS = "";

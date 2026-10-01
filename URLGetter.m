@@ -68,7 +68,7 @@
 
 - (void)startProgressIndication:(id)sender {
 	if (!window) {
-		if (![NSBundle loadNibNamed:@"URLGetter" owner:self])  {
+		if (!NVLoadNib(@"URLGetter", self))  {
 			NSLog(@"Failed to load URLGetter.nib");
 			NSBeep();
 			return;
@@ -141,7 +141,7 @@
 	
 	NSString *reason = [error localizedDescription];
 	if (!reason) reason = NSLocalizedString(@"unknown error.", @"error description of last resort for why a URL couldn't be accessed");
-	NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"The URL quotemark%@quotemark could not be accessed: %@.", nil), 
+	NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The URL quotemark%@quotemark could not be accessed: %@.", nil), 
 		[url absoluteString], reason], @"", NSLocalizedString(@"OK",nil), nil, nil);
 	
 	

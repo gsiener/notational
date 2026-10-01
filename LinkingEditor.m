@@ -31,8 +31,20 @@
 
 #define PASSWORD_SUGGESTIONS 0
 
+//replaces -stringByAddingPercentEscapesUsingEncoding:, which left reserved characters (and brackets) alone
+static NSCharacterSet *NVLinkingEditorURLAllowedSet(void) {
+	static NSCharacterSet *allowedSet = nil;
+	if (!allowedSet) {
+		NSMutableCharacterSet *set = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
+		[set addCharactersInString:@"[]"];
+		allowedSet = set;
+	}
+	return allowedSet;
+}
+
 #ifdef notyet
 static long (*GetGetScriptManagerVariablePointer())(short);
+
 #endif
 
 #define kDefaultTextInsetWidth 8.0
@@ -161,7 +173,7 @@ if ([selectorString isEqualToString:SEL_STR(setNoteBodyFont:sender:)]) {
 - (BOOL)becomeFirstResponder {
 	[notesTableView setShouldUseSecondaryHighlightColor:YES];
 
-	if ([[[self window] currentEvent] type] == NSKeyDown && [[[self window] currentEvent] firstCharacter] == '\t') {
+	if ([[[self window] currentEvent] type] == NSEventTypeKeyDown && [[[self window] currentEvent] firstCharacter] == '\t') {
 		//"indicate" the current cursor/selection when moving focus to this field, but only if the user did not click here
 		NSRange range = [self selectedRange];
 		if (range.length) {
@@ -198,7 +210,7 @@ if ([selectorString isEqualToString:SEL_STR(setNoteBodyFont:sender:)]) {
 }
 
 - (void)setBackgroundColor:(NSColor*)aColor {
-	backgroundIsDark = (_perceptualDarkness([aColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace]) > 0.5);
+	backgroundIsDark = (_perceptualDarkness([aColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]) > 0.5);
     [self fixCursorForBackgroundUpdatingMouseInside:YES];
 	[super setBackgroundColor:aColor];
 }
@@ -251,8 +263,8 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 - (NSColor*)_linkColorForForegroundColor:(NSColor*)fgColor backgroundColor:(NSColor*)bgColor {
 	//if fgColor is black, choose blue; otherwise, rotate hue (keeping the same sat.) until color is different enough
 	
-	fgColor = [fgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-	bgColor = [bgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+	fgColor = [fgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	bgColor = [bgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 	
 	CGFloat hue, brightness, saturation, alpha, diffInc = 0.5;
 	NSUInteger rotationsLeft = 25;
@@ -284,11 +296,11 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 }
 
 - (NSColor*)_selectionColorForForegroundColor:(NSColor*)fgColor backgroundColor:(NSColor*)bgColor {
-	fgColor = [fgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-	bgColor = [bgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+	fgColor = [fgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	bgColor = [bgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
     
 	NSColor *proposedBlend = [fgColor blendedColorWithFraction:0.5 ofColor:bgColor];
-	NSColor *defaultColor = [[NSColor selectedTextBackgroundColor] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+	NSColor *defaultColor = [[NSColor selectedTextBackgroundColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 	
 	CGFloat fgDiff = _perceptualColorDifference(proposedBlend, fgColor);
 	CGFloat fgSelDiff = _perceptualColorDifference(defaultColor, fgColor);
@@ -308,8 +320,8 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 
 
 - (NSColor*)_insertionPointColorForForegroundColor:(NSColor*)fgColor backgroundColor:(NSColor*)bgColor {
-	fgColor = [fgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-	bgColor = [bgColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+	fgColor = [fgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	bgColor = [bgColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 
 	CGFloat hue, brightness, saturation;
 	[fgColor getHue:&hue saturation:&saturation brightness:&brightness alpha:NULL];
@@ -391,7 +403,7 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 - (BOOL)readSelectionFromPasteboard:(NSPasteboard *)pboard type:(NSString *)type {
 	//NSLog(@"readSelectionFromPasteboard: %@ (total %@)", type, [[pboard types] description]);
 	
-	if ([type isEqualToString:NSFilenamesPboardType]) {
+	if ([type isEqualToString:NSPasteboardTypeFileURL]) {
 		//paste as a file:// URL, so that it can be linked
 		NSString *allURLsString = [(AppController *)[NSApp delegate] stringWithNoteURLsOnPasteboard:pboard];
 		
@@ -406,10 +418,10 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 		}
 	}
 	
-	if ([type isEqualToString:NSRTFPboardType] || [type isEqualToString:NVPTFPboardType] || [type isEqualToString:NSHTMLPboardType]) {
+	if ([type isEqualToString:NSPasteboardTypeRTF] || [type isEqualToString:NVPTFPboardType] || [type isEqualToString:NSPasteboardTypeHTML]) {
 		//strip formatting if RTF and stick it into a new pboard
 		
-		NSMutableAttributedString *newString = [[[NSMutableAttributedString alloc] performSelector:[type isEqualToString:NSHTMLPboardType] ? 
+		NSMutableAttributedString *newString = [[[NSMutableAttributedString alloc] performSelector:[type isEqualToString:NSPasteboardTypeHTML] ? 
 												 @selector(initWithHTML:documentAttributes:) : @selector(initWithRTF:documentAttributes:) 
 																						withObject:[pboard dataForType:type] withObject:nil] autorelease];
 		if ([newString length]) {
@@ -445,11 +457,11 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 }
 
 - (NSArray *)readablePasteboardTypes {
-	NSMutableArray *types = [NSMutableArray arrayWithObjects:NSFilenamesPboardType, NVPTFPboardType, NSStringPboardType, nil];
+	NSMutableArray *types = [NSMutableArray arrayWithObjects:NSPasteboardTypeFileURL, NVPTFPboardType, NSPasteboardTypeString, nil];
 	
 	if ([prefsController pastePreservesStyle]) {
-		[types insertObject:NSRTFPboardType atIndex:2];
-		[types insertObject:NSHTMLPboardType atIndex:3];
+		[types insertObject:NSPasteboardTypeRTF atIndex:2];
+		[types insertObject:NSPasteboardTypeHTML atIndex:3];
 	}
 	
 	return types;
@@ -457,7 +469,7 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 
 - (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pboard type:(NSString *)type {
 	
-	if ([type isEqualToString:NVPTFPboardType] || [type isEqualToString:NSRTFPboardType]) {
+	if ([type isEqualToString:NVPTFPboardType] || [type isEqualToString:NSPasteboardTypeRTF]) {
 		//always preserve RTF to allow pasting into ourselves; prejudice against external sources
 		
 		NSMutableAttributedString *newString = [[[self textStorage] attributedSubstringFromRange:[self selectedRange]] mutableCopy];
@@ -477,7 +489,7 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 #define COPY_PASTE_DEBUG 0
 
 - (NSArray *)writablePasteboardTypes {
-	NSMutableArray *types = [NSMutableArray arrayWithObjects:NVPTFPboardType, NSStringPboardType, nil];
+	NSMutableArray *types = [NSMutableArray arrayWithObjects:NVPTFPboardType, NSPasteboardTypeString, nil];
 	
 	NSRange selectedRange = [self selectedRange];
 	if (selectedRange.length) {
@@ -520,7 +532,7 @@ copyRTFType:
 			NSLog(@"copying RTF due to multiple attributes");
 			[[self layoutManager] addTemporaryAttributes:[prefsController searchTermHighlightAttributes] forCharacterRange:effectiveRange];
 #endif
-			[types insertObject:NSRTFPboardType atIndex:1];
+			[types insertObject:NSPasteboardTypeRTF atIndex:1];
 		}
 	}
 	
@@ -770,10 +782,10 @@ copyRTFType:
 //    [[NSApp delegate] resetModTimers];
     //    [[NSNotificationCenter defaultCenter] postNotificationName:@"ModTimersShouldReset" object:nil];
     NSUInteger modFlags=[anEvent modifierFlags];
-    if((modFlags&NSControlKeyMask)||(modFlags&NSAlternateKeyMask)){
+    if((modFlags&NSEventModifierFlagControl)||(modFlags&NSEventModifierFlagOption)){
          [[NSNotificationCenter defaultCenter] postNotificationName:@"ModTimersShouldReset" object:nil];
     }
-	if (((modFlags & NSCommandKeyMask)>0)&&([[self window]firstResponder]==self)) {
+	if (((modFlags & NSEventModifierFlagCommand)>0)&&([[self window]firstResponder]==self)) {
 		
 		unichar keyChar = [anEvent firstCharacterIgnoringModifiers];
 		if (keyChar == NSCarriageReturnCharacter || keyChar == NSNewlineCharacter || keyChar == NSEnterCharacter) {
@@ -784,8 +796,8 @@ copyRTFType:
 			if ([aLink isKindOfClass:[NSURL class]]) {
 				[self clickedOnLink:aLink atIndex:charIndex];
 				return YES;
-			}else if (!((modFlags&NSControlKeyMask)||(modFlags&NSAlternateKeyMask))){
-                if (modFlags&NSShiftKeyMask) {
+			}else if (!((modFlags&NSEventModifierFlagControl)||(modFlags&NSEventModifierFlagOption))){
+                if (modFlags&NSEventModifierFlagShift) {
                     [self moveToBeginningOfParagraph:self]; 
                     [self moveBackward:self];       
                 }else{            
@@ -843,7 +855,7 @@ copyRTFType:
 
 - (BOOL)jumpToRenaming {
 	NSEvent *event = [[self window] currentEvent];
-	if ([event type] == NSKeyDown && ![event isARepeat] && NSEqualRanges([self selectedRange], NSMakeRange(0, 0))) {
+	if ([event type] == NSEventTypeKeyDown && ![event isARepeat] && NSEqualRanges([self selectedRange], NSMakeRange(0, 0))) {
 		//command-left at the beginning of the note--jump to editing the title!
 		[(AppController *)[NSApp delegate] renameNote:nil];
 		NSText *editor = [notesTableView currentEditor];
@@ -979,10 +991,10 @@ copyRTFType:
 			[spacesString appendString:@" "];
 		}
 		
-		[self insertText:spacesString];
+		[self insertText:spacesString replacementRange:NSMakeRange(NSNotFound, 0)];
 		[spacesString release];
 	} else {
-		[self insertText:@"\t"];
+		[self insertText:@"\t" replacementRange:NSMakeRange(NSNotFound, 0)];
 	}
 }
 
@@ -1185,7 +1197,7 @@ copyRTFType:
 		}
 		
 		if (menuItemState && multipleAttributes)
-			menuItemState = NSMixedState;
+			menuItemState = NSControlStateValueMixed;
 		[menuItem setState:menuItemState];
 
 		return YES;
@@ -1269,7 +1281,7 @@ copyRTFType:
 	NSEvent *currentEvent = [[self window] currentEvent];
 //    NSLog(@"clicked:%@",[currentEvent description]);
 	
-	if (![prefsController URLsAreClickable] && [currentEvent modifierFlags] & NSCommandKeyMask) {
+	if (![prefsController URLsAreClickable] && [currentEvent modifierFlags] & NSEventModifierFlagCommand) {
 		
 		[self highlightLinkAtIndex:charIndex];
 		
@@ -1281,9 +1293,9 @@ copyRTFType:
 	
 	if ([aLink isKindOfClass:[NSURL class]] && ([[aLink scheme] isEqualToString:@"nvalt"] || [[aLink scheme] isEqualToString:@"notational"])) {
         NSUInteger flags=[currentEvent modifierFlags];
-        if (((flags&NSDeviceIndependentModifierFlagsMask)==(flags&NSCommandKeyMask))&&((flags&NSDeviceIndependentModifierFlagsMask)>0)) {
-            NSString *newURLString=[[aLink lastPathComponent]stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-            NSString *txtString=[[NSString stringWithFormat:@"[[%@]]",[aLink lastPathComponent]] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagCommand))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) {
+            NSString *newURLString=[[aLink lastPathComponent]stringByAddingPercentEncodingWithAllowedCharacters:NVLinkingEditorURLAllowedSet()];
+            NSString *txtString=[[NSString stringWithFormat:@"[[%@]]",[aLink lastPathComponent]] stringByAddingPercentEncodingWithAllowedCharacters:NVLinkingEditorURLAllowedSet()];
             newURLString=[NSString stringWithFormat:@"nvalt://make/?title=%@&txt=%@",newURLString,txtString];
 //            NSLog(@"newurlstring:%@",newURLString);
             NSURL *newURL=[NSURL URLWithString:newURLString];
@@ -1688,7 +1700,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 #if PASSWORD_SUGGESTIONS
         theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"New Password...", "new password command in the edit menu")
 												 action:@selector(showGeneratedPasswords:) keyEquivalent:@"\\"];
-        [theMenuItem setKeyEquivalentModifierMask:NSCommandKeyMask];
+        [theMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
         [theMenuItem setTarget:nil]; // First Responder being the current Link Editor
         [editMenu addItem:theMenuItem];
         [theMenuItem release];
@@ -1699,7 +1711,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 //#if PASSWORD_SUGGESTIONS
 //        [theMenuItem setAlternate:YES];
 //#endif
-//        [theMenuItem setKeyEquivalentModifierMask:NSCommandKeyMask|NSAlternateKeyMask];
+//        [theMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand|NSEventModifierFlagOption];
 //        [theMenuItem setTarget:nil]; // First Responder being the current Link Editor
 //        [editMenu addItem:theMenuItem];
 //        [theMenuItem release];
@@ -1709,7 +1721,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 
 - (void)insertPassword:(NSString*)password
 {
-    [self insertText:password];
+    [self insertText:password replacementRange:NSMakeRange(NSNotFound, 0)];
     @try {
     NSPasteboard *pb = [NSPasteboard generalPasteboard];
     #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
@@ -1717,8 +1729,8 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     [pbitem setData:[password dataUsingEncoding:NSUTF8StringEncoding] forType:@"public.plain-text"];
     [pb writeObjects:[NSArray arrayWithObject:pbitem]];
     #else
-    [pb declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
-    [pb setString:password forType:NSStringPboardType];
+    [pb declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
+    [pb setString:password forType:NSPasteboardTypeString];
     #endif
     } @catch (NSException *e) {}
 }
@@ -1794,7 +1806,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
             }
         }
     }else{
-        mPt= [[self window]convertScreenToBase:[NSEvent mouseLocation]];
+        mPt=NSZeroPoint; // unreachable: deployment target is past Lion
     }
     //    vRect.size.width=[[self enclosingScrollView]visibleRect].size.width;
     //     NSLog(@"mPt:%@     vRect :>%@<",NSStringFromPoint(mPt),NSStringFromRect(vRect));
@@ -1893,14 +1905,14 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
                     [self setSelectedRange:insRange];
                     return;
                 }else {
-                    [super insertText:[appendString stringByAppendingString:oppositeAppend]];
+                    [super insertText:[appendString stringByAppendingString:oppositeAppend] replacementRange:NSMakeRange(NSNotFound, 0)];
                     [self setSelectedRange:NSMakeRange(selRange.location+appendString.length, 0)];
                     return;
                 }
             }
         }
     }
-    [super insertText:string];
+    [super insertText:string replacementRange:NSMakeRange(NSNotFound, 0)];
 }
 
 - (IBAction)insertLink:(id)sender{
@@ -2040,7 +2052,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         return YES;
     }else{
         NSString *doubleString=[syntaxBit stringByAppendingString:matchingPair];
-        [super insertText:doubleString];
+        [super insertText:doubleString replacementRange:NSMakeRange(NSNotFound, 0)];
         selRange.location+=syntaxLength;
         [self setSelectedRange:selRange];
         return YES;
@@ -2424,7 +2436,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         if (IsSnowLeopardOrLater) {
             pbType=NSPasteboardTypeString;
         }else{
-            pbType=NSStringPboardType;
+            pbType=NSPasteboardTypeString;
         }
         NSString *typedString = [controller typedString];
         if (!typedString) typedString = [controlField stringValue];
@@ -2436,7 +2448,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
              typedString=[typedString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
              if ([typedString length] > 0 && ![lastImportedFindString isEqualToString:typedString]) {
                  
-                 NSPasteboard *pasteboard = [NSPasteboard pasteboardWithName:NSFindPboard];
+                 NSPasteboard *pasteboard = [NSPasteboard pasteboardWithName:NSPasteboardNameFind];
                  [pasteboard declareTypes:[NSArray arrayWithObject:pbType] owner:nil];
                  [pasteboard setString:typedString forType:pbType];
                  [lastImportedFindString release];
@@ -2506,7 +2518,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 
 - (BOOL)clipboardHasLink{      
     NSPasteboard *pasteboard =  [NSPasteboard generalPasteboard]; 
-    NSString *type = [pasteboard availableTypeFromArray: [NSArray arrayWithObjects: NSPasteboardTypeString,NSURLPboardType, nil]];
+    NSString *type = [pasteboard availableTypeFromArray: [NSArray arrayWithObjects: NSPasteboardTypeString,NSPasteboardTypeURL, nil]];
     if (type) {
         NSString *pString=[[pasteboard stringForType:type] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];       
         NSURL *pUrl=[NSURL URLWithString:pString];
@@ -2528,7 +2540,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     NSPredicate *bifoRefPred=[NSPredicate predicateWithFormat:@"SELF LIKE[cd] %@ OR SELF LIKE[cd] %@",@"*[*]",@"*[*]("];
     if((![bifoRefPred evaluateWithObject:bifoString])&&((![aftaString hasPrefix:@"]"])&&(![bifoString hasSuffix:@"["]))&&((![aftaString hasPrefix:@"\""])&&(![bifoString hasSuffix:@"\""]))&&((![aftaString hasPrefix:@">"])&&(![bifoString hasSuffix:@"<"]))&&((![aftaString hasPrefix:@"'"])&&(![bifoString hasSuffix:@"'"]))&&((![aftaString hasPrefix:@")"])&&(![bifoString hasSuffix:@"("]))){ 
         NSPasteboard *pasteboard =  [NSPasteboard generalPasteboard]; 
-        NSString *type = [pasteboard availableTypeFromArray: [NSArray arrayWithObjects: NSPasteboardTypeString,NSURLPboardType, nil]];
+        NSString *type = [pasteboard availableTypeFromArray: [NSArray arrayWithObjects: NSPasteboardTypeString,NSPasteboardTypeURL, nil]];
         if (type) {
             NSString *pString=[[pasteboard stringForType:type] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];       
             NSURL *pUrl=[NSURL URLWithString:pString];
@@ -2547,7 +2559,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
                 }else{
                     urlString=[NSString stringWithFormat:@"[%@](%@)",selString,urlString];            
                 }
-                [super insertText:urlString];
+                [super insertText:urlString replacementRange:NSMakeRange(NSNotFound, 0)];
                 selRange.location=[self selectedRange].location;
                 selRange.location-=(urlString.length-1);
                 [self setSelectedRange:selRange];

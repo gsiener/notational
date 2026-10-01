@@ -167,7 +167,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	 @selector(setTableFontSize:sender:),
 	 @selector(setHorizontalLayout:sender:),@selector(setShowGrid:sender:),@selector(setAlternatingRows:sender:), nil];
 	
-	[self registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, NSRTFPboardType, NSRTFDPboardType, NSStringPboardType, nil]];
+	[self registerForDraggedTypes:[NSArray arrayWithObjects:NSPasteboardTypeFileURL, NSPasteboardTypeRTF, NSPasteboardTypeRTFD, NSPasteboardTypeString, nil]];
 	
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	
@@ -389,7 +389,9 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	
 	NSClipView *clipView = [[self enclosingScrollView] contentView];
 	
-	[clipView scrollToPoint:[clipView constrainScrollPoint:rowRect.origin]];
+	NSRect constrainedBounds = [clipView bounds];
+	constrainedBounds.origin = rowRect.origin;
+	[clipView scrollToPoint:[clipView constrainBoundsRect:constrainedBounds].origin];
 	[[self enclosingScrollView] reflectScrolledClipView:clipView];
 }
 
@@ -716,7 +718,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	
 	NSMenuItem *noteLinkItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Copy URL",@"contextual menu item title to copy urls")
 														  action:@selector(copyNoteLink:) keyEquivalent:@"c"];
-	[noteLinkItem setKeyEquivalentModifierMask:NSCommandKeyMask|NSAlternateKeyMask];
+	[noteLinkItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand|NSEventModifierFlagOption];
 	[noteLinkItem setTarget:target];
 	[theMenu addItem:[noteLinkItem autorelease]];
 	
@@ -793,7 +795,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	}
 	
 	NSUInteger flags = [event modifierFlags];
-    if (flags & NSAlternateKeyMask) { // option click starts a drag 
+    if (flags & NSEventModifierFlagOption) { // option click starts a drag 
 		
 		NSPoint mousePoint = [self convertPoint:[event locationInWindow] fromView:nil];
         NSPoint dragPoint = NSMakePoint(mousePoint.x - 16, mousePoint.y + 16); 
@@ -821,9 +823,12 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		if ([paths count] > 0) {
 			NSImage *image = [[NSWorkspace sharedWorkspace] iconForFile:[paths lastObject]];
 			
-			NSPasteboard *pboard = [NSPasteboard pasteboardWithName:NSDragPboard]; 
-			[pboard declareTypes:[NSArray arrayWithObject:NSFilenamesPboardType] owner:nil];
-			[pboard setPropertyList:paths forType:NSFilenamesPboardType];			
+			NSPasteboard *pboard = [NSPasteboard pasteboardWithName:NSPasteboardNameDrag]; 
+			NSMutableArray *fileURLs = [NSMutableArray arrayWithCapacity:[paths count]];
+			for (i=0; i<[paths count]; i++)
+				[fileURLs addObject:[NSURL fileURLWithPath:[paths objectAtIndex:i]]];
+			[pboard clearContents];
+			[pboard writeObjects:fileURLs];
 			
 			[NSApp preventWindowOrdering]; 
 			[self dragImage:image at:dragPoint offset:NSZeroSize event:event pasteboard:pboard source:self slideBack:YES]; 
@@ -870,7 +875,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	
 	NSUInteger modifiers = [theEvent modifierFlags];
 	
-	if (modifiers & NSCommandKeyMask) {
+	if (modifiers & NSEventModifierFlagCommand) {
 		//replicating up/down with option key
 		if (UPCHAR(keyChar)) {
 			[self selectRowAndScroll:0];
@@ -881,7 +886,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		}
 	}
 	
-	if (modifiers & NSShiftKeyMask) {
+	if (modifiers & NSEventModifierFlagShift) {
 		if (DOWNCHAR(keyChar) || UPCHAR(keyChar)) {
 			
 			NSIndexSet *indexes = [self selectedRowIndexes];
@@ -937,11 +942,11 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 //    [[NSNotificationCenter defaultCenter] postNotificationName:@"ModTimersShouldReset" object:nil];
 	NSUInteger mods = [theEvent modifierFlags];
 	
-	BOOL isControlKeyPressed = (mods & NSControlKeyMask) != 0 && [userDefaults boolForKey: @"UseCtrlForSwitchingNotes"];
-	BOOL isCommandKeyPressed = (mods & NSCommandKeyMask) != 0;
+	BOOL isControlKeyPressed = (mods & NSEventModifierFlagControl) != 0 && [userDefaults boolForKey: @"UseCtrlForSwitchingNotes"];
+	BOOL isCommandKeyPressed = (mods & NSEventModifierFlagCommand) != 0;
 
 	// Also catch Ctrl-J/-K to match the shortcuts of other apps
-	if ((isControlKeyPressed || isCommandKeyPressed) && ((mods & NSShiftKeyMask) == 0)) {
+	if ((isControlKeyPressed || isCommandKeyPressed) && ((mods & NSEventModifierFlagShift) == 0)) {
 		
 		unichar keyChar = ' '; 
 		if (isCommandKeyPressed) {
@@ -953,7 +958,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 		
 		// Handle J and K for both Control and Command
 		if ( keyChar == kNext_Tag || keyChar == kPrev_Tag ) {
-			if (mods & NSAlternateKeyMask) {
+			if (mods & NSEventModifierFlagOption) {
 				[self selectRowAndScroll:((keyChar == kNext_Tag) ? [self numberOfRows] - 1 :  0)];
 			} else {
 				[self _incrementNoteSelectionByTag:keyChar];
@@ -1019,7 +1024,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 	if (command == @selector(moveToEndOfLine:) || command == @selector(moveToRightEndOfLine:)) {
 		
 		NSEvent *event = [[self window] currentEvent];
-		if ([event type] == NSKeyDown && ![event isARepeat] && 
+		if ([event type] == NSEventTypeKeyDown && ![event isARepeat] && 
 			NSEqualRanges([aTextView selectedRange], NSMakeRange([[aTextView string] length], 0))) {
 			//command-right at the end of the title--jump to editing the note!
 			[[self window] makeFirstResponder:[self nextValidKeyView]];
@@ -1110,7 +1115,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 		return NO;
 	
 	NSEventType type = [event type];
-	if (type == NSLeftMouseDown || type == NSLeftMouseUp) {
+	if (type == NSEventTypeLeftMouseDown || type == NSEventTypeLeftMouseUp) {
 		
 		NSPoint p = [self convertPoint:[event locationInWindow] fromView:nil];
 		
@@ -1120,12 +1125,12 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 		
 		return [self mouse:p inRect:tagCellRect];
 		
-	} else if (type == NSKeyDown) {
+	} else if (type == NSEventTypeKeyDown) {
 		
 		//activated either using the shortcut or using tab, when there was already an editor, and the last event invoked rename
 		//checking for the keyboard equivalent here is redundant in theory
 		
-		return ([event firstCharacter] == 't' && ([event modifierFlags] & (NSShiftKeyMask | NSCommandKeyMask)) != 0) || 
+		return ([event firstCharacter] == 't' && ([event modifierFlags] & (NSEventModifierFlagShift | NSEventModifierFlagCommand)) != 0) || 
 		([event firstCharacter] == NSTabCharacter && !lastEventActivatedTagEdit && [self currentEditor]);
 	}
 	
@@ -1179,11 +1184,11 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 		NoteAttributeColumn *col = [self noteAttributeColumnForIdentifier:NoteTitleColumnString];
 		if (tagsInTitleColumn && dereferencingFunction(col) != unifiedCellSingleLineForNote) {
 			//the textview will comply! when editing tags, use a smaller font, right-aligned
-			[editor setAlignment:NSRightTextAlignment range:range];
+			[editor setAlignment:NSTextAlignmentRight range:range];
 			NSFont *smallerFont = [NSFont systemFontOfSize:[globalPrefs tableFontSize] - 1.0];
 			[editor setFont:smallerFont range:range];
 			NSMutableParagraphStyle *pstyle = [[[NSMutableParagraphStyle alloc] init] autorelease];
-			[pstyle setAlignment:NSRightTextAlignment];
+			[pstyle setAlignment:NSTextAlignmentRight];
 			[editor setTypingAttributes:[NSDictionary dictionaryWithObjectsAndKeys:pstyle, NSParagraphStyleAttributeName, smallerFont, NSFontAttributeName, nil]];
 		}
 #endif
@@ -1368,10 +1373,10 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 - (void)setBackgroundColor:(NSColor *)color{
     [super setBackgroundColor:color];
      
-    if (![[color colorSpaceName] isEqualToString:@"NSNamedColorSpace"]) {
+    if ([color type] != NSColorTypeCatalog) {
         [NotesTableHeaderCell setBColor:color];
         CGFloat fWhite;
-        fWhite = [[color colorUsingColorSpaceName:NSCalibratedWhiteColorSpace] whiteComponent];
+        fWhite = [[color colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent];
         if (fWhite<0.25f) {
             fWhite += 0.22f;
         }else if (fWhite < 0.75f) {
@@ -1394,7 +1399,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
     }else{
         NSColor *backColor=[self backgroundColor];
         NSColor *altColor;
-		if ([[backColor colorUsingColorSpaceName:NSCalibratedWhiteColorSpace]whiteComponent] < 0.5f) {
+		if ([[backColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]]whiteComponent] < 0.5f) {
 			altColor = [backColor blendedColorWithFraction:0.05f ofColor:[NSColor whiteColor]];
 		} else {
 			altColor = [backColor blendedColorWithFraction:0.05f ofColor:[NSColor blackColor]];

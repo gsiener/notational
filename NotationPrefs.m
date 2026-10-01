@@ -221,14 +221,14 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	case SingleDatabaseFormat:
 	    return [NSMutableArray arrayWithCapacity:0];
 	case PlainTextFormat: 
-	    return [NSMutableArray arrayWithObjects:[(id)UTCreateStringForOSType(TEXT_TYPE_ID) autorelease], 
-			[(id)UTCreateStringForOSType(UTXT_TYPE_ID) autorelease], nil];
+	    return [NSMutableArray arrayWithObjects:NVStringFromOSType(TEXT_TYPE_ID), 
+			NVStringFromOSType(UTXT_TYPE_ID), nil];
 	case RTFTextFormat: 
-	    return [NSMutableArray arrayWithObjects:[(id)UTCreateStringForOSType(RTF_TYPE_ID) autorelease], nil];
+	    return [NSMutableArray arrayWithObjects:NVStringFromOSType(RTF_TYPE_ID), nil];
 	case HTMLFormat:
-	    return [NSMutableArray arrayWithObjects:[(id)UTCreateStringForOSType(HTML_TYPE_ID) autorelease], nil];
+	    return [NSMutableArray arrayWithObjects:NVStringFromOSType(HTML_TYPE_ID), nil];
 	case WordDocFormat:
-		return [NSMutableArray arrayWithObjects:[(id)UTCreateStringForOSType(WORD_DOC_TYPE_ID) autorelease], nil];
+		return [NSMutableArray arrayWithObjects:NVStringFromOSType(WORD_DOC_TYPE_ID), nil];
 	default:
 	    NSLog(@"Unknown format ID: %d", formatID);
     }
@@ -825,8 +825,8 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 			offendingFileConduitName = NSLocalizedString(@"Dropbox", nil);
 		}
 		if (offendingFileConduitName) {
-			NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning title>", nil), offendingFileConduitName, syncServiceTitle], 
-							@"%@", NSLocalizedString(@"OK", nil), nil, nil, [NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning message>", nil), syncServiceTitle]);
+			NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning title>", nil), offendingFileConduitName, syncServiceTitle], 
+							[NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning message>", nil), syncServiceTitle], NSLocalizedString(@"OK", nil), nil, nil);
 		}
 	}
 }
@@ -902,7 +902,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
     allowedTypes = (OSType*)realloc(allowedTypes, newSize);
 	
     for (i=0; i<[typeStrings[notesStorageFormat] count]; i++)
-		allowedTypes[i] = UTGetOSTypeFromString((CFStringRef)[typeStrings[notesStorageFormat] objectAtIndex:i]);
+		allowedTypes[i] = NVOSTypeFromString([typeStrings[notesStorageFormat] objectAtIndex:i]);
 }
 
 - (void)addAllowedPathExtension:(NSString*)extension {
@@ -984,7 +984,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 				
 			return YES;
 		}
-		if (!UTGetOSTypeFromString((CFStringRef)[typeStrings[notesStorageFormat] objectAtIndex:oldIndex])) {
+		if (!NVOSTypeFromString([typeStrings[notesStorageFormat] objectAtIndex:oldIndex])) {
 			return NO;
 		}
     }

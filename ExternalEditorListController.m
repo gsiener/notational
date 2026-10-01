@@ -21,6 +21,7 @@
  along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
 
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "ExternalEditorListController.h"
 #import "NoteObject.h"
 #import "NotationController.h"
@@ -105,16 +106,15 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 
 - (NSImage*)iconImage {
 	if (!iconImg) {
-		FSRef appRef;
-		if (CFURLGetFSRef((CFURLRef)[self resolvedURL], &appRef))
-			iconImg = [[NSImage smallIconForFSRef:&appRef] retain];
+		iconImg = [[NSImage smallIconForFileURL:[self resolvedURL]] retain];
 	}
 	return iconImg;
 }
 
 - (NSString*)displayName {
 	if (!displayName) {
-		LSCopyDisplayNameForURL((CFURLRef)[self resolvedURL], (CFStringRef*)&displayName);
+		NSString *path = [[self resolvedURL] path];
+		if (path) displayName = [[[NSFileManager defaultManager] displayNameAtPath:path] retain];
 	}
 	return displayName;
 }
@@ -122,12 +122,10 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 - (NSURL*)resolvedURL {
 	if (!resolvedURL && !installCheckFailed) {
 		
-		OSStatus err = LSFindApplicationForInfo(kLSUnknownCreator, (CFStringRef)bundleIdentifier, NULL, NULL, (CFURLRef*)&resolvedURL);
+		resolvedURL = [bundleIdentifier ? [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier] : nil retain];
 		
-		if (kLSApplicationNotFoundErr == err) {
+		if (!resolvedURL) {
 			installCheckFailed = YES;
-		} else if (noErr != err) {
-			NSLog(@"LSFindApplicationForInfo error for bundle identifier '%@': %d", bundleIdentifier, err);
 		}
 	}
 	return resolvedURL;
@@ -273,9 +271,9 @@ static ExternalEditorListController* sharedInstance = nil;
     [openPanel setResolvesAliases:YES];
     [openPanel setAllowsMultipleSelection:NO];
     [openPanel setDirectoryURL:[NSURL fileURLWithPath:@"/Applications"]];
-    [openPanel setAllowedFileTypes:@[@"app"]];
+    [openPanel setAllowedContentTypes:@[UTTypeApplicationBundle]];
     
-    if ([openPanel runModal] == NSFileHandlingPanelOKButton) {
+    if ([openPanel runModal] == NSModalResponseOK) {
 		if (![[openPanel URL]path]) goto errorReturn;
 		NSURL *appURL = [openPanel URL];
        
@@ -382,7 +380,7 @@ errorReturn:
 			
 		if (!isPrefsMenu && [[self defaultExternalEditor] isEqual:ed]) {
 			[theMenuItem setKeyEquivalent:@"E"];
-			[theMenuItem setKeyEquivalentModifierMask: NSCommandKeyMask | NSShiftKeyMask];
+			[theMenuItem setKeyEquivalentModifierMask: NSEventModifierFlagCommand | NSEventModifierFlagShift];
 		}
 		//PrefsWindowController maintains default-editor selection by updating on ExternalEditorsChangedNotification
 			

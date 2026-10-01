@@ -39,10 +39,10 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 	NSArray *types = [pasteboard types];
 	NSMutableAttributedString *newString = nil;
 	NSData *data = nil;
-	BOOL pbHasPlainText = [types containsObject:NSStringPboardType];
+	BOOL pbHasPlainText = [types containsObject:NSPasteboardTypeString];
 	
-	if ([types containsObject:NSFilenamesPboardType]) {
-		NSArray *files = [pasteboard propertyListForType:NSFilenamesPboardType];
+	if ([types containsObject:NSPasteboardTypeFileURL]) {
+		NSArray *files = NVFilePathsFromPasteboard(pasteboard);
 		if ([files isKindOfClass:[NSArray class]]) {
 			if ([notationController openFiles:files]) return YES;
 		}
@@ -62,14 +62,14 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 								  [NSString stringWithCharacters:&nullChar length:1] withString:@""];
 	}
 	
-	if ([types containsObject:NSURLPboardType] || (pbHasPlainText && [[pasteboard stringForType:NSStringPboardType] superficiallyResemblesAnHTTPURL])) {
+	if ([types containsObject:NSPasteboardTypeURL] || (pbHasPlainText && [[pasteboard stringForType:NSPasteboardTypeString] superficiallyResemblesAnHTTPURL])) {
 		NSURL *url = [NSURL URLFromPasteboard:pasteboard];
-		if (!url) url = [NSURL URLWithString:[pasteboard stringForType:NSStringPboardType]];
+		if (!url) url = [NSURL URLWithString:[pasteboard stringForType:NSPasteboardTypeString]];
 		
-		NSString *potentialURLString = pbHasPlainText ? [pasteboard stringForType:NSStringPboardType] : nil;
+		NSString *potentialURLString = pbHasPlainText ? [pasteboard stringForType:NSPasteboardTypeString] : nil;
 		if (potentialURLString && [[url absoluteString] isEqualToString:potentialURLString]) {
 			//only begin downloading if we know that there's no other useful string data
-			//because we've already checked NSFilenamesPboardType
+			//because we've already checked NSPasteboardTypeFileURL
 			
 			if ([[url scheme] caseInsensitiveCompare:@"http"] == NSOrderedSame || 
 				[[url scheme] caseInsensitiveCompare:@"https"] == NSOrderedSame ||
@@ -96,12 +96,12 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 		if ((data = [pasteboard dataForType:NVPTFPboardType]))
 			newString = [[NSMutableAttributedString alloc] initWithRTF:data documentAttributes:NULL];
 		
-	} else if ([types containsObject:NSRTFPboardType] && !shallUsePlainTextFallback) {
-		if ((data = [pasteboard dataForType:NSRTFPboardType]))
+	} else if ([types containsObject:NSPasteboardTypeRTF] && !shallUsePlainTextFallback) {
+		if ((data = [pasteboard dataForType:NSPasteboardTypeRTF]))
 			newString = [[NSMutableAttributedString alloc] initWithRTF:data documentAttributes:NULL];
 		hasRTFData = YES;
-	} else if ([types containsObject:NSRTFDPboardType] && !shallUsePlainTextFallback) {
-		if ((data = [pasteboard dataForType:NSRTFDPboardType]))
+	} else if ([types containsObject:NSPasteboardTypeRTFD] && !shallUsePlainTextFallback) {
+		if ((data = [pasteboard dataForType:NSPasteboardTypeRTFD]))
 			newString = [[NSMutableAttributedString alloc] initWithRTFD:data documentAttributes:NULL];
 		hasRTFData = YES;
 	} else if ([types containsObject:WebArchivePboardType] && !shallUsePlainTextFallback) {
@@ -112,13 +112,13 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 		}
 		hasRTFData = YES;
 		
-	} else if ([types containsObject:NSHTMLPboardType] && !shallUsePlainTextFallback) {
-		if ((data = [pasteboard dataForType:NSHTMLPboardType]))
+	} else if ([types containsObject:NSPasteboardTypeHTML] && !shallUsePlainTextFallback) {
+		if ((data = [pasteboard dataForType:NSPasteboardTypeHTML]))
 			newString = [[NSMutableAttributedString alloc] initWithHTML:data documentAttributes:NULL];
 		hasRTFData = YES;
 	} else if (pbHasPlainText) {
 		
-		NSString *pboardString = [pasteboard stringForType:NSStringPboardType];
+		NSString *pboardString = [pasteboard stringForType:NSPasteboardTypeString];
 		if (pboardString) newString = [[NSMutableAttributedString alloc] initWithString:pboardString];
 	}
 	
@@ -224,8 +224,8 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
             NSURL *theURL = [NSURL URLWithString:urlTxt];
             //	NSData *data = [urlTxt dataUsingEncoding:NSUTF8StringEncoding];
             if (theURL) {                
-                // [pboard declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
-                //[pboard setData:data forType:NSStringPboardType];
+                // [pboard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
+                //[pboard setData:data forType:NSPasteboardTypeString];
                 NSString *linkTitle = nil;
                 if (title) {
                     linkTitle = title;
@@ -253,11 +253,11 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
             } else if (txtBody || htmlBody) {
                 NSPasteboard *pboard = [NSPasteboard pasteboardWithUniqueName];
                 NSData *data = [htmlBody dataUsingEncoding:NSUTF8StringEncoding];
-                [pboard declareTypes:[NSArray arrayWithObject: data ? NSHTMLPboardType : NSStringPboardType] owner:nil];
+                [pboard declareTypes:[NSArray arrayWithObject: data ? NSPasteboardTypeHTML : NSPasteboardTypeString] owner:nil];
                 if (data) {
-                    [pboard setData:data forType:NSHTMLPboardType];
+                    [pboard setData:data forType:NSPasteboardTypeHTML];
                 } else if (txtBody) {
-                    [pboard setString:txtBody forType:NSStringPboardType];
+                    [pboard setString:txtBody forType:NSPasteboardTypeString];
                 } else {
                     NSLog(@"no txt or html to add to pboard");
                     return NO;
@@ -282,7 +282,7 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 	
 	NSMutableString *allURLsString = [NSMutableString string];
 	
-	NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	NSArray *files = NVFilePathsFromPasteboard(pboard);
 	if ([files isKindOfClass:[NSArray class]]) {
 		NSArray *unknownPaths = files;
 		NSUInteger i;

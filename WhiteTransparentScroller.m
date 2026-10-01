@@ -133,9 +133,9 @@ static NSColor *backgroundColor;
 	//	NSRect slotRect = [self rectForPart:NSScrollerKnobSlot];
 	
 	//	if (isVertical)
-	//		NSDrawThreePartImage(slotRect, slotTop, slotVerticalFill, slotBottom, YES, NSCompositeSourceOver, 1, NO);
+	//		NSDrawThreePartImage(slotRect, slotTop, slotVerticalFill, slotBottom, YES, NSCompositingOperationSourceOver, 1, NO);
 	//	else
-	//		NSDrawThreePartImage(slotRect, slotLeft, slotHorizontalFill, slotRight, NO, NSCompositeSourceOver, 1, NO);
+	//		NSDrawThreePartImage(slotRect, slotLeft, slotHorizontalFill, slotRight, NO, NSCompositingOperationSourceOver, 1, NO);
 }
 
 - (void)drawKnob;
@@ -143,9 +143,9 @@ static NSColor *backgroundColor;
 	NSRect knobRect = [self rectForPart:NSScrollerKnob];
 	
 	if (isVertical)
-		NSDrawThreePartImage(knobRect, knobTop, knobVerticalFill, knobBottom, YES, NSCompositeSourceOver, 1, NO);
+		NSDrawThreePartImage(knobRect, knobTop, knobVerticalFill, knobBottom, YES, NSCompositingOperationSourceOver, 1, NO);
 	else
-		NSDrawThreePartImage(knobRect, knobLeft, knobHorizontalFill, knobRight, NO, NSCompositeSourceOver, 1, NO);
+		NSDrawThreePartImage(knobRect, knobLeft, knobHorizontalFill, knobRight, NO, NSCompositingOperationSourceOver, 1, NO);
 }
 
 - (NSRect)_drawingRectForPart:(NSScrollerPart)aPart;

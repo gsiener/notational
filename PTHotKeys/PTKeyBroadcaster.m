@@ -56,12 +56,12 @@ NSString* PTKeyBroadcasterKeyEvent = @"PTKeyBroadcasterKeyEvent";
 {
 	static long cocoaToCarbon[6][2] =
 	{
-		{ NSCommandKeyMask, cmdKey},
-		{ NSAlternateKeyMask, optionKey},
-		{ NSControlKeyMask, controlKey},
-		{ NSShiftKeyMask, shiftKey},
-		{ NSFunctionKeyMask, rightControlKey},
-		//{ NSAlphaShiftKeyMask, alphaLock }, //Ignore this?
+		{ NSEventModifierFlagCommand, cmdKey},
+		{ NSEventModifierFlagOption, optionKey},
+		{ NSEventModifierFlagControl, controlKey},
+		{ NSEventModifierFlagShift, shiftKey},
+		{ NSEventModifierFlagFunction, rightControlKey},
+		//{ NSEventModifierFlagCapsLock, alphaLock }, //Ignore this?
 	};
 
 	long carbonModifiers = 0;

@@ -173,7 +173,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 
 - (NSView*)accessoryView {
 	if (!importAccessoryView) {
-		if (![NSBundle loadNibNamed:@"ImporterAccessory" owner:self])  {
+		if (!NVLoadNib(@"ImporterAccessory", self))  {
 			NSLog(@"Failed to load ImporterAccessory.nib");
 			NSBeep();
 			return nil;
@@ -188,8 +188,8 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 //	
 //	if (delegate && [delegate respondsToSelector:@selector(noteImporter:importedNotes:)]) {
 //		
-//		if (returnCode == NSOKButton) {
-//			shouldGrabCreationDates = [grabCreationDatesButton state] == NSOnState;
+//		if (returnCode == NSModalResponseOK) {
+//			shouldGrabCreationDates = [grabCreationDatesButton state] == NSControlStateValueOn;
 //			[[NSUserDefaults standardUserDefaults] setBool:shouldGrabCreationDates forKey:ShouldImportCreationDates];
 //            NSArray *importedFiles=[[panel URLs]valueForKey:@"path"];
 //            if (!importedFiles||importedFiles.count==0) {
@@ -199,7 +199,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 //			if (notes && [notes count])
 //				[delegate noteImporter:self importedNotes:notes];
 //			else
-//				NSRunAlertPanel(NSLocalizedString(@"None of the selected files could be imported.",nil), 
+//				NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"None of the selected files could be imported.",nil), 
 //								NSLocalizedString(@"Please choose other files.",nil), NSLocalizedString(@"OK",nil),nil,nil);
 //		}
 //	} else {
@@ -226,8 +226,8 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 //	[openPanel beginSheetForDirectory:nil file:nil types:nil modalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(openPanelDidEnd:returnCode:contextInfo:) contextInfo:receiver];
     if (receiver && [receiver respondsToSelector:@selector(noteImporter:importedNotes:)]) {
         [openPanel beginSheetModalForWindow:mainWindow completionHandler:^(NSInteger result) {
-            if (result == NSFileHandlingPanelOKButton) {
-                shouldGrabCreationDates = [grabCreationDatesButton state] == NSOnState;
+            if (result == NSModalResponseOK) {
+                shouldGrabCreationDates = [grabCreationDatesButton state] == NSControlStateValueOn;
                 [[NSUserDefaults standardUserDefaults] setBool:shouldGrabCreationDates forKey:ShouldImportCreationDates];
                 NSArray *filePaths=[[openPanel URLs]valueForKey:@"path"];
                 
@@ -238,7 +238,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
                 if (notes && [notes count]){
                     [receiver noteImporter:self importedNotes:notes];
                 }else{
-                    NSRunAlertPanel(NSLocalizedString(@"None of the selected files could be imported.",nil),
+                    NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"None of the selected files could be imported.",nil),
                                     NSLocalizedString(@"Please choose other files.",nil), NSLocalizedString(@"OK",nil),nil,nil);
                 }
             }
@@ -373,7 +373,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 		attributedStringFromData = [[NSMutableAttributedString alloc] initWithRTF:[NSData uncachedDataFromFile:filename] documentAttributes:NULL];
 		
 	} else if (fileType == RTFD_TYPE_ID || [extension isEqualToString:@"rtfd"]) {
-		NSFileWrapper *wrapper = [[[NSFileWrapper alloc] initWithPath:filename] autorelease];
+		NSFileWrapper *wrapper = [[[NSFileWrapper alloc] initWithURL:[NSURL fileURLWithPath:filename] options:0 error:NULL] autorelease];
 		if ([[attributes objectForKey:NSFileType] isEqualToString:NSFileTypeDirectory])
 			attributedStringFromData = [[NSMutableAttributedString alloc] initWithRTFDFileWrapper:wrapper documentAttributes:NULL];
 		else
