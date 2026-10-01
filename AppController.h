@@ -16,7 +16,6 @@
 
 #import "NotationController.h"
 #import "NotesTableView.h"
-//#import "Spaces.h"
 
 @class LinkingEditor;
 @class EmptyView;
@@ -82,7 +81,6 @@
     IBOutlet NotesTableView *notesTableView;
     IBOutlet LinkingEditor *textView;
 	IBOutlet EmptyView *editorStatusView;
-	IBOutlet NSMenuItem *sparkleUpdateItem;
     IBOutlet NSWindow *window;
 	IBOutlet NSPanel *syncWaitPanel;
 	IBOutlet NSProgressIndicator *syncWaitSpinner;

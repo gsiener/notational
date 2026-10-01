@@ -21,7 +21,6 @@
 #import "NSString_NV.h"
 #import "NVPasswordGenerator.h"
 #import "ETClipView.h"
-//#import "NSTextFinder.h"
 //#import "NVTextFinderAdditions.h"
 
 

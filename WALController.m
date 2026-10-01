@@ -492,8 +492,15 @@ static CFStringRef SynchronizedNoteKeyDescription(const void *value) {
 	return value ? (CFStringRef)[NSString uuidStringWithBytes:*(CFUUIDBytes*)value] : NULL;
 }
 static CFHashCode SynchronizedNoteHash(const void * o) {
-	
-	return CFHashBytes(o, sizeof(CFUUIDBytes));
+	//FNV-1a over the UUID bytes; only used for in-memory lookup during recovery
+	const unsigned char *bytes = (const unsigned char *)o;
+	CFHashCode hash = 14695981039346656037ULL;
+	size_t i;
+	for (i = 0; i < sizeof(CFUUIDBytes); i++) {
+		hash ^= bytes[i];
+		hash *= 1099511628211ULL;
+	}
+	return hash;
 }
 static Boolean SynchronizedNoteIsEqual(const void *o, const void *p) {
 	
