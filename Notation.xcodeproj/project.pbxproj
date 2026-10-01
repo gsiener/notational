@@ -17,8 +17,6 @@
 		2114C13F0957732800614E74 /* NotationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C13E0957732800614E74 /* NotationController.m */; };
 		2114C1460957733200614E74 /* NoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C1450957733200614E74 /* NoteObject.m */; };
 		2114C23E095883A600614E74 /* NSData_transformations.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C23C095883A600614E74 /* NSData_transformations.m */; };
-		2114C2880958CC9100614E74 /* pbkdf2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2114C2870958CC9100614E74 /* pbkdf2.c */; };
-		2114C2A80958D24800614E74 /* hmacsha1.c in Sources */ = {isa = PBXBuildFile; fileRef = 2114C2A70958D24800614E74 /* hmacsha1.c */; };
 		212089B10B0C24F500A15A69 /* AlienNoteImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 212089B00B0C24F500A15A69 /* AlienNoteImporter.m */; };
 		212089D80B0C2CA500A15A69 /* StickiesDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 212089D70B0C2CA500A15A69 /* StickiesDocument.m */; };
 		212B84620978422300F3597F /* NSString_NV.m in Sources */ = {isa = PBXBuildFile; fileRef = 212B84610978422300F3597F /* NSString_NV.m */; };
@@ -265,9 +263,7 @@
 		606B82838E83B0C6BA5817C4 /* NotationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C13E0957732800614E74 /* NotationController.m */; };
 		D01FDFEA2EB9C418A8B74B60 /* NoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C1450957733200614E74 /* NoteObject.m */; };
 		D87A610EFAECA69B36CAF7D7 /* NSData_transformations.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C23C095883A600614E74 /* NSData_transformations.m */; };
-		1D5CEDC86DF05E1C80751F21 /* pbkdf2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2114C2870958CC9100614E74 /* pbkdf2.c */; };
 		14D552EE6B610E5577684E1B /* ETNoteScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C43669F1DA283720086FF84 /* ETNoteScrollView.m */; };
-		7E5FACE3C3A96CF1B50D0A77 /* hmacsha1.c in Sources */ = {isa = PBXBuildFile; fileRef = 2114C2A70958D24800614E74 /* hmacsha1.c */; };
 		1CD282B836A128E1E86F3F8E /* LinkingEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 219588D10961D7F200972B8C /* LinkingEditor.m */; };
 		60D5C83ADF26818F39F54FAA /* LabelObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 217D4281096545A000E84749 /* LabelObject.m */; };
 		6F45243DEA83BB93C1C18BF8 /* FastListDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 21A30EA60971D11D0071E9AF /* FastListDataSource.m */; };
@@ -425,10 +421,6 @@
 		2114C1450957733200614E74 /* NoteObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NoteObject.m; sourceTree = "<group>"; };
 		2114C23B095883A600614E74 /* NSData_transformations.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = NSData_transformations.h; sourceTree = "<group>"; };
 		2114C23C095883A600614E74 /* NSData_transformations.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = NSData_transformations.m; sourceTree = "<group>"; };
-		2114C2860958CC9100614E74 /* pbkdf2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pbkdf2.h; sourceTree = "<group>"; };
-		2114C2870958CC9100614E74 /* pbkdf2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pbkdf2.c; sourceTree = "<group>"; };
-		2114C2A60958D24800614E74 /* hmacsha1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hmacsha1.h; sourceTree = "<group>"; };
-		2114C2A70958D24800614E74 /* hmacsha1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hmacsha1.c; sourceTree = "<group>"; };
 		212089AF0B0C24F500A15A69 /* AlienNoteImporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AlienNoteImporter.h; sourceTree = "<group>"; };
 		212089B00B0C24F500A15A69 /* AlienNoteImporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AlienNoteImporter.m; sourceTree = "<group>"; };
 		212089D60B0C2CA500A15A69 /* StickiesDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StickiesDocument.h; sourceTree = "<group>"; };
@@ -1087,10 +1079,6 @@
 		211345A10B35D8340081B064 /* Crypto */ = {
 			isa = PBXGroup;
 			children = (
-				2114C2860958CC9100614E74 /* pbkdf2.h */,
-				2114C2870958CC9100614E74 /* pbkdf2.c */,
-				2114C2A60958D24800614E74 /* hmacsha1.h */,
-				2114C2A70958D24800614E74 /* hmacsha1.c */,
 				211344430B354E000081B064 /* idea_ossl.h */,
 				211344440B354E000081B064 /* idea_ossl.c */,
 				211345A90B35D8540081B064 /* broken_md5.c */,
@@ -1799,9 +1787,7 @@
 				2114C13F0957732800614E74 /* NotationController.m in Sources */,
 				2114C1460957733200614E74 /* NoteObject.m in Sources */,
 				2114C23E095883A600614E74 /* NSData_transformations.m in Sources */,
-				2114C2880958CC9100614E74 /* pbkdf2.c in Sources */,
 				5C4366A01DA283720086FF84 /* ETNoteScrollView.m in Sources */,
-				2114C2A80958D24800614E74 /* hmacsha1.c in Sources */,
 				219588D20961D7F200972B8C /* LinkingEditor.m in Sources */,
 				217D4282096545A000E84749 /* LabelObject.m in Sources */,
 				21A30EA70971D11D0071E9AF /* FastListDataSource.m in Sources */,
@@ -1909,9 +1895,7 @@
 				606B82838E83B0C6BA5817C4 /* NotationController.m in Sources */,
 				D01FDFEA2EB9C418A8B74B60 /* NoteObject.m in Sources */,
 				D87A610EFAECA69B36CAF7D7 /* NSData_transformations.m in Sources */,
-				1D5CEDC86DF05E1C80751F21 /* pbkdf2.c in Sources */,
 				14D552EE6B610E5577684E1B /* ETNoteScrollView.m in Sources */,
-				7E5FACE3C3A96CF1B50D0A77 /* hmacsha1.c in Sources */,
 				1CD282B836A128E1E86F3F8E /* LinkingEditor.m in Sources */,
 				60D5C83ADF26818F39F54FAA /* LabelObject.m in Sources */,
 				6F45243DEA83BB93C1C18BF8 /* FastListDataSource.m in Sources */,

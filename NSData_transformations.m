@@ -11,14 +11,13 @@
 /* NSData_transformations.m */
 
 #import "NSData_transformations.h"
-#include "pbkdf2.h"
-#include "hmacsha1.h"
 #include "broken_md5.h"
 
 #include <unistd.h>
 #include <zlib.h>
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonDigest.h>
+#include <CommonCrypto/CommonKeyDerivation.h>
 
 #import <WebKit/WebKit.h>
 
@@ -159,16 +158,14 @@
 }
 
 - (NSMutableData*)derivedKeyOfLength:(int)len salt:(NSData*)salt iterations:(int)count {
+	//PBKDF2-HMAC-SHA1, as used for the master key, verifier and journal record keys
+	if (len <= 0 || count <= 0)
+		return nil;
 	
 	NSMutableData *derivedKey = [NSMutableData dataWithLength:len];
-	
-	//NSDate *date = [NSDate date];
-	//when compiled with -Os or greater, this is always faster than OpenSSL version
-#if 1
-	if (!pbkdf2_sha1([self bytes], [self length], [salt bytes], [salt length], (unsigned int)count, [derivedKey mutableBytes], (size_t)len))
+	if (CCKeyDerivationPBKDF(kCCPBKDF2, [self bytes], [self length], [salt bytes], [salt length],
+							 kCCPRFHmacAlgSHA1, (uint)count, [derivedKey mutableBytes], (size_t)len) != kCCSuccess)
 		return nil;
-	//NSLog(@"dk_time(%d): %g", count, (float)[[NSDate date] timeIntervalSinceDate:date]);
-#endif
 	
 	return derivedKey;
 }
@@ -179,14 +176,8 @@
 }
 
 - (NSData*)SHA1Digest {
-	sha1_ctx_nv keyhash;
-	
-	NSMutableData *mutableData = [NSMutableData dataWithLength:20];
-	
-	sha1_init_ctx(&keyhash);
-	sha1_process_bytes([self bytes], [self length], &keyhash);
-	sha1_finish_ctx(&keyhash, [mutableData mutableBytes]);
-	
+	NSMutableData *mutableData = [NSMutableData dataWithLength:CC_SHA1_DIGEST_LENGTH];
+	CC_SHA1([self bytes], (CC_LONG)[self length], [mutableData mutableBytes]);
 	return mutableData;
 }
 
