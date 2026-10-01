@@ -300,9 +300,9 @@
             [pathString hasSuffix:@"png"])
         {
           currentPreviewMode = [[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"];
-          if (currentPreviewMode == MarkdownPreview || currentPreviewMode == MultiMarkdownPreview) {
+          if (currentPreviewMode == NVMarkupMarkdown || currentPreviewMode == NVMarkupMultiMarkdown) {
             linkFormat = @"![](%@)%s";
-          } else if (currentPreviewMode == TextilePreview) {
+          } else if (currentPreviewMode == NVMarkupTextile) {
             linkFormat = @"!%@()!%s"; 
           }
         }

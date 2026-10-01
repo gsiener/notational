@@ -8,9 +8,7 @@
 #import "PreviewController.h"
 #import "AppController.h" // TODO for the defines only, can you get around that?
 #import "AppController_Preview.h"
-#import "NSString_MultiMarkdown.h"
-#import "NSString_Markdown.h"
-#import "NSString_Textile.h"
+#import "NVMarkupRenderer.h"
 #import "NoteObject.h"
 #import "ETTransparentButtonCell.h"
 #import "ETTransparentButton.h"
@@ -345,10 +343,8 @@
     AppController *app = object;
     NSString *rawString = [app noteContent];
 
-    SEL mode = [self markupProcessorSelector:[app currentPreviewMode]];
-    NSString *processedString = [NSString performSelector:mode withObject:rawString];
+    NSString *processedString = [[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]];
     NSString *previewString = processedString;
-    NSMutableString *outputString = [NSMutableString stringWithString:(NSString *)htmlString];
     NSString *noteTitle =  ([app selectedNoteObject]) ? [NSString stringWithFormat:@"%@",titleOfNote([app selectedNoteObject])] : @"";
 
     if (lastNote == [app selectedNoteObject]) {
@@ -361,12 +357,8 @@
         htmlString = [[[self class] html] retain];
         lastNote = [app selectedNoteObject];
     }
-    NSString *nvSupportPath = [[NSFileManager defaultManager] applicationSupportDirectory];
-
-    [outputString replaceOccurrencesOfString:@"{%support%}" withString:nvSupportPath options:0 range:NSMakeRange(0, [outputString length])];
-    [outputString replaceOccurrencesOfString:@"{%title%}" withString:noteTitle options:0 range:NSMakeRange(0, [outputString length])];
-    [outputString replaceOccurrencesOfString:@"{%content%}" withString:previewString options:0 range:NSMakeRange(0, [outputString length])];
-    [outputString replaceOccurrencesOfString:@"{%style%}" withString:cssString options:0 range:NSMakeRange(0, [outputString length])];
+    NSString *outputString = [NVMarkupRenderer documentWithHTML:previewString title:noteTitle templateHTML:htmlString css:cssString
+                                                    supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
 
     [[preview mainFrame] loadHTMLString:outputString baseURL:nil];
     [preview stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"var body = document.getElementsByTagName('body')[0],oldscroll = %@;body.scrollTop = oldscroll;",lastScrollPosition]];
@@ -374,20 +366,6 @@
 
     [sourceView replaceCharactersInRange:NSMakeRange(0, [[sourceView string] length]) withString:processedString];
     self.isPreviewOutdated = NO;
-}
-
--(SEL)markupProcessorSelector:(NSInteger)previewMode
-{
-    if (previewMode == MarkdownPreview) {
-        previewMode = MultiMarkdownPreview;
-        return @selector(stringWithProcessedMultiMarkdown:);
-    } else if (previewMode == MultiMarkdownPreview) {
-        return @selector(stringWithProcessedMultiMarkdown:);
-    } else if (previewMode == TextilePreview) {
-        return @selector(stringWithProcessedTextile:);
-    }
-
-    return nil;
 }
 
 + (void) createCustomFiles
@@ -485,8 +463,7 @@
     AppController *app = [NSApp delegate];
     NSString *noteTitle = [NSString stringWithFormat:@"%@",titleOfNote([app selectedNoteObject])];
     NSString *rawString = [app noteContent];
-    SEL mode = [self markupProcessorSelector:[app currentPreviewMode]];
-    NSString *processedString = [NSString performSelector:mode withObject:rawString];
+    NSString *processedString = [[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]];
 
 
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc]
@@ -538,20 +515,21 @@
     [receivedData release];
 }
 
+//the same HTML as the preview, as a page of its own or inside the preview template
+- (NSString *)savedHTMLForApp:(AppController *)app {
+    NSString *html = [[NVMarkupRenderer defaultRenderer] htmlForText:[app noteContent] format:[app currentPreviewMode]];
+    NSString *noteTitle = [app selectedNoteObject] ? titleOfNote([app selectedNoteObject]) : @"";
+    BOOL embed = [includeTemplate state] == NSOnState;
+    return [NVMarkupRenderer documentWithHTML:html title:noteTitle templateHTML:embed ? [[self class] html] : nil
+                                          css:embed ? [[self class] css] : nil supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
+}
+
 - (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
     if (returnCode == NSFileHandlingPanelOKButton) {
 
         AppController *app = [[NSApplication sharedApplication] delegate];
         NSString *rawString = [app noteContent];
-        NSString *processedString = [[[NSString alloc] init] autorelease];
-
-        if ([app currentPreviewMode] == MarkdownPreview) {
-            processedString = [NSString stringWithProcessedMarkdown:rawString];
-        } else if ([app currentPreviewMode] == MultiMarkdownPreview) {
-            processedString = ( [includeTemplate state] == NSOnState ) ? [NSString documentWithProcessedMultiMarkdown:rawString] : [NSString xhtmlWithProcessedMultiMarkdown:rawString];
-        } else if ([app currentPreviewMode] == TextilePreview) {
-            processedString = ( [includeTemplate state] == NSOnState ) ? [NSString documentWithProcessedTextile:rawString] : [NSString xhtmlWithProcessedTextile:rawString];
-        }
+        NSString *processedString = [self savedHTMLForApp:app];
         NSURL *file = [sheet URL];
         NSError *error;
         [processedString writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error];
@@ -581,8 +559,7 @@
 
 
     NSString *rawString = [app noteContent];
-    NSString *xhtmlOutput = [NSString xhtmlWithProcessedMultiMarkdown:rawString];
-    if ([xhtmlOutput hasPrefix:@"<?xml version="]) {
+    if ([NVMarkupRenderer isCompleteDocument:[[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]]]) {
         [includeTemplate setState:0];
         [includeTemplate setEnabled:NO];
         [templateNote setStringValue:@"Template embed unavailable because your note will render as a full XHTML document"];
@@ -596,15 +573,7 @@
     savePanel.nameFieldStringValue=noteTitle;
     [savePanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSFileHandlingPanelOKButton) {
-            NSString *processedString = [[[NSString alloc] init] autorelease];
-
-            if ([app currentPreviewMode] == MarkdownPreview) {
-                processedString = [NSString stringWithProcessedMarkdown:rawString];
-            } else if ([app currentPreviewMode] == MultiMarkdownPreview) {
-                processedString = ( [includeTemplate state] == NSOnState ) ? [NSString documentWithProcessedMultiMarkdown:rawString] : [NSString xhtmlWithProcessedMultiMarkdown:rawString];
-            } else if ([app currentPreviewMode] == TextilePreview) {
-                processedString = ( [includeTemplate state] == NSOnState ) ? [NSString documentWithProcessedTextile:rawString] : [NSString xhtmlWithProcessedTextile:rawString];
-            }
+            NSString *processedString = [self savedHTMLForApp:app];
             NSURL *file = [savePanel URL];
             NSError *error;
             [processedString writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error];

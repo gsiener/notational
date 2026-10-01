@@ -13,6 +13,7 @@
 
 
 #import <Cocoa/Cocoa.h>
+#import "NVMarkupRenderer.h"
 
 #import "NotationController.h"
 #import "NotesTableView.h"
@@ -36,17 +37,6 @@
 @class ETScrollView;
 @class ETNoteScrollView;
 
-#ifndef MarkdownPreview
-#define MarkdownPreview 13371
-#endif
-
-#ifndef MultiMarkdownPreview
-#define MultiMarkdownPreview 13372
-#endif
-
-#ifndef TextilePreview
-#define TextilePreview 13373
-#endif
 
 @interface AppController : NSObject 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6

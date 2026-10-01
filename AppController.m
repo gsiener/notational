@@ -80,7 +80,7 @@ BOOL splitViewAwoke;
 /*
  + (void)initialize
  {
- NSDictionary *appDefaults = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:MultiMarkdownPreview] forKey:kDefaultMarkupPreviewMode];
+ NSDictionary *appDefaults = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:NVMarkupMultiMarkdown] forKey:kDefaultMarkupPreviewMode];
  
  [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
  } // initialize*/
@@ -246,11 +246,11 @@ BOOL splitViewAwoke;
 	}
 	
 	currentPreviewMode = [[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"];
-    if (currentPreviewMode == MarkdownPreview) {
+    if (currentPreviewMode == NVMarkupMarkdown) {
         [multiMarkdownPreview setState:NSOnState];
-    } else if (currentPreviewMode == MultiMarkdownPreview) {
+    } else if (currentPreviewMode == NVMarkupMultiMarkdown) {
         [multiMarkdownPreview setState:NSOnState];
-    } else if (currentPreviewMode == TextilePreview) {
+    } else if (currentPreviewMode == NVMarkupTextile) {
         [textilePreview setState:NSOnState];
     }
 	
@@ -543,7 +543,7 @@ terminateApp:
 	NSInteger numberSelected = [notesTableView numberOfSelectedRows];
 	NSInteger tag = [menuItem tag];
     
-    if ((tag == TextilePreview) || (tag == MarkdownPreview) || (tag == MultiMarkdownPreview)) {
+    if ((tag == NVMarkupTextile) || (tag == NVMarkupMarkdown) || (tag == NVMarkupMultiMarkdown)) {
         // Allow only one Preview mode to be selected at every one time
         [menuItem setState:((tag == currentPreviewMode) ? NSOnState : NSOffState)];
         return YES;

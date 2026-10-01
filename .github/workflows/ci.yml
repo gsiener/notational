@@ -29,14 +29,6 @@ jobs:
           sw_vers
           xcodebuild -version
 
-      - name: test
-        run: |
-          xcodebuild test \
-            -project Notation.xcodeproj \
-            -scheme NotationTests \
-            -derivedDataPath build/DerivedData \
-            -resultBundlePath build/TestResults.xcresult
-
       - name: build app
         run: |
           xcodebuild \
@@ -46,6 +38,15 @@ jobs:
             -derivedDataPath build/DerivedData \
             -archivePath build/Notational.xcarchive \
             archive
+
+      # after the build: the Markup renderer's golden-file tests use the bundled multimarkdown
+      - name: test
+        run: |
+          xcodebuild test \
+            -project Notation.xcodeproj \
+            -scheme NotationTests \
+            -derivedDataPath build/DerivedData \
+            -resultBundlePath build/TestResults.xcresult
 
       - name: verify app
         run: |

@@ -1,0 +1,21 @@
+Groceries
+=========
+
+A *short* list with **bold**, `code`, a [link](https://example.com) and "quotes" -- dashes.
+
+- eggs
+- milk
+    1. whole
+    2. skim
+
+> quoted
+
+    indented code
+
+| Item | Qty |
+| ---- | --- |
+| eggs | 12  |
+
+Footnote here.[^1]
+
+[^1]: The footnote.

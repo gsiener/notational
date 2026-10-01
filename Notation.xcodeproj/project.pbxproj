@@ -118,11 +118,7 @@
 		5C96F4FF131C2F9500A2E4AC /* TabClose_Front_Pressed.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F4FC131C2F9500A2E4AC /* TabClose_Front_Pressed.tif */; };
 		5C96F501131C2F9500A2E4AC /* TabClose_Front.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F4FE131C2F9500A2E4AC /* TabClose_Front.tif */; };
 		5C96F504131C2FA800A2E4AC /* BTTransparentScroller.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F502131C2FA800A2E4AC /* BTTransparentScroller.m */; };
-		5C96F5AF131C37DF00A2E4AC /* NSString_MultiMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AA131C37DF00A2E4AC /* NSString_MultiMarkdown.m */; };
-		5C96F5B0131C37DF00A2E4AC /* NSString_Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AC131C37DF00A2E4AC /* NSString_Markdown.m */; };
-		5C96F5B1131C37DF00A2E4AC /* NSString_Textile.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AE131C37DF00A2E4AC /* NSString_Textile.m */; };
 		5C96F616131C380100A2E4AC /* Textile_2.12 in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F610131C380100A2E4AC /* Textile_2.12 */; };
-		5C96F61C131C380C00A2E4AC /* Markdown_1.0.1 in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F617131C380C00A2E4AC /* Markdown_1.0.1 */; };
 		5C96F6DE131C488B00A2E4AC /* ETTransparentButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */; };
 		5C96F6E9131C48FE00A2E4AC /* ETTransparentButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */; };
 		5C96F709131C49D400A2E4AC /* TransparentButtonFillN.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F703131C49D400A2E4AC /* TransparentButtonFillN.tiff */; };
@@ -294,9 +290,6 @@
 		94480AD7E17331C0169A660A /* AppController_Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA10F31131C29E900DE1F91 /* AppController_Preview.m */; };
 		27FCBD28B5756502681EB1F3 /* MAAttachedWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA10F3A131C2A3F00DE1F91 /* MAAttachedWindow.m */; };
 		BF2BD94CAEF0EA7824A5B9DA /* BTTransparentScroller.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F502131C2FA800A2E4AC /* BTTransparentScroller.m */; };
-		BE1BB346712A64BC6B18B518 /* NSString_MultiMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AA131C37DF00A2E4AC /* NSString_MultiMarkdown.m */; };
-		44C4BB7A2C42D39ED54A0C91 /* NSString_Markdown.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AC131C37DF00A2E4AC /* NSString_Markdown.m */; };
-		7D9D52ED4B3E399CAC676DA3 /* NSString_Textile.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F5AE131C37DF00A2E4AC /* NSString_Textile.m */; };
 		B10E43C63D48CDB7CC363277 /* ETTransparentButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */; };
 		65B786C074C743302FC36A8E /* ETTransparentButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */; };
 		305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C7733131DA04300FB2652 /* WordCountToken.m */; };
@@ -365,6 +358,9 @@
 		CCB5338365264BD4ADFFEB62 /* NVHTMLMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */; };
 		275E900EB1BF974391045428 /* NVHTMLMarkdownTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */; };
 		EB00AAED12AAFE1703AE01F6 /* AlienNoteImporterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */; };
+		7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = B803B414643106CD651088CB /* NVMarkupRenderer.m */; };
+		EA11E9A4410D20E32F82DFB7 /* NVMarkupRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = B803B414643106CD651088CB /* NVMarkupRenderer.m */; };
+		8B6F5F6B6BF42A539B3F1F31 /* NVMarkupRendererTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -671,14 +667,7 @@
 		5C96F4FE131C2F9500A2E4AC /* TabClose_Front.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TabClose_Front.tif; sourceTree = "<group>"; };
 		5C96F502131C2FA800A2E4AC /* BTTransparentScroller.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTTransparentScroller.m; sourceTree = "<group>"; };
 		5C96F503131C2FA800A2E4AC /* BTTransparentScroller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTTransparentScroller.h; sourceTree = "<group>"; };
-		5C96F5A9131C37DF00A2E4AC /* NSString_MultiMarkdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_MultiMarkdown.h; sourceTree = "<group>"; };
-		5C96F5AA131C37DF00A2E4AC /* NSString_MultiMarkdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSString_MultiMarkdown.m; sourceTree = "<group>"; };
-		5C96F5AB131C37DF00A2E4AC /* NSString_Markdown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_Markdown.h; sourceTree = "<group>"; };
-		5C96F5AC131C37DF00A2E4AC /* NSString_Markdown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSString_Markdown.m; sourceTree = "<group>"; };
-		5C96F5AD131C37DF00A2E4AC /* NSString_Textile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_Textile.h; sourceTree = "<group>"; };
-		5C96F5AE131C37DF00A2E4AC /* NSString_Textile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSString_Textile.m; sourceTree = "<group>"; };
 		5C96F610131C380100A2E4AC /* Textile_2.12 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Textile_2.12; sourceTree = "<group>"; };
-		5C96F617131C380C00A2E4AC /* Markdown_1.0.1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Markdown_1.0.1; sourceTree = "<group>"; };
 		5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETTransparentButtonCell.m; sourceTree = "<group>"; };
 		5C96F6E7131C48FE00A2E4AC /* ETTransparentButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETTransparentButton.h; sourceTree = "<group>"; };
 		5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETTransparentButton.m; sourceTree = "<group>"; };
@@ -853,6 +842,9 @@
 		B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHTMLMarkdown.m; sourceTree = "<group>"; };
 		5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHTMLMarkdownTests.m; sourceTree = "<group>"; };
 		0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AlienNoteImporterTests.m; sourceTree = "<group>"; };
+		0B7460D6F207276A99D3D6C7 /* NVMarkupRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVMarkupRenderer.h; sourceTree = "<group>"; };
+		B803B414643106CD651088CB /* NVMarkupRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVMarkupRenderer.m; sourceTree = "<group>"; };
+		9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVMarkupRendererTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -898,6 +890,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				B803B414643106CD651088CB /* NVMarkupRenderer.m */,
+				0B7460D6F207276A99D3D6C7 /* NVMarkupRenderer.h */,
 				B5D31880F7C5162E04FDA219 /* NVHTMLMarkdown.m */,
 				953BF612D2D4C16E2489B143 /* NVHTMLMarkdown.h */,
 				540D251378C4BAC31FE8E241 /* NVLegacyPreferences.m */,
@@ -1368,14 +1362,7 @@
 			children = (
 				9335C40C148EC7AC009CE623 /* multimarkdown */,
 				93099627138BD61000368C45 /* tp2md.rb */,
-				5C96F617131C380C00A2E4AC /* Markdown_1.0.1 */,
 				5C96F610131C380100A2E4AC /* Textile_2.12 */,
-				5C96F5A9131C37DF00A2E4AC /* NSString_MultiMarkdown.h */,
-				5C96F5AA131C37DF00A2E4AC /* NSString_MultiMarkdown.m */,
-				5C96F5AB131C37DF00A2E4AC /* NSString_Markdown.h */,
-				5C96F5AC131C37DF00A2E4AC /* NSString_Markdown.m */,
-				5C96F5AD131C37DF00A2E4AC /* NSString_Textile.h */,
-				5C96F5AE131C37DF00A2E4AC /* NSString_Textile.m */,
 			);
 			name = Markup;
 			sourceTree = "<group>";
@@ -1431,6 +1418,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */,
 				0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */,
 				5194F7092B925DA18A5DB31B /* NVHTMLMarkdownTests.m */,
 				21BF60B0E4EC664346E1F992 /* NotationPrefsViewControllerTests.m */,
@@ -1573,7 +1561,6 @@
 				5C96F4FF131C2F9500A2E4AC /* TabClose_Front_Pressed.tif in Resources */,
 				5C96F501131C2F9500A2E4AC /* TabClose_Front.tif in Resources */,
 				5C96F616131C380100A2E4AC /* Textile_2.12 in Resources */,
-				5C96F61C131C380C00A2E4AC /* Markdown_1.0.1 in Resources */,
 				5C96F709131C49D400A2E4AC /* TransparentButtonFillN.tiff in Resources */,
 				5C96F70B131C49D400A2E4AC /* TransparentButtonLeftN.tiff in Resources */,
 				5C96F70D131C49D400A2E4AC /* TransparentButtonRightN.tiff in Resources */,
@@ -1699,6 +1686,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */,
 				CE445F755D155920EB6B4680 /* NVHTMLMarkdown.m in Sources */,
 				6D5DD0BE2FE833BB6D7FFD2D /* NVLegacyPreferences.m in Sources */,
 				A1B3CC34F791F4986223AFD3 /* NVSimplenoteAccountWindowController.m in Sources */,
@@ -1781,9 +1769,6 @@
 				5CA10F32131C29E900DE1F91 /* AppController_Preview.m in Sources */,
 				5CA10F3B131C2A3F00DE1F91 /* MAAttachedWindow.m in Sources */,
 				5C96F504131C2FA800A2E4AC /* BTTransparentScroller.m in Sources */,
-				5C96F5AF131C37DF00A2E4AC /* NSString_MultiMarkdown.m in Sources */,
-				5C96F5B0131C37DF00A2E4AC /* NSString_Markdown.m in Sources */,
-				5C96F5B1131C37DF00A2E4AC /* NSString_Textile.m in Sources */,
 				5C96F6DE131C488B00A2E4AC /* ETTransparentButtonCell.m in Sources */,
 				5C96F6E9131C48FE00A2E4AC /* ETTransparentButton.m in Sources */,
 				5C9C7734131DA04300FB2652 /* WordCountToken.m in Sources */,
@@ -1803,6 +1788,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B6F5F6B6BF42A539B3F1F31 /* NVMarkupRendererTests.m in Sources */,
+				EA11E9A4410D20E32F82DFB7 /* NVMarkupRenderer.m in Sources */,
 				EB00AAED12AAFE1703AE01F6 /* AlienNoteImporterTests.m in Sources */,
 				275E900EB1BF974391045428 /* NVHTMLMarkdownTests.m in Sources */,
 				CCB5338365264BD4ADFFEB62 /* NVHTMLMarkdown.m in Sources */,
@@ -1901,9 +1888,6 @@
 				94480AD7E17331C0169A660A /* AppController_Preview.m in Sources */,
 				27FCBD28B5756502681EB1F3 /* MAAttachedWindow.m in Sources */,
 				BF2BD94CAEF0EA7824A5B9DA /* BTTransparentScroller.m in Sources */,
-				BE1BB346712A64BC6B18B518 /* NSString_MultiMarkdown.m in Sources */,
-				44C4BB7A2C42D39ED54A0C91 /* NSString_Markdown.m in Sources */,
-				7D9D52ED4B3E399CAC676DA3 /* NSString_Textile.m in Sources */,
 				B10E43C63D48CDB7CC363277 /* ETTransparentButtonCell.m in Sources */,
 				65B786C074C743302FC36A8E /* ETTransparentButton.m in Sources */,
 				305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */,

@@ -158,7 +158,7 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
             [NSNumber numberWithBool:YES],ShowDockIcon,
 			[NSNumber numberWithBool:NO], RTLKey,
             [NSNumber numberWithBool:YES], ShowWordCount,
-            [NSNumber numberWithInt:MultiMarkdownPreview], markupPreviewMode,
+            [NSNumber numberWithInt:NVMarkupMultiMarkdown], markupPreviewMode,
 			[NSNumber numberWithBool:NO], UseMarkdownImportKey,
 			[NSNumber numberWithBool:NO], UseReadabilityKey,
             [NSNumber numberWithBool:YES], ShowGridKey,
