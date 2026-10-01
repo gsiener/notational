@@ -373,6 +373,18 @@
 		2A4B64FEF1B5962E028F0534 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2191926609C52AA600586B15 /* libz.tbd */; };
 		D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */; };
 		F2ACCC151AB01313434785BF /* RealDatabaseCompatibilityTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */; };
+		2EFA2EA0A8A421572DA37A64 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FDDF93C32F0A647680221F04 /* libsqlite3.tbd */; };
+		A40807F5E855C8B2ADC907ED /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FDDF93C32F0A647680221F04 /* libsqlite3.tbd */; };
+		0DB3AB692E726E25067C3007 /* NVNoteRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 57A824B1AAAA55ACEBF82CB3 /* NVNoteRecord.m */; };
+		1990A56BDA0562E944DB733E /* NVNoteRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = 57A824B1AAAA55ACEBF82CB3 /* NVNoteRecord.m */; };
+		D04C5F134240947DFCA4C139 /* NVSimplenoteService.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C26E0D689FE970A20415A2E /* NVSimplenoteService.m */; };
+		F1F4BDE8871D6F10CBB9E7AC /* NVSimplenoteService.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C26E0D689FE970A20415A2E /* NVSimplenoteService.m */; };
+		7AC25EA79ED30C0F33EA17CE /* NVTextMerge.m in Sources */ = {isa = PBXBuildFile; fileRef = A426D9AC0CDDD9784BD48419 /* NVTextMerge.m */; };
+		7B09933A67FD39DCFE5E70DC /* NVTextMerge.m in Sources */ = {isa = PBXBuildFile; fileRef = A426D9AC0CDDD9784BD48419 /* NVTextMerge.m */; };
+		564550F6F6A16522A367C1AC /* NVFakeSimplenoteService.m in Sources */ = {isa = PBXBuildFile; fileRef = D342AFBCDC33FA2AD5FEA056 /* NVFakeSimplenoteService.m */; };
+		2BC7DDBD3EC5E632DA14469A /* NVTextMergeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */; };
+		2FE7AE69DBF337107D0F2D43 /* NVFakeSimplenoteServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */; };
+		F2BBF2F87D2B091406A4FCAB /* NVNoteRecordTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -919,6 +931,18 @@
 		1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NSDataTransformationsTests.m; sourceTree = "<group>"; };
 		6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotesDatabaseTests.m; sourceTree = "<group>"; };
 		33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RealDatabaseCompatibilityTests.m; sourceTree = "<group>"; };
+		FDDF93C32F0A647680221F04 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		2A22B12429739921C1056F9D /* NVNoteRecord.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVNoteRecord.h; sourceTree = "<group>"; };
+		57A824B1AAAA55ACEBF82CB3 /* NVNoteRecord.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVNoteRecord.m; sourceTree = "<group>"; };
+		EC41282ACF52438919D7CBCC /* NVSimplenoteService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSimplenoteService.h; sourceTree = "<group>"; };
+		3C26E0D689FE970A20415A2E /* NVSimplenoteService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSimplenoteService.m; sourceTree = "<group>"; };
+		0C11CF2EDC05AC987622D2D5 /* NVTextMerge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTextMerge.h; sourceTree = "<group>"; };
+		A426D9AC0CDDD9784BD48419 /* NVTextMerge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTextMerge.m; sourceTree = "<group>"; };
+		A80BC5BF248959D441717F16 /* NVFakeSimplenoteService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVFakeSimplenoteService.h; sourceTree = "<group>"; };
+		D342AFBCDC33FA2AD5FEA056 /* NVFakeSimplenoteService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVFakeSimplenoteService.m; sourceTree = "<group>"; };
+		6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTextMergeTests.m; sourceTree = "<group>"; };
+		A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVFakeSimplenoteServiceTests.m; sourceTree = "<group>"; };
+		996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVNoteRecordTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -926,6 +950,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EFA2EA0A8A421572DA37A64 /* libsqlite3.tbd in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				21F459AD0A92E01D00FB6FFE /* Carbon.framework in Frameworks */,
 				214493F60ADB892C00E2A2B6 /* CoreServices.framework in Frameworks */,
@@ -943,6 +968,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A40807F5E855C8B2ADC907ED /* libsqlite3.tbd in Frameworks */,
 				9174E3E461AA8FA3E52F7F09 /* Cocoa.framework in Frameworks */,
 				079B27E71C6681D6F33E2269 /* Carbon.framework in Frameworks */,
 				46A5EB42E3DDA2A317F52CF3 /* CoreServices.framework in Frameworks */,
@@ -962,6 +988,12 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				A426D9AC0CDDD9784BD48419 /* NVTextMerge.m */,
+				0C11CF2EDC05AC987622D2D5 /* NVTextMerge.h */,
+				3C26E0D689FE970A20415A2E /* NVSimplenoteService.m */,
+				EC41282ACF52438919D7CBCC /* NVSimplenoteService.h */,
+				57A824B1AAAA55ACEBF82CB3 /* NVNoteRecord.m */,
+				2A22B12429739921C1056F9D /* NVNoteRecord.h */,
 				2114C11409575BD400614E74 /* AppController.h */,
 				2114C11509575BD400614E74 /* AppController.m */,
 				5CA10F30131C29E900DE1F91 /* AppController_Preview.h */,
@@ -1428,6 +1460,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FDDF93C32F0A647680221F04 /* libsqlite3.tbd */,
 				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
@@ -1529,6 +1562,11 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				996440772CE8FD18BC53C7D6 /* NVNoteRecordTests.m */,
+				A9C527F33C13A1E811D095A2 /* NVFakeSimplenoteServiceTests.m */,
+				6C03EC9F7AA4424A4121FDCE /* NVTextMergeTests.m */,
+				D342AFBCDC33FA2AD5FEA056 /* NVFakeSimplenoteService.m */,
+				A80BC5BF248959D441717F16 /* NVFakeSimplenoteService.h */,
 				33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */,
 				6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */,
 				1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */,
@@ -1788,6 +1826,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AC25EA79ED30C0F33EA17CE /* NVTextMerge.m in Sources */,
+				D04C5F134240947DFCA4C139 /* NVSimplenoteService.m in Sources */,
+				0DB3AB692E726E25067C3007 /* NVNoteRecord.m in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				2114C11609575BD400614E74 /* AppController.m in Sources */,
 				2114C13F0957732800614E74 /* NotationController.m in Sources */,
@@ -1897,6 +1938,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2BBF2F87D2B091406A4FCAB /* NVNoteRecordTests.m in Sources */,
+				2FE7AE69DBF337107D0F2D43 /* NVFakeSimplenoteServiceTests.m in Sources */,
+				2BC7DDBD3EC5E632DA14469A /* NVTextMergeTests.m in Sources */,
+				564550F6F6A16522A367C1AC /* NVFakeSimplenoteService.m in Sources */,
+				7B09933A67FD39DCFE5E70DC /* NVTextMerge.m in Sources */,
+				F1F4BDE8871D6F10CBB9E7AC /* NVSimplenoteService.m in Sources */,
+				1990A56BDA0562E944DB733E /* NVNoteRecord.m in Sources */,
 				F2ACCC151AB01313434785BF /* RealDatabaseCompatibilityTests.m in Sources */,
 				D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */,
 				A89DDACA50CBE829E56A0DB3 /* AppController.m in Sources */,
