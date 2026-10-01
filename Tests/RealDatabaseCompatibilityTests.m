@@ -21,6 +21,7 @@
 #import "DeletedNoteObject.h"
 #import "WALController.h"
 #import "NVLegacyImporter.h"
+#import "NVNoteContent.h"
 
 @interface RealDatabaseCompatibilityTests : XCTestCase
 @end
@@ -92,6 +93,16 @@
 	NSLog(@"[compat] simplenote: synced=%lu neverSynced=%lu dirty=%lu newestSyncedModify=%@ oldestDirtyModify=%@",
 		  (unsigned long)synced, (unsigned long)neverSynced, (unsigned long)dirty, newestSync, oldestDirty);
 	XCTAssertGreaterThan([notes count], (NSUInteger)0);
+	
+	//every note's Simplenote content must survive split + recombine byte for byte
+	NSUInteger exact = 0;
+	for (NoteObject *note in notes) {
+		NSString *content = [note combinedContentWithContextSeparator:[[[note syncServicesMD] objectForKey:@"SN"] objectForKey:@"SepStr"]];
+		NVNoteContent *split = [NVNoteContent contentWithString:content];
+		if ([[split stringWithTitle:[split title] body:[split body]] isEqualToString:content]) exact++;
+	}
+	NSLog(@"[compat] content round trip: %lu/%lu exact", (unsigned long)exact, (unsigned long)[notes count]);
+	XCTAssertEqual(exact, [notes count]);
 
 	NSString *journalDirectory = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_JOURNAL_DIR"];
 	if ([journalDirectory length]) {
