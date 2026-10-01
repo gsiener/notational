@@ -371,6 +371,7 @@
 		7B4864BBA665425B91DA9A1E /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 219D25491113FE34005E7DF5 /* SystemConfiguration.framework */; };
 		C9A29ECF90A9B7BA1DBB4D36 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21B54C011134F2E800E163A1 /* IOKit.framework */; };
 		2A4B64FEF1B5962E028F0534 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2191926609C52AA600586B15 /* libz.tbd */; };
+		D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -915,6 +916,7 @@
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 		C9E1D6AD973487800280D642 /* NotationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NSDataTransformationsTests.m; sourceTree = "<group>"; };
+		6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotesDatabaseTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1525,6 +1527,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */,
 				1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */,
 			);
 			path = Tests;
@@ -1891,6 +1894,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */,
 				A89DDACA50CBE829E56A0DB3 /* AppController.m in Sources */,
 				606B82838E83B0C6BA5817C4 /* NotationController.m in Sources */,
 				D01FDFEA2EB9C418A8B74B60 /* NoteObject.m in Sources */,
