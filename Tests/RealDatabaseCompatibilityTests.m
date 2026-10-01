@@ -20,6 +20,7 @@
 #import "NoteObject.h"
 #import "DeletedNoteObject.h"
 #import "WALController.h"
+#import "NVLegacyImporter.h"
 
 @interface RealDatabaseCompatibilityTests : XCTestCase
 @end
@@ -117,6 +118,13 @@
 			  (unsigned long)[recovered count], (unsigned long)updated, (unsigned long)added, (unsigned long)removed);
 		//leave the copied journal in place so the check can be re-run
 	}
+	
+	//what migration to the Simplenote-backed store would import as nvalt-recovered notes
+	NVLegacyImporter *importer = [[[NVLegacyImporter alloc] initWithDatabasePath:path journalDirectory:journalDirectory] autorelease];
+	XCTAssertEqual([importer read], NVLegacyImportRead);
+	NSLog(@"[compat] migration: total=%lu synced=%lu wouldRecover=%lu journalRecords=%lu",
+		  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes],
+		  (unsigned long)[[importer recoveredNotes] count], (unsigned long)[importer journalRecords]);
 }
 
 @end
