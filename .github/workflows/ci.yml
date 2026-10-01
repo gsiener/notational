@@ -48,6 +48,15 @@ jobs:
             -derivedDataPath build/DerivedData \
             -resultBundlePath build/TestResults.xcresult
 
+      # memory errors in the C buffers and manual retain/release code (#26) fail the build
+      - name: test with Address Sanitizer
+        run: |
+          xcodebuild test \
+            -project Notation.xcodeproj \
+            -scheme NotationTests \
+            -derivedDataPath build/DerivedDataASan \
+            -enableAddressSanitizer YES
+
       - name: verify app
         run: |
           app=build/Notational.xcarchive/Products/Applications/Notational.app
