@@ -104,7 +104,6 @@
 - (IBAction)toggledSyncing:(id)sender;
 - (IBAction)syncFrequencyChange:(id)sender;
 
-- (void)cancelLoginVerifier;
 - (void)setVerificationStatus:(int)status withString:(NSString*)aString;
 
 - (void)encryptionFormatMismatchSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode 

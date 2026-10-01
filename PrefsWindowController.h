@@ -94,7 +94,6 @@
 
 - (NSMenu*)directorySelectionMenu;
 - (void)changeDefaultDirectory;
-- (BOOL)getNewNotesRefFromOpenPanel:(FSRef*)notesDirectoryRef returnedPath:(NSString**)path;
 
 - (NotationPrefsViewController*)notationPrefsViewController;
 - (NSView*)databaseView;

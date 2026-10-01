@@ -12,6 +12,7 @@
 
 #import "AppController.h"
 #import "AppController_Simplenote.h"
+#import "NVSyncEngine.h"
 #import "NSString_CustomTruncation.h"
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
@@ -20,7 +21,6 @@
 #import "NotationPrefs.h"
 #import "PrefsWindowController.h"
 #import "NoteAttributeColumn.h"
-#import "NotationDirectoryManager.h"
 #import "NotationFileManager.h"
 #import "NSString_NV.h"
 #import "NSFileManager_NV.h"
@@ -340,7 +340,6 @@ void outletObjectAwoke(id sender) {
     [textView setupFontMenu];
     [prefsController registerAppActivationKeystrokeWithTarget:self selector:@selector(toggleNVActivation:)];
     [notationController updateLabelConnectionsAfterDecoding];
-    [notationController checkIfNotationIsTrashed];
     [[SecureTextEntryManager sharedInstance] checkForIncompatibleApps];
 
     // add elasticthreads' menuitems
@@ -499,9 +498,6 @@ terminateApp:
 		[[window undoManager] removeAllActions];
 		[notationController setUndoManager:[window undoManager]];
 		
-		if ([notationController aliasNeedsUpdating]) {
-			[prefsController setAliasDataForDefaultDirectory:[notationController aliasDataForNoteDirectory] sender:self];
-		}
 		if ([prefsController tableColumnsShowPreview] || [prefsController horizontalLayout]) {
 			[self _forceRegeneratePreviewsForTitleColumn];
 			[notesTableView setNeedsDisplay:YES];
@@ -926,38 +922,7 @@ terminateApp:
 }
 
 - (void)settingChangedForSelectorString:(NSString*)selectorString {
-    if ([selectorString isEqualToString:SEL_STR(setAliasDataForDefaultDirectory:sender:)]) {
-		//defaults changed for the database location -- load the new one!
-		
-		OSStatus err = noErr;
-		NotationController *newNotation = nil;
-		NSData *newData = [prefsController aliasDataForDefaultDirectory];
-		if (newData) {
-#if kUseCachesFolderForInterimNoteChanges
-            if (notationController&&[notationController flushAllNoteChanges]) {
-                [notationController closeJournal];
-            }
-#endif
-			if ((newNotation = [[NotationController alloc] initWithAliasData:newData error:&err])) {
-				[self setNotationController:newNotation];
-				[newNotation release];
-				
-			} else {
-				
-				//set alias data back
-				NSData *oldData = [notationController aliasDataForNoteDirectory];
-				[prefsController setAliasDataForDefaultDirectory:oldData sender:self];
-				
-				//display alert with err--could not set notation directory
-				NSString *location = [[[NSFileManager defaultManager] pathCopiedFromAliasData:newData] stringByAbbreviatingWithTildeInPath];
-				NSString *oldLocation = [[[NSFileManager defaultManager] pathCopiedFromAliasData:oldData] stringByAbbreviatingWithTildeInPath];
-				NSString *reason = [NSString reasonStringFromCarbonFSError:err];
-				NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"Unable to initialize notes database in \n%@ because %@.",nil), location, reason],
-								[NSString stringWithFormat:NSLocalizedString(@"Reverting to current location of %@.",nil), oldLocation],
-								NSLocalizedString(@"OK",nil), NULL, NULL);
-			}
-		}
-    } else if ([selectorString isEqualToString:SEL_STR(setSortedTableColumnKey:reversed:sender:)]) {
+    if ([selectorString isEqualToString:SEL_STR(setSortedTableColumnKey:reversed:sender:)]) {
 		NoteAttributeColumn *oldSortCol = [notationController sortColumn];
 		NoteAttributeColumn *newSortCol = [notesTableView noteAttributeColumnForIdentifier:[prefsController sortedTableColumnKey]];
 		BOOL changedColumns = oldSortCol != newSortCol;
@@ -1015,11 +980,7 @@ terminateApp:
 		if ([prefsController autoCompleteSearches])
 			[notationController updateTitlePrefixConnections];
 		
-	}else if ([selectorString isEqualToString:SEL_STR(setUseFinderTags:)]) {
-        if(IsMavericksOrLater&&(([notationController currentNoteStorageFormat] != SingleDatabaseFormat))){
-            [notationController mirrorAllOMToFinderTags];
-        }
-    }
+	}
 	
 }
 
@@ -1095,11 +1056,8 @@ terminateApp:
 //}
 
 - (void)applicationDidBecomeActive:(NSNotification *)aNotification {
-	[notationController checkJournalExistence];
-	
-    if ([notationController currentNoteStorageFormat] != SingleDatabaseFormat)
-		[notationController performSelector:@selector(synchronizeNotesFromDirectory) withObject:nil afterDelay:0.0];
 	[notationController updateDateStringsIfNecessary];
+	[[notationController syncEngine] syncNow];
 }
 
 - (void)applicationWillResignActive:(NSNotification *)aNotification {
@@ -2072,14 +2030,7 @@ terminateApp:
 	}
 	
 	[[NSApp windows] makeObjectsPerformSelector:@selector(close)];
-	[notationController stopFileNotifications];
-	
-	//wait for syncing to finish, showing a progress bar
-	
-    if ([notationController flushAllNoteChanges])
-		[notationController closeJournal];
-	else
-		NSLog(@"Could not flush database, so not removing journal");
+	[notationController closeAllResources];
 	
     [prefsController synchronize];
 }

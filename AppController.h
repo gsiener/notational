@@ -163,7 +163,6 @@ void outletObjectAwoke(id sender);
 
 - (void)restoreListStateUsingPreferences;
 
-- (void)_finishSyncWait;
 - (IBAction)syncWaitQuit:(id)sender;
 
 - (void)setTableAllowsMultipleSelection;

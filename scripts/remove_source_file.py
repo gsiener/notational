@@ -9,8 +9,24 @@ import os, re, sys
 
 PBX = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Notation.xcodeproj', 'project.pbxproj')
 s = open(PBX).read()
+def remove_variant_group(name):
+    """Remove a localized resource (e.g. Foo.nib in every .lproj): the variant group, its children and build files."""
+    global s
+    m = re.search(r'\t\t([0-9A-F]{24}) /\* ' + re.escape(name) + r' \*/ = \{\n\t\t\tisa = PBXVariantGroup;.*?\n\t\t\};\n', s, re.S)
+    if not m:
+        return False
+    group_id, block = m.group(1), m.group(0)
+    children = re.findall(r'\t\t\t\t([0-9A-F]{24}) /\*', block)
+    s = s.replace(block, '')
+    builds = re.findall(r'\t\t([0-9A-F]{24}) /\* [^*]+ \*/ = \{isa = PBXBuildFile; fileRef = ' + group_id, s)
+    for ident in builds + children + [group_id]:
+        s = '\n'.join(line for line in s.split('\n') if not re.match(r'\s*' + ident + r' ', line))
+    return True
+
 for path in sys.argv[1:]:
     name = os.path.basename(path)
+    if remove_variant_group(name):
+        print(f'{name}: removed (localized variants)'); continue
     refs = re.findall(r'\t\t([0-9A-F]{24}) /\* ' + re.escape(name) + r' \*/ = \{isa = PBXFileReference', s)
     if not refs:
         print(f'{name}: not in project'); continue

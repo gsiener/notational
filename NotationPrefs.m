@@ -631,9 +631,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		//didn't cancel
 		[self setNotesStorageFormat:newNoteStorageFormat];
 	
-	if (returnCode == NSAlertOtherReturn)
-		//tell delegate to delete all its notes' files
-		[delegate trashRemainingNoteFilesInDirectory];
 	//but what if the files remain after switching to a single-db format--and then the user deletes a bunch of the files themselves?
 	//should we switch the currentFormatIDs of those notes to single-db? I guess.
 	

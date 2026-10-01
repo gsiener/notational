@@ -21,7 +21,6 @@
 #import "NotationFileManager.h"
 #import "BookmarksController.h"
 #import "DualField.h"
-#import "NotationDirectoryManager.h"
 #import "AlienNoteImporter.h"
 #import "NSString_NV.h"
 #import <WebKit/WebArchive.h>
@@ -287,19 +286,6 @@
 		NSArray *unknownPaths = files;
 		NSUInteger i;
 		
-		if ([notationController currentNoteStorageFormat] != SingleDatabaseFormat) {
-			//notes are stored as separate files, so if these paths are in the notes folder then NV can create double-bracketed-links to them instead
-			
-			NSSet *existingNotes = [notationController notesWithFilenames:files unknownFiles:&unknownPaths];
-			if ([existingNotes count]) {
-				//create double-bracketed links using these notes' titles
-				NSArray *existingArray = [existingNotes allObjects];
-				for (i=0; i<[existingArray count]; i++) {
-					[allURLsString appendFormat:@"[[%@]]%s", titleOfNote([existingArray objectAtIndex:i]), 
-					 (i < [existingArray count] - 1) || [unknownPaths count] ? "\n" : ""];
-				}
-			}
-		}
 		//NSLog(@"paths not found in DB: %@", unknownPaths);
 		
 		for (i=0; i<[unknownPaths count]; i++) {

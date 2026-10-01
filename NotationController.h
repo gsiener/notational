@@ -41,7 +41,6 @@ typedef struct _NoteCatalogEntry {
 @class NotationPrefs;
 @class NoteAttributeColumn;
 @class NoteBookmark;
-@class DeletionManager;
 @class GlobalPrefs;
 
 @class NVNotesStore, NVSyncEngine;
@@ -51,7 +50,6 @@ typedef struct _NoteCatalogEntry {
     FastListDataSource *notesListDataSource;
     LabelsListController *labelsListController;
 	GlobalPrefs *prefsController;
-	DeletionManager *deletionManager;
 	id delegate;
 	
 	float titleColumnWidth;
@@ -115,24 +113,10 @@ typedef struct _NoteCatalogEntry {
 - (NoteObject *)noteForRecordID:(NSString *)recordID;
 
 - (id)init;
-- (id)initWithAliasData:(NSData*)data error:(OSStatus*)err;
-- (id)initWithDefaultDirectoryReturningError:(OSStatus*)err;
-- (id)initWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err;
-- (void)setAliasNeedsUpdating:(BOOL)needsUpdate;
-- (BOOL)aliasNeedsUpdating;
-- (NSData*)aliasDataForNoteDirectory;
-- (OSStatus)_readAndInitializeSerializedNotes;
-- (void)processRecoveredNotes:(NSDictionary*)dict;
-- (BOOL)initializeJournaling;
-- (void)handleJournalError;
-- (void)checkJournalExistence;
-- (void)closeJournal;
 - (BOOL)flushAllNoteChanges;
 - (void)flushEverything;
 
-- (void)mirrorAllOMToFinderTags;
 
-- (void)upgradeDatabaseIfNecessary;
 
 - (id)delegate;
 - (void)setDelegate:(id)theDelegate;
@@ -152,21 +136,16 @@ typedef struct _NoteCatalogEntry {
 - (void)noteDidNotWrite:(NoteObject*)note errorCode:(OSStatus)error;
 - (void)scheduleWriteForNote:(NoteObject*)note;
 - (void)closeAllResources;
-- (void)trashRemainingNoteFilesInDirectory;
-- (void)checkIfNotationIsTrashed;
 - (void)updateLinksToNote:(NoteObject*)aNoteObject fromOldName:(NSString*)oldname;
 - (void)updateTitlePrefixConnections;
 - (void)addNotes:(NSArray*)noteArray;
-- (void)addNotesFromSync:(NSArray*)noteArray;
 - (void)addNewNote:(NoteObject*)aNoteObject;
 - (void)_addNote:(NoteObject*)aNoteObject;
 - (void)removeNote:(NoteObject*)aNoteObject;
 - (void)removeNotes:(NSArray*)noteArray;
 - (void)_purgeAlreadyDistributedDeletedNotes;
-- (void)removeSyncMDFromDeletedNotesInSet:(NSSet*)notesToOrphan forService:(NSString*)serviceName;
 - (DeletedNoteObject*)_addDeletedNote:(id<SynchronizedNote>)aNote;
 - (void)_registerDeletionUndoForNote:(NoteObject*)aNote;
-- (NoteObject*)addNoteFromCatalogEntry:(NoteCatalogEntry*)catEntry;
 
 - (BOOL)openFiles:(NSArray*)filenames;
 
