@@ -744,6 +744,9 @@ static inline CGFloat fMAX(CGFloat a,CGFloat b) {
 	return [super needsDisplay];
 }
 
+//defined in AppController.m; tracks nib outlets as they load
+extern void outletObjectAwoke(id sender);
+
 // We implement awakeFromNib to restore the state. This works if an autosaveName is set in the nib.
 - (void)awakeFromNib {
 	if ([RBSplitSubview instancesRespondToSelector:@selector(awakeFromNib)]) {

@@ -11,6 +11,7 @@
 //ET NV4
 
 #import "AppController.h"
+#import "NSString_CustomTruncation.h"
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "AlienNoteImporter.h"
