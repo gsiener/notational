@@ -18,7 +18,6 @@
 
 #import "AppController_Importing.h"
 #import "NotationController.h"
-#import "NotationFileManager.h"
 #import "BookmarksController.h"
 #import "DualField.h"
 #import "AlienNoteImporter.h"
@@ -137,8 +136,7 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 		}
 		[newString santizeForeignStylesForImporting];
 		
-		NoteObject *note = [[[NoteObject alloc] initWithNoteBody:newString title:noteTitle delegate:notationController
-														  format:[notationController currentNoteStorageFormat] labels:nil] autorelease];
+		NoteObject *note = [[[NoteObject alloc] initWithNoteBody:newString title:noteTitle delegate:notationController labels:nil] autorelease];
 		if (bodyLoc > 0 && [newString length] >= bodyLoc + prefixedSourceLength) [note setSelectedRange:NSMakeRange(prefixedSourceLength, bodyLoc)];
 		[notationController addNewNote:note];
 		
@@ -246,8 +244,7 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
                 [attributedContents removeAttachments];
                 [attributedContents santizeForeignStylesForImporting];
                 
-                NoteObject *note = [[[NoteObject alloc] initWithNoteBody:[attributedContents autorelease] title:title delegate:notationController
-                                                                  format:[notationController currentNoteStorageFormat] labels:tags] autorelease];
+                NoteObject *note = [[[NoteObject alloc] initWithNoteBody:[attributedContents autorelease] title:title delegate:notationController labels:tags] autorelease];
                 [notationController addNewNote:note];
                 return YES;
             } else if (txtBody || htmlBody) {

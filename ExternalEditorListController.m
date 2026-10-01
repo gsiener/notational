@@ -54,54 +54,9 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 	return nil;
 }
 
-- (BOOL)canEditNoteDirectly:(NoteObject*)aNote {
-	NSAssert(aNote != nil, @"aNote is nil");
-
-	//for determining whether this potentially non-ODB-editor can open a non-plain-text file
-	//process: does pathExtension key exist in knownPathExtensions dict?
-	//if not, check this path extension w/ launch services
-	//then add a corresponding YES/NO NSNumber value to the knownPathExtensions dict
-
-	//but first, this editor can't handle any path if it's not actually installed
-	if (![self isInstalled]) return NO;
-	
-	//and if this note isn't actually stored in a separate file, then obviously it can't be opened directly
-	if ([[aNote delegate] currentNoteStorageFormat] == SingleDatabaseFormat) return NO;
-	
-	//and if aNote is in plaintext format and this editor is ODB-capable, then it should also be a general-purpose texteditor
-	//conversely ODB editors should never be allowed to open non-plain-text documents; for some reason LSCanURLAcceptURL claims they can do that
-	//one exception known: writeroom can edit rich-text documents
-	if (([self isODBEditor] && ![bundleIdentifier hasPrefix:@"com.hogbaysoftware.WriteRoom"]) || [bundleIdentifier hasPrefix:@"com.multimarkdown.composer.mac"]) {
-		return storageFormatOfNote(aNote) == PlainTextFormat;
-	}
-		
-	if (!knownPathExtensions) knownPathExtensions = [NSMutableDictionary new];
-	NSString *extension = [[filenameOfNote(aNote) pathExtension] lowercaseString];
-	NSNumber *canHandleNumber = [knownPathExtensions objectForKey:extension];
-	
-	if (!canHandleNumber) {
-		NSString *path = [aNote noteFilePath];
-	
-		Boolean canAccept = false;
-		OSStatus err = LSCanURLAcceptURL((CFURLRef)[NSURL fileURLWithPath:path], (CFURLRef)[self resolvedURL], kLSRolesEditor, kLSAcceptAllowLoginUI, &canAccept);
-		if (noErr != err) {
-			NSLog(@"LSCanURLAcceptURL '%@' err: %d", path, err);
-		}
-		[knownPathExtensions setObject:[NSNumber numberWithBool:(BOOL)canAccept] forKey:extension];
-		
-		return (BOOL)canAccept;
-	}
-	
-	return [canHandleNumber boolValue];
-}
-
 - (BOOL)canEditAllNotes:(NSArray*)notes {
-	NSUInteger i = 0;
-	for (i=0; i<[notes count]; i++) {
-		if (![self isODBEditor] && ![self canEditNoteDirectly:[notes objectAtIndex:i]])
-			return NO;
-	}
-	return YES;
+	//a note is edited by writing its text to a temporary file, which only an ODB editor can report changes to
+	return [self isODBEditor];
 }
 
 - (NSImage*)iconImage {
@@ -159,7 +114,6 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 
 
 - (void)dealloc {
-	[knownPathExtensions release];
 	[bundleIdentifier release];
 	[displayName release];
 	[resolvedURL release];

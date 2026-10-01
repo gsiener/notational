@@ -21,22 +21,6 @@
 
 #define ResizeArray(__DirectBuffer, __objCount, __bufObjCount)	_ResizeBuffer((void***)(__DirectBuffer), (__objCount), (__bufObjCount), sizeof(typeof(**(__DirectBuffer))))
 
-#define UTCDateTimeIsEmpty(__UTCDT) (*(int64_t*)&((__UTCDT)) == 0LL)
-
-typedef struct _PerDiskInfo {
-	
-	//index in a table of disk UUIDs; should be the disk from which this time was gathered
-	//the disk UUIDs table is tracked separately in FrozenNotation; it should only ever be appended-to
-	UInt32 diskIDIndex;
-	
-	//catalog node ID of a file
-	UInt32 nodeID;
-	
-	//the attribute modification time of a file
-	UTCDateTime attrTime;
-	
-} PerDiskInfo;
-
 char *replaceString(char *oldString, const char *newString);
 void _ResizeBuffer(void ***buffer, unsigned int objCount, unsigned int *bufSize, unsigned int elemSize);
 int IsZeros(const void *s1, size_t n);
@@ -51,14 +35,8 @@ NSInteger genericSortContextFirst(int (*context) (void*, void*), void* one, void
 NSInteger genericSortContextLast(void* one, void* two, int (*context) (void*, void*));
 void QuickSortBuffer(void **buffer, unsigned int objCount, int (*compar)(const void *, const void *));
 
-void RemovePerDiskInfoWithTableIndex(UInt32 diskIndex, PerDiskInfo **perDiskGroups, unsigned int *groupCount);
-unsigned int SetPerDiskInfoWithTableIndex(UTCDateTime *dateTime, UInt32 *nodeID, UInt32 diskIndex, PerDiskInfo **perDiskGroups, unsigned int *groupCount);
-void CopyPerDiskInfoGroupsToOrder(PerDiskInfo **flippedGroups, unsigned int *existingCount, PerDiskInfo *perDiskGroups, size_t bufferSize, int toHostOrder);
-
-CFStringRef CreateRandomizedFileName(void);
 OSStatus FSCreateFileIfNotPresentInDirectory(FSRef *directoryRef, FSRef *childRef, CFStringRef filename, Boolean *created);
 OSStatus FSRefMakeInDirectoryWithString(FSRef *directoryRef, FSRef *childRef, CFStringRef filename, UniChar* charsBuffer);
-OSStatus FSRefReadData(FSRef *fsRef, size_t maximumReadSize, UInt64 *bufferSize, void** newBuffer, UInt16 modeOptions);
 OSStatus FSRefWriteData(FSRef *fsRef, size_t maximumWriteSize, UInt64 bufferSize, const void* buffer, UInt16 modeOptions, Boolean truncateFile);
 
 CFStringRef CopyReasonFromFSErr(OSStatus err);

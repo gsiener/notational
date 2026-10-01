@@ -27,7 +27,6 @@
 #import "SynchronizedNoteProtocol.h"
 
 @class LabelObject;
-@class WALStorageController;
 @class NotesTableView;
 @class ExternalEditor;
 
@@ -51,18 +50,11 @@ typedef struct _NoteFilterContext {
 	
 	id delegate; //the notes controller
 	
-	//for syncing to text file
-	UInt32 nodeID;
-	PerDiskInfo *perDiskInfoGroups;
-	unsigned int perDiskInfoGroupCount;
-	BOOL shouldWriteToFile, didUnarchive;
+	BOOL didUnarchive;
 	
 	//for storing in write-ahead-log
 	unsigned int logSequenceNumber;
 	
-	//not determined until it's time to read to or write from a text file
-	FSRef *noteFileRef;
-
 	//the first for syncing w/ NV server, as the ID cannot be encrypted
 	CFUUIDBytes uniqueNoteIDBytes;
 	
@@ -75,12 +67,7 @@ typedef struct _NoteFilterContext {
 	NSUndoManager *undoManager;
 @public
 	NSMutableArray *prefixParentNotes;
-	NSString *filename;
 	NSString *titleString, *labelString;
-	UInt32 logicalSize;
-	UTCDateTime fileModifiedDate, *attrsModifiedDate;
-	NSStringEncoding fileEncoding;
-	NSInteger currentFormatID;
 	CFAbsoluteTime modifiedDate, createdDate;
 }
 
@@ -97,10 +84,6 @@ NSInteger compareDateCreatedReverse(id *a, id *b);
 NSInteger compareLabelStringReverse(id *a, id *b);
 NSInteger compareTitleStringReverse(id *a, id *b);
 
-NSInteger compareFilename(id *a, id *b);
-NSInteger compareNodeID(id *a, id *b);
-NSInteger compareFileSize(id *a, id *b);
-
 //syncing w/ server and from journal
 - (CFUUIDBytes *)uniqueNoteIDBytes;
 - (NSDictionary*)syncServicesMD;
@@ -109,17 +92,8 @@ NSInteger compareFileSize(id *a, id *b);
 
 - (BOOL)youngerThanLogObject:(id<SynchronizedNote>)obj;
 
-	//syncing w/ files in directory
-	NSInteger storageFormatOfNote(NoteObject *note);
-	NSString* filenameOfNote(NoteObject *note);
-	UInt32 fileNodeIDOfNote(NoteObject *note);
-	UInt32 fileSizeOfNote(NoteObject *note);
-	UTCDateTime fileModifiedDateOfNote(NoteObject *note);
-	UTCDateTime *attrsModifiedDateOfNote(NoteObject *note);
 	CFAbsoluteTime modifiedDateOfNote(NoteObject *note);
 	CFAbsoluteTime createdDateOfNote(NoteObject *note);
-
-	NSStringEncoding fileEncodingOfNote(NoteObject *note);
 	
 	NSString* titleOfNote(NoteObject *note);
 	NSString* labelsOfNote(NoteObject *note);
@@ -148,8 +122,7 @@ NSInteger compareFileSize(id *a, id *b);
 - (id)delegate;
 - (void)setDelegate:(id)theDelegate;
 - (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle 
-			  delegate:(id)aDelegate format:(NSInteger)formatID labels:(NSString*)aLabelString;
-- (id)initWithCatalogEntry:(NoteCatalogEntry*)entry delegate:(id)aDelegate;
+			  delegate:(id)aDelegate labels:(NSString*)aLabelString;
 
 - (NSSet*)labelSet;
 - (void)replaceMatchingLabelSet:(NSSet*)aLabelSet;
@@ -171,41 +144,19 @@ NSInteger compareFileSize(id *a, id *b);
 - (void)updateWithSyncBody:(NSString*)newBody andTitle:(NSString*)newTitle;
 - (void)registerModificationWithOwnedServices;
 
-- (OSStatus)writeCurrentFileEncodingToFSRef:(FSRef*)fsRef;
-- (void)_setFileEncoding:(NSStringEncoding)encoding;
-- (BOOL)setFileEncodingAndReinterpret:(NSStringEncoding)encoding;
-- (BOOL)upgradeToUTF8IfUsingSystemEncoding;
-- (BOOL)upgradeEncodingToUTF8;
-- (BOOL)updateFromFile;
-- (BOOL)updateFromCatalogEntry:(NoteCatalogEntry*)catEntry;
-- (BOOL)updateFromData:(NSMutableData*)data inFormat:(NSInteger)fmt;
-
-- (OSStatus)writeFileDatesAndUpdateTrackingInfo;
-
-- (BOOL)mirrorTags;
+- (BOOL)updateFromPlainTextData:(NSMutableData*)data;
 
 - (NSURL*)uniqueNoteLink;
-- (NSString*)noteFilePath;
-- (void)invalidateFSRef;
+- (NSString*)titleAsFilename;
+- (NSString*)temporaryTextFilePath;
 
-- (BOOL)writeUsingJournal:(WALStorageController*)wal;
-
-- (BOOL)writeUsingCurrentFileFormatIfNecessary;
-- (BOOL)writeUsingCurrentFileFormatIfNonExistingOrChanged;
-- (BOOL)writeUsingCurrentFileFormat;
 - (void)makeNoteDirtyUpdateTime:(BOOL)updateTime updateFile:(BOOL)updateFile;
-
-- (void)moveFileToTrash;
-- (void)removeFileFromDirectory;
-- (BOOL)removeUsingJournal:(WALStorageController*)wal;
 
 - (OSStatus)exportToDirectoryRef:(FSRef*)directoryRef withFilename:(NSString*)userFilename usingFormat:(int)storageFormat overwrite:(BOOL)overwrite;
 - (NSRange)nextRangeForWords:(NSArray*)words options:(unsigned)opts range:(NSRange)inRange;
 - (void)editExternallyUsingEditor:(ExternalEditor*)ed;
 - (void)abortEditingInExternalEditor;
 
-- (void)setFilenameFromTitle;
-- (void)setFilename:(NSString*)aString withExternalTrigger:(BOOL)externalTrigger;
 - (BOOL)_setTitleString:(NSString*)aNewTitle;
 - (void)setTitleString:(NSString*)aNewTitle;
 - (void)updateTablePreviewString;

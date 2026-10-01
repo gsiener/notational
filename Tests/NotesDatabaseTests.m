@@ -42,8 +42,7 @@
 
 - (NoteObject *)noteWithTitle:(NSString *)title body:(NSString *)body {
 	NSAttributedString *bodyText = [[[NSAttributedString alloc] initWithString:body] autorelease];
-	return [[[NoteObject alloc] initWithNoteBody:bodyText title:title delegate:nil
-										  format:SingleDatabaseFormat labels:@""] autorelease];
+	return [[[NoteObject alloc] initWithNoteBody:bodyText title:title delegate:nil labels:@""] autorelease];
 }
 
 - (NSMutableArray *)sampleNotes {

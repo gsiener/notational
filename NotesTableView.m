@@ -723,7 +723,6 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	[theMenu addItem:[noteLinkItem autorelease]];
 	
 	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, @selector(exportNote:), target, -1);
-	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, @selector(revealNote:), target, -1);
 	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, NULL, target, 88);
 	
 	[theMenu setSubmenu:[[ExternalEditorListController sharedInstance] addEditNotesMenu] forItem:[theMenu itemAtIndex:[theMenu numberOfItems] - 1]];
@@ -814,11 +813,9 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		unsigned int i;
 		for (i=0;i<[notes count]; i++) {
 			NoteObject *note = [notes objectAtIndex:i];
-			//for now, allow option-dragging-out only for notes with separate file-backing stores
-			if (storageFormatOfNote(note) != SingleDatabaseFormat) {
-				NSString *aPath = [note noteFilePath];
-				if (aPath) [paths addObject:aPath];
-			}
+			//notes aren't files, so drag out a temporary text file of each one
+			NSString *aPath = [note temporaryTextFilePath];
+			if (aPath) [paths addObject:aPath];
 		}
 		if ([paths count] > 0) {
 			NSImage *image = [[NSWorkspace sharedWorkspace] iconForFile:[paths lastObject]];

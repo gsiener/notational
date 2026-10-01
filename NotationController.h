@@ -25,17 +25,6 @@
 
 //enum { kUISearch, kUINewNote, kUIDeleteNote, kUIRenameNote, kUILabelOperation };
 
-typedef struct _NoteCatalogEntry {
-    UTCDateTime lastModified;
-	UTCDateTime lastAttrModified;
-    UInt32 logicalSize;
-    OSType fileType;
-    UInt32 nodeID;
-    CFMutableStringRef filename;
-    UniChar *filenameChars;
-    UniCharCount filenameCharCount;
-} NoteCatalogEntry;
-
 @class NoteObject;
 @class DeletedNoteObject;
 @class NotationPrefs;
@@ -62,36 +51,12 @@ typedef struct _NoteCatalogEntry {
     char *currentFilterStr, *manglingString;
     NSInteger lastWordInFilterStr;
     
-	BOOL directoryChangesFound;
-    
     NotationPrefs *notationPrefs;
 	
 	NSMutableSet *deletedNotes;
     
-	int volumeSupportsExchangeObjects;
-    FSCatalogInfo *fsCatInfoArray;
-    HFSUniStr255 *HFSUniNameArray;
-
-#if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-	FNSubscriptionUPP subscriptionCallback;
-    FNSubscriptionRef noteDirSubscription;	
-#endif
-	FSEventStreamRef noteDirEventStreamRef;
-	BOOL eventStreamStarted;
-	    
-    size_t catEntriesCount, totalCatEntriesCount;
-    NoteCatalogEntry *catalogEntries, **sortedCatalogEntries;
-    
 	unsigned int lastCheckedDateInHours;
 	int lastLayoutStyleGenerated;
-    long blockSize;
-	struct statfs *statfsInfo;
-	NSUInteger diskUUIDIndex;
-	CFUUIDRef diskUUID;
-    FSRef noteDirectoryRef, noteDatabaseRef;
-    AliasHandle aliasHandle;
-    BOOL aliasNeedsUpdating;
-    OSStatus lastWriteError;
     
     WALStorageController *walWriter;
     NSMutableSet *unwrittenNotes;
@@ -124,7 +89,6 @@ typedef struct _NoteCatalogEntry {
 - (void)databaseEncryptionSettingsChanged;
 - (void)databaseSettingsChangedFromOldFormat:(NSInteger)oldFormat;
 
-- (NSInteger)currentNoteStorageFormat;
 - (void)synchronizeNoteChanges:(NSTimer*)timer;
 
 - (void)updateDateStringsIfNecessary;
@@ -133,10 +97,8 @@ typedef struct _NoteCatalogEntry {
 - (void)restyleAllNotes;
 - (void)setUndoManager:(NSUndoManager*)anUndoManager;
 - (NSUndoManager*)undoManager;
-- (void)noteDidNotWrite:(NoteObject*)note errorCode:(OSStatus)error;
 - (void)scheduleWriteForNote:(NoteObject*)note;
 - (void)closeAllResources;
-- (void)updateLinksToNote:(NoteObject*)aNoteObject fromOldName:(NSString*)oldname;
 - (void)updateTitlePrefixConnections;
 - (void)addNotes:(NSArray*)noteArray;
 - (void)addNewNote:(NoteObject*)aNoteObject;

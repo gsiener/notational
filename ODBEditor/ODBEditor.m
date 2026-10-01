@@ -20,8 +20,6 @@
 #import "NSAppleEventDescriptor-Extensions.h"
 #import "ODBEditor.h"
 #import "ODBEditorSuite.h"
-#import "NotationPrefs.h"
-#import "TemporaryFileCachePreparer.h"
 #import "ExternalEditorListController.h"
 #import "NoteObject.h"
 #import <Carbon/Carbon.h>
@@ -88,24 +86,7 @@ static ODBEditor	*_sharedODBEditor;
 	[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEModifiedFile];
 	[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEClosedFile];
 	[_filePathsBeingEdited release];
-	[editingSpacePreparer release];
 	[super dealloc];
-}
-
-- (void)initializeDatabase:(NotationPrefs*)prefs {
-	if (editingSpacePreparer) {
-		[editingSpacePreparer setDelegate:nil];
-		[editingSpacePreparer release];
-	}
-	[(editingSpacePreparer = [[TemporaryFileCachePreparer alloc] init]) setDelegate:self];
-	[editingSpacePreparer prepEditingSpaceIfNecessaryForNotationPrefs:prefs];
-}
-
-- (void)temporaryFileCachePreparerDidNotFinish:(TemporaryFileCachePreparer*)preparer {
-	NSLog(@"preparer failed");
-}
-- (void)temporaryFileCachePreparerFinished:(TemporaryFileCachePreparer*)preparer {
-	NSLog(@"finished: '%@'", [preparer preparedCachePath]);
 }
 
 - (void)abortEditingFile:(NSString *)path {
@@ -150,32 +131,17 @@ static ODBEditor	*_sharedODBEditor;
 - (BOOL)editNote:(NoteObject*)aNote inEditor:(ExternalEditor*)ed context:(NSDictionary *)context {
 	if (!aNote) goto beepReturn;
 	
-	//see comments in -[TemporaryFileCachePreprer prepEditingSpaceIfNecessaryForNotationPrefs:]
+	//notes are no longer separate files, so edit a temporary copy of the text using the ODB protocol
 	
-	//let's first see if we can avoid this whole ODB protocol rigmarole altogether, and ideally even allow non-plain-text editors to be used		
-	if ([ed canEditNoteDirectly:aNote]) {
-		NSString *path = [aNote noteFilePath];
-		
-		[[NSWorkspace sharedWorkspace] openURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:path]] withAppBundleIdentifier:[ed bundleIdentifier] options:NSWorkspaceLaunchDefault additionalEventParamDescriptor:nil launchIdentifiers:NULL];
-		return YES;
-	}
-
-	//weren't able to edit the note-file directly, so fall back to opening a copy of it using an ODB editor
-	//what if this editor is not an ODB editor? what if the path doesn't exist?
-	
-	if (![editingSpacePreparer preparedCachePath]) {
-		NSLog(@"not editing '%@' because temporary cache path was not initialized", aNote);
-		goto beepReturn;
-	}
 	if (![ed isODBEditor]) {
-		NSLog(@"not editing '%@' with '%@' because it is not an ODB editor and the note-file cannot be saved directly", aNote, ed);
+		NSLog(@"not editing '%@' with '%@' because it is not an ODB editor", aNote, ed);
 		goto beepReturn;
 	}
 	
 	//now write aNote as text to path?
-	NSString *path = [self _nonexistingTemporaryPathForFilename:filenameOfNote(aNote)];	
+	NSString *path = [self _nonexistingTemporaryPathForFilename:[[aNote titleAsFilename] stringByAppendingPathExtension:@"txt"]];	
 	NSError *error = nil;
-	if (![[[aNote contentString] string] writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:&error]) {
+	if (!path || ![[[aNote contentString] string] writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:&error]) {
 		NSLog(@"not editing '%@' because it could not be written to '%@'", aNote, path);
 		goto beepReturn;
 	}
@@ -239,11 +205,12 @@ beepReturn:
 	NSString *basename = [filename stringByDeletingPathExtension];
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
-	NSAssert([editingSpacePreparer preparedCachePath] != nil, @"cache path does not exist!");
+	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Notational"];
+	if (![fileManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL]) return nil;
 	
 	do {
 		path = sTempFileSequence++ ? [NSString stringWithFormat: @"%@ %03d.txt", basename, sTempFileSequence] : [basename stringByAppendingPathExtension:@"txt"];
-		path = [[editingSpacePreparer preparedCachePath] stringByAppendingPathComponent: path];
+		path = [directory stringByAppendingPathComponent: path];
 	} while ([fileManager fileExistsAtPath:path]);
 	
 	return path;

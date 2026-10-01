@@ -34,11 +34,9 @@ extern NSString *ExternalEditorsChangedNotification;
 	NSString *bundleIdentifier;
 	NSURL *resolvedURL;
 	NSString *displayName;
-	NSMutableDictionary *knownPathExtensions;
 }
 
 - (id)initWithBundleID:(NSString*)aBundleIdentifier resolvedURL:(NSURL*)aURL;
-- (BOOL)canEditNoteDirectly:(NoteObject*)aNote;
 - (BOOL)canEditAllNotes:(NSArray*)notes;
 - (NSImage*)iconImage;
 - (NSURL*)resolvedURL;

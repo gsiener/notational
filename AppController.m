@@ -22,10 +22,8 @@
 #import "NotationPrefs.h"
 #import "PrefsWindowController.h"
 #import "NoteAttributeColumn.h"
-#import "NotationFileManager.h"
 #import "NSString_NV.h"
 #import "NSFileManager_NV.h"
-#import "EncodingsManager.h"
 #import "ExporterManager.h"
 #import "ExternalEditorListController.h"
 #import "NSData_transformations.h"
@@ -556,31 +554,6 @@ terminateApp:
 		
 		return (numberSelected == 1);
 		
-	} else if (selector == @selector(revealNote:)) {
-        
-		return (numberSelected == 1) && [notationController currentNoteStorageFormat] != SingleDatabaseFormat;
-		
-        //	} else if (selector == @selector(openFileInEditor:)) {
-        //		NSString *defApp = [prefsController textEditor];
-        //		if (![[self getTxtAppList] containsObject:defApp]) {
-        //			defApp = @"Default";
-        //			[prefsController setTextEditor:@"Default"];
-        //		}
-        //		if (([defApp isEqualToString:@"Default"])||(![[NSFileManager defaultManager] fileExistsAtPath:[[NSWorkspace sharedWorkspace] fullPathForApplication:defApp]])) {
-        //
-        //			if (![defApp isEqualToString:@"Default"]) {
-        //				[prefsController setTextEditor:@"Default"];
-        //			}
-        //			CFStringRef cfFormat = (CFStringRef)noteFormat;
-        //			defApp = [(NSString *)LSCopyDefaultRoleHandlerForContentType(cfFormat,kLSRolesEditor) autorelease];
-        //			defApp = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier: defApp];
-        //			defApp = [[NSFileManager defaultManager] displayNameAtPath: defApp];
-        //		}
-        //		if ((!defApp)||([defApp isEqualToString:@"Safari"])) {
-        //			defApp = @"TextEdit";
-        //		}
-        //		[menuItem setTitle:[@"Open Note in " stringByAppendingString:defApp]];
-        //		return (numberSelected == 1) && [notationController currentNoteStorageFormat] != SingleDatabaseFormat;
 	} else if (selector == @selector(toggleCollapse:)) {
         if ([notesSubview isCollapsed]) {
             [menuItem setTitle:NSLocalizedString(@"Expand Notes List",@"menu item title for expanding notes list")];
@@ -607,9 +580,6 @@ terminateApp:
         }
         
         
-	} else if (selector == @selector(fixFileEncoding:)) {
-		
-		return (currentNote != nil && storageFormatOfNote(currentNote) == PlainTextFormat && ![currentNote contentsWere7Bit]);
     } else if (selector == @selector(editNoteExternally:)) {
         return (numberSelected > 0) && [[menuItem representedObject] canEditAllNotes:[notationController notesAtIndexes:[notesTableView selectedRowIndexes]]];
 	}else if (selector == @selector(previewNoteWithMarked:)){
@@ -827,17 +797,6 @@ terminateApp:
 	[[ExporterManager sharedManager] exportNotes:notes forWindow:window];
 }
 
-- (IBAction)revealNote:(id)sender {
-	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-	NSString *path = nil;
-	
-	if ([indexes count] != 1 || !(path = [[notationController noteObjectAtFilteredIndex:[indexes lastIndex]] noteFilePath])) {
-		NSBeep();
-		return;
-	}
-	[[NSWorkspace sharedWorkspace] selectFile:path inFileViewerRootedAtPath:@""];
-}
-
 - (IBAction)editNoteExternally:(id)sender {
     ExternalEditor *ed = [sender representedObject];
     if ([ed isKindOfClass:[ExternalEditor class]]) {
@@ -846,7 +805,7 @@ terminateApp:
             //allow changing the default editor directly from Notes menu
             [[ExternalEditorListController sharedInstance] setDefaultEditor:ed];
         }
-        //force-write any queued changes to disk in case notes are being stored as separate files which might be opened directly by the method below
+        //save queued changes first so the temporary copy the editor opens is current
         [notationController synchronizeNoteChanges:nil];
         [[notationController notesAtIndexes:indexes] makeObjectsPerformSelector:@selector(editExternallyUsingEditor:) withObject:ed];
     } else {
@@ -861,7 +820,7 @@ terminateApp:
         NSLog(@"Marked not found");
     } else {
         NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-        //force-write any queued changes to disk in case notes are being stored as separate files which might be opened directly by the method below
+        //save queued changes first so the temporary copy Marked opens is current
         [notationController synchronizeNoteChanges:nil];
         [[notationController notesAtIndexes:indexes] makeObjectsPerformSelector:@selector(previewUsingMarked)];
     }
@@ -1723,8 +1682,7 @@ terminateApp:
 		NSString *title = [[field stringValue] length] ? [field stringValue] : NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
 		NSAttributedString *attributedContents = [textView textStorage] ? [textView textStorage] : [[[NSAttributedString alloc] initWithString:@"" attributes:
 																									 [prefsController noteBodyAttributes]] autorelease];
-		NoteObject *note = [[[NoteObject alloc] initWithNoteBody:attributedContents title:title delegate:notationController
-														  format:[notationController currentNoteStorageFormat] labels:nil] autorelease];
+		NoteObject *note = [[[NoteObject alloc] initWithNoteBody:attributedContents title:title delegate:notationController labels:nil] autorelease];
 		[notationController addNewNote:note];
 		
 		isCreatingANote = NO;
@@ -1975,15 +1933,6 @@ terminateApp:
 	}
 }
 
-
-
-- (IBAction)fixFileEncoding:(id)sender {
-	if (currentNote) {
-		[notationController synchronizeNoteChanges:nil];
-		
-		[[EncodingsManager sharedManager] showPanelForNote:currentNote];
-	}
-}
 
 
 - (void)windowDidResignKey:(NSNotification *)notification{

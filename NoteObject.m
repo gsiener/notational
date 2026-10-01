@@ -24,16 +24,13 @@
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "LabelObject.h"
-#import "WALController.h"
 #import "NotationController.h"
 #import "NotationPrefs.h"
 #import "AttributedPlainText.h"
 #import "NSString_CustomTruncation.h"
 #import "NSFileManager_NV.h"
 #include "BufferUtils.h"
-#import "NotationFileManager.h"
 #import "NoteObject_NVRecord.h"
-#import "ExternalEditorListController.h"
 #import "NSData_transformations.h"
 #import "NSCollection_utils.h"
 #import "NotesTableView.h"
@@ -53,19 +50,9 @@ typedef NSRange NSRange32;
 
 @implementation NoteObject
 
-static FSRef *noteFileRefInit(NoteObject* obj);
-static void setAttrModifiedDate(NoteObject *note, UTCDateTime *dateTime);
-static void setCatalogNodeID(NoteObject *note, UInt32 cnid);
-
 - (id)init {
     if (self=[super init]) {
 	
-		perDiskInfoGroups = calloc(1, sizeof(PerDiskInfo));
-		perDiskInfoGroups[0].diskIDIndex = -1;
-		perDiskInfoGroupCount = 1;
-		
-		currentFormatID = SingleDatabaseFormat;
-		fileEncoding = NSUTF8StringEncoding;
 		selectedRange = NSMakeRange(NSNotFound, 0);
 		
 		//other instance variables initialized on demand
@@ -77,21 +64,15 @@ static void setCatalogNodeID(NoteObject *note, UInt32 cnid);
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	[self invalidateFSRef];
-	
 	[tableTitleString release];
 	[titleString release];
 	[labelString release];
 	[labelSet release];
 	[undoManager release];
-	[filename release];
 	[dateModifiedString release];
 	[dateCreatedString release];
 	[prefixParentNotes release];
 	
-	if (perDiskInfoGroups)
-		free(perDiskInfoGroups);
-		
 	if (cTitle)
 		free(cTitle);
 	if (cContents)
@@ -112,72 +93,9 @@ static void setCatalogNodeID(NoteObject *note, UInt32 cnid);
 		delegate = theDelegate;
 		
 		//do things that ought to have been done during init, but were not possible due to lack of delegate information
-		if (!filename) filename = [[delegate uniqueFilenameForTitle:titleString fromNote:self] retain];
 		if (!tableTitleString && !didUnarchive) [self updateTablePreviewString];
 		if (!labelSet && !didUnarchive) [self updateLabelConnectionsAfterDecoding];
 	}
-}
-
-static FSRef *noteFileRefInit(NoteObject* obj) {
-	if (!(obj->noteFileRef)) {
-		obj->noteFileRef = (FSRef*)calloc(1, sizeof(FSRef));
-	}
-	return obj->noteFileRef;
-}
-
-static void setAttrModifiedDate(NoteObject *note, UTCDateTime *dateTime) {
-	unsigned int idx = SetPerDiskInfoWithTableIndex(dateTime, NULL, (UInt32)diskUUIDIndexForNotation(note->delegate),
-													&(note->perDiskInfoGroups), &(note->perDiskInfoGroupCount));
-	note->attrsModifiedDate = &(note->perDiskInfoGroups[idx].attrTime);
-}
-static void setCatalogNodeID(NoteObject *note, UInt32 cnid) {
-	SetPerDiskInfoWithTableIndex(NULL, &cnid, (UInt32)diskUUIDIndexForNotation(note->delegate),
-								 &(note->perDiskInfoGroups), &(note->perDiskInfoGroupCount));
-	note->nodeID = cnid;
-}
-
-UTCDateTime *attrsModifiedDateOfNote(NoteObject *note) {
-	//once unarchived, the disk UUID index won't change, so this pointer will always reflect the current attr mod time
-	if (!note->attrsModifiedDate) {
-		//init from delegate based on disk table index
-		unsigned int i, tableIndex = (UInt32)diskUUIDIndexForNotation(note->delegate);
-		
-		for (i=0; i<note->perDiskInfoGroupCount; i++) {
-			//check if this date has actually been initialized; this entry could be here only because setCatalogNodeID was called
-			if (note->perDiskInfoGroups[i].diskIDIndex == tableIndex && !UTCDateTimeIsEmpty(note->perDiskInfoGroups[i].attrTime)) {
-				note->attrsModifiedDate = &(note->perDiskInfoGroups[i].attrTime);
-				goto giveDate;
-			}
-		}
-		//this note doesn't have a file-modified date, so initialize a fairly reasonable one here
-		setAttrModifiedDate(note, &(note->fileModifiedDate));
-	}
-giveDate:	
-	return note->attrsModifiedDate;
-}
-
-UInt32 fileNodeIDOfNote(NoteObject *note) {
-	if (!note->nodeID) {
-		unsigned int i, tableIndex = (UInt32)diskUUIDIndexForNotation(note->delegate);
-		
-		for (i=0; i<note->perDiskInfoGroupCount; i++) {
-			//check if this nodeID has actually been initialized; this entry could be here only because setAttrModifiedDate was called
-			if (note->perDiskInfoGroups[i].diskIDIndex == tableIndex && note->perDiskInfoGroups[i].nodeID != 0U) {
-				note->nodeID = note->perDiskInfoGroups[i].nodeID;
-				goto giveID;
-			}
-		}
-		//this note doesn't have a file-modified date, so initialize something that at least won't repeat this lookup
-		setCatalogNodeID(note, 1);
-	}
-giveID:	
-	return note->nodeID;
-}
-
-NSInteger compareFilename(id *one, id *two) {
-    
-    return (NSInteger)CFStringCompare((CFStringRef)((*(NoteObject**)one)->filename), 
-				(CFStringRef)((*(NoteObject**)two)->filename), kCFCompareCaseInsensitive);
 }
 
 NSInteger compareDateModified(id *a, id *b) {
@@ -236,27 +154,14 @@ NSInteger compareTitleStringReverse(id *a, id *b) {
 	return (NSInteger)stringResult;	
 }
 
-NSInteger compareNodeID(id *a, id *b) {
-    return fileNodeIDOfNote(*(NoteObject**)a) - fileNodeIDOfNote(*(NoteObject**)b);
-}
-NSInteger compareFileSize(id *a, id *b) {
-    return (*(NoteObject**)a)->logicalSize - (*(NoteObject**)b)->logicalSize;
-}
-
-
 #include "SynchronizedNoteMixIns.h"
 
 //syncing w/ server and from journal;
 
-DefModelAttrAccessor(filenameOfNote, filename)
-DefModelAttrAccessor(fileSizeOfNote, logicalSize)
 DefModelAttrAccessor(titleOfNote, titleString)
 DefModelAttrAccessor(labelsOfNote, labelString)
-DefModelAttrAccessor(fileModifiedDateOfNote, fileModifiedDate)
 DefModelAttrAccessor(modifiedDateOfNote, modifiedDate)
 DefModelAttrAccessor(createdDateOfNote, createdDate)
-DefModelAttrAccessor(storageFormatOfNote, currentFormatID)
-DefModelAttrAccessor(fileEncodingOfNote, fileEncoding)
 DefModelAttrAccessor(prefixParentsOfNote, prefixParentNotes)
 
 //DefColAttrAccessor(wordCountOfNote, wordCountString)
@@ -338,19 +243,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			
 			logSequenceNumber = [decoder decodeInt32ForKey:VAR_STR(logSequenceNumber)];
 
-			currentFormatID = [decoder decodeInt32ForKey:VAR_STR(currentFormatID)];
-			logicalSize = [decoder decodeInt32ForKey:VAR_STR(logicalSize)];
-			
-			int64_t fileModifiedDate64 = [decoder decodeInt64ForKey:VAR_STR(fileModifiedDate)];
-			memcpy(&fileModifiedDate, &fileModifiedDate64, sizeof(int64_t));
-						
-			NSUInteger decodedPerDiskByteCount = 0;
-			const uint8_t *decodedPerDiskBytes = [decoder decodeBytesForKey:VAR_STR(perDiskInfoGroups) returnedLength:&decodedPerDiskByteCount];
-			if (decodedPerDiskBytes && decodedPerDiskByteCount) {
-				CopyPerDiskInfoGroupsToOrder(&perDiskInfoGroups, &perDiskInfoGroupCount, (PerDiskInfo *)decodedPerDiskBytes, decodedPerDiskByteCount, 1);
-			}
-			
-			fileEncoding = [decoder decodeInt32ForKey:VAR_STR(fileEncoding)];
+			//the per-file storage keys (filename, fileEncoding, currentFormatID, logicalSize, fileModifiedDate, perDiskInfoGroups) are no longer read
 
 			NSUInteger decodedUUIDByteCount = 0;
 			const uint8_t *decodedUUIDBytes = [decoder decodeBytesForKey:VAR_STR(uniqueNoteIDBytes) returnedLength:&decodedUUIDByteCount];
@@ -361,7 +254,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			titleString = [[decoder decodeObjectForKey:VAR_STR(titleString)] retain];
 			labelString = [[decoder decodeObjectForKey:VAR_STR(labelString)] retain];
 			contentString = [[NSMutableAttributedString alloc] initWithAttributedString: [decoder decodeObjectForKey:VAR_STR(contentString)]];
-			filename = [[decoder decodeObjectForKey:VAR_STR(filename)] retain];
 			
 		} else {
             NSRange32 range32;
@@ -370,6 +262,12 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
             #if __LP64__
             unsigned long longTemp;
             #endif
+			//per-file storage values that are read only to advance past them
+			int legacyFormatID = 0;
+			NSString *legacyFilename = nil;
+			UInt32 legacyNodeID = 0;
+			UTCDateTime legacyFileModifiedDate = {0, 0, 0};
+			NSStringEncoding legacyFileEncoding = 0;
 #if DECODE_INDIVIDUALLY
 			[decoder decodeValueOfObjCType:@encode(CFAbsoluteTime) at:&modifiedDate];
 			[decoder decodeValueOfObjCType:@encode(CFAbsoluteTime) at:&createdDate];
@@ -382,26 +280,26 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			
 			[decoder decodeValueOfObjCType:@encode(unsigned int) at:&logSequenceNumber];
 			
-			[decoder decodeValueOfObjCType:@encode(int) at:&currentFormatID];
+			[decoder decodeValueOfObjCType:@encode(int) at:&legacyFormatID];
             #if __LP64__
             [decoder decodeValueOfObjCType:"L" at:&longTemp];
-            nodeID = (UInt32)longTemp;
+            legacyNodeID = (UInt32)longTemp;
             #else
-			[decoder decodeValueOfObjCType:@encode(UInt32) at:&nodeID];
+			[decoder decodeValueOfObjCType:@encode(UInt32) at:&legacyNodeID];
             #endif
-			[decoder decodeValueOfObjCType:@encode(UInt16) at:&fileModifiedDate.highSeconds];
+			[decoder decodeValueOfObjCType:@encode(UInt16) at:&legacyFileModifiedDate.highSeconds];
             #if __LP64__
 			[decoder decodeValueOfObjCType:"L" at:&longTemp];
-            fileModifiedDate.lowSeconds = (UInt32)longTemp;
+            legacyFileModifiedDate.lowSeconds = (UInt32)longTemp;
             #else
-            [decoder decodeValueOfObjCType:@encode(UInt32) at:&fileModifiedDate.lowSeconds];
+            [decoder decodeValueOfObjCType:@encode(UInt32) at:&legacyFileModifiedDate.lowSeconds];
             #endif
-			[decoder decodeValueOfObjCType:@encode(UInt16) at:&fileModifiedDate.fraction];	
+			[decoder decodeValueOfObjCType:@encode(UInt16) at:&legacyFileModifiedDate.fraction];	
             
             #if __LP64__
-            [decoder decodeValueOfObjCType:"I" at:&fileEncoding];
+            [decoder decodeValueOfObjCType:"I" at:&legacyFileEncoding];
             #else
-            [decoder decodeValueOfObjCType:@encode(NSStringEncoding) at:&fileEncoding];
+            [decoder decodeValueOfObjCType:@encode(NSStringEncoding) at:&legacyFileEncoding];
             #endif
 			
 			[decoder decodeValueOfObjCType:@encode(CFUUIDBytes) at:&uniqueNoteIDBytes];
@@ -410,11 +308,11 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			titleString = [[decoder decodeObject] retain];
 			labelString = [[decoder decodeObject] retain];
 			contentString = [[[decoder decodeObject] mutableCopy] retain];
-			filename = [[decoder decodeObject] retain];
+			legacyFilename = [decoder decodeObject];
 #else 
 			[decoder decodeValuesOfObjCTypes: "dd{NSRange=ii}fIiI{UTCDateTime=SIS}I[16C]I@@@@", &modifiedDate, &createdDate, &range32, 
-				&scrolledProportion, &logSequenceNumber, &currentFormatID, &nodeID, &fileModifiedDate, &fileEncoding, &uniqueNoteIDBytes, 
-				&serverModifiedTime, &titleString, &labelString, &contentString, &filename];
+				&scrolledProportion, &logSequenceNumber, &legacyFormatID, &legacyNodeID, &legacyFileModifiedDate, &legacyFileEncoding, &uniqueNoteIDBytes, 
+				&serverModifiedTime, &titleString, &labelString, &contentString, &legacyFilename];
 #endif
             selectedRange.location = range32.location;
             selectedRange.length = range32.length;
@@ -447,18 +345,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		
 		[coder encodeInt32:logSequenceNumber forKey:VAR_STR(logSequenceNumber)];
 		
-		[coder encodeInteger:currentFormatID forKey:VAR_STR(currentFormatID)];
-		[coder encodeInt32:logicalSize forKey:VAR_STR(logicalSize)];
-
-		uint8_t *flippedPerDiskInfoGroups = calloc(perDiskInfoGroupCount, sizeof(PerDiskInfo));
-		CopyPerDiskInfoGroupsToOrder((PerDiskInfo**)&flippedPerDiskInfoGroups, &perDiskInfoGroupCount, perDiskInfoGroups, perDiskInfoGroupCount * sizeof(PerDiskInfo), 0);
-		
-		[coder encodeBytes:flippedPerDiskInfoGroups length:perDiskInfoGroupCount * sizeof(PerDiskInfo) forKey:VAR_STR(perDiskInfoGroups)];
-		free(flippedPerDiskInfoGroups);
-		
-		[coder encodeInt64:*(int64_t*)&fileModifiedDate forKey:VAR_STR(fileModifiedDate)];
-        
-		[coder encodeInt32:fileEncoding forKey:VAR_STR(fileEncoding)];
+		//the per-file storage keys are no longer written; nothing reads them
 		
 		[coder encodeBytes:(const uint8_t *)&uniqueNoteIDBytes length:sizeof(CFUUIDBytes) forKey:VAR_STR(uniqueNoteIDBytes)];
 		[coder encodeObject:syncServicesMD forKey:VAR_STR(syncServicesMD)];
@@ -466,47 +353,10 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		[coder encodeObject:titleString forKey:VAR_STR(titleString)];
 		[coder encodeObject:labelString forKey:VAR_STR(labelString)];
 		[coder encodeObject:contentString forKey:VAR_STR(contentString)];
-		[coder encodeObject:filename forKey:VAR_STR(filename)];
-		
-	} else {
-// 64bit encoding would break 32bit reading - keyed archives should be used
-#if !__LP64__
-		unsigned int serverModifiedTime = 0;
-		float scrolledProportion = 0.0;
-		*(unsigned int*)&scrolledProportion = (unsigned int)contentsWere7Bit;
-#if DECODE_INDIVIDUALLY
-		[coder encodeValueOfObjCType:@encode(CFAbsoluteTime) at:&modifiedDate];
-		[coder encodeValueOfObjCType:@encode(CFAbsoluteTime) at:&createdDate];
-        [coder encodeValueOfObjCType:@encode(NSRange) at:&selectedRange];
-		[coder encodeValueOfObjCType:@encode(float) at:&scrolledProportion];
-		
-		[coder encodeValueOfObjCType:@encode(unsigned int) at:&logSequenceNumber];
-		
-		[coder encodeValueOfObjCType:@encode(int) at:&currentFormatID];
-		[coder encodeValueOfObjCType:@encode(UInt32) at:&nodeID];
-		[coder encodeValueOfObjCType:@encode(UInt16) at:&fileModifiedDate.highSeconds];
-		[coder encodeValueOfObjCType:@encode(UInt32) at:&fileModifiedDate.lowSeconds];
-		[coder encodeValueOfObjCType:@encode(UInt16) at:&fileModifiedDate.fraction];
-		[coder encodeValueOfObjCType:@encode(NSStringEncoding) at:&fileEncoding];
-		
-		[coder encodeValueOfObjCType:@encode(CFUUIDBytes) at:&uniqueNoteIDBytes];
-		[coder encodeValueOfObjCType:@encode(unsigned int) at:&serverModifiedTime];
-		
-		[coder encodeObject:titleString];
-		[coder encodeObject:labelString];
-		[coder encodeObject:contentString];
-		[coder encodeObject:filename];
-		
-#else
-		[coder encodeValuesOfObjCTypes: "dd{NSRange=ii}fIiI{UTCDateTime=SIS}I[16C]I@@@@", &modifiedDate, &createdDate, &range32, 
-			&scrolledProportion, &logSequenceNumber, &currentFormatID, &nodeID, &fileModifiedDate, &fileEncoding, &uniqueNoteIDBytes, 
-			&serverModifiedTime, &titleString, &labelString, &contentString, &filename];
-#endif
-#endif // !__LP64__
 	}
 }
 
-- (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle delegate:(id)aDelegate format:(NSInteger)formatID labels:(NSString*)aLabelString {
+- (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle delegate:(id)aDelegate labels:(NSString*)aLabelString {
 	//delegate optional here
     if (self=[self init]) {
 		
@@ -530,8 +380,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			cLabelsFoundPtr = cLabels = strdup("");
 		}
 		
-		currentFormatID = formatID;
-		filename = [[delegate uniqueFilenameForTitle:titleString fromNote:nil] retain];
 		
 		CFUUIDRef uuidRef = CFUUIDCreate(kCFAllocatorDefault);
 		uniqueNoteIDBytes = CFUUIDGetUUIDBytes(uuidRef);
@@ -539,58 +387,11 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		
 		createdDate = modifiedDate = CFAbsoluteTimeGetCurrent();
 		dateCreatedString = [dateModifiedString = [[NSString relativeDateStringWithAbsoluteTime:modifiedDate] retain] retain];
-		UCConvertCFAbsoluteTimeToUTCDateTime(modifiedDate, &fileModifiedDate);
 		
 		if (delegate)
 			[self updateTablePreviewString];
         
         
-        return self;
-    }
-    return nil;
-}
-
-//only get the fsrefs until we absolutely need them
-
-- (id)initWithCatalogEntry:(NoteCatalogEntry*)entry delegate:(id)aDelegate {
-	NSAssert(aDelegate != nil, @"must supply a delegate");
-    if (self=[self init]) {
-		delegate = aDelegate;
-		filename = [(NSString*)entry->filename copy];
-		currentFormatID = [delegate currentNoteStorageFormat];
-		fileModifiedDate = entry->lastModified;
-		setAttrModifiedDate(self, &(entry->lastAttrModified));
-		setCatalogNodeID(self, entry->nodeID);
-		logicalSize = entry->logicalSize;
-		
-		CFUUIDRef uuidRef = CFUUIDCreate(kCFAllocatorDefault);
-		uniqueNoteIDBytes = CFUUIDGetUUIDBytes(uuidRef);
-		CFRelease(uuidRef);
-		
-		if (![self _setTitleString:[filename stringByDeletingPathExtension]])
-			titleString = NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
-		
-		labelString = @""; //set by updateFromCatalogEntry if there are openmeta extended attributes 
-		cLabelsFoundPtr = cLabels = strdup("");	
-				
-		contentString = [[NSMutableAttributedString alloc] initWithString:@""];
-		[self initContentCacheCString];
-		
-		if (![self updateFromCatalogEntry:entry]) {						
-			//just initialize a blank note for now; if the file becomes readable again we'll be updated
-			//but if we make modifications, well, the original is toast
-			//so warn the user here and offer to trash it?
-			//perhaps also offer to re-interpret using another text encoding?
-			
-			//additionally, it is possible that the file was deleted before we could read it
-		}
-		if (!modifiedDate || !createdDate) {
-			modifiedDate = createdDate = CFAbsoluteTimeGetCurrent();
-			dateModifiedString = [dateCreatedString = [[NSString relativeDateStringWithAbsoluteTime:createdDate] retain] retain];	
-		}
-	
-        [self updateTablePreviewString];
-    
         return self;
     }
     return nil;
@@ -745,28 +546,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	NSString *oldTitle = [titleString retain];
 	
     if ([self _setTitleString:aNewTitle]) {
-		//do you really want to do this when the format is a single DB and the file on disk hasn't been removed?
-		//the filename could get out of sync if we lose the fsref and we could end up with a second file after note is rewritten
-		
-		//solution: don't change the name in that case and allow its new name to be generated
-		//when the format is changed and the file rewritten?
-		
-		
-		
-		//however, the filename is used for exporting and potentially other purposes, so we should also update
-		//it if we know that is has no currently existing (older) counterpart in the notes directory
-		
-		//woe to the exporter who also left the note files in the notes directory after switching to a singledb format
-		//his note names might not be up-to-date
-		if ([delegate currentNoteStorageFormat] != SingleDatabaseFormat || 
-			![delegate notesDirectoryContainsFile:filename returningFSRef:noteFileRefInit(self)]) {
-			
-			[self setFilenameFromTitle];
-		}
-		
-		//yes, the given extension could be different from what we had before
-		//but makeNoteDirty will eventually cause it to be re-written in the current format
-		//and thus the format ID will be changed if that was the case
 		[self makeNoteDirtyUpdateTime:YES updateFile:YES];
 		
 		[self updateTablePreviewString];
@@ -794,41 +573,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
     return YES;
 }
 
-- (void)setFilenameFromTitle {
-	[self setFilename:[delegate uniqueFilenameForTitle:titleString fromNote:self] withExternalTrigger:NO];
-}
-
-- (void)setFilename:(NSString*)aString withExternalTrigger:(BOOL)externalTrigger {
-    
-    if (!filename || ![aString isEqualToString:filename]) {
-		NSString *oldName = filename;
-		filename = [aString copy];
-		
-		if (!externalTrigger) {
-			if ([delegate noteFileRenamed:noteFileRefInit(self) fromName:oldName toName:filename] != noErr) {
-				NSLog(@"Couldn't rename note %@", titleString);
-				
-				//revert name
-				[filename release];
-				filename = [oldName retain];
-				return;
-			}
-		} else {
-			[self _setTitleString:[aString stringByDeletingPathExtension]];	
-			
-			[self updateTablePreviewString];
-			[delegate note:self attributeChanged:NoteTitleColumnString];
-		}
-		
-		[self makeNoteDirtyUpdateTime:YES updateFile:NO];
-		
-		[delegate updateLinksToNote:self fromOldName:oldName];
-		//update all the notes that link to the old filename as well!!
-		
-		[oldName release];
-    }
-}
-
 - (void)setForegroundTextColorOnly:(NSColor*)aColor {
 	//called when notationPrefs font doesn't match globalprefs font, or user changes the font
 	[contentString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, [contentString length])];
@@ -846,9 +590,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	
 	[self _setTitleString:(NSString*)normalizedString];
 	CFRelease(normalizedString);
-	
-	if ([delegate currentNoteStorageFormat] == RTFTextFormat)
-		[self makeNoteDirtyUpdateTime:NO updateFile:YES];
 }
 
 //how do we write a thousand RTF files at once, repeatedly? 
@@ -857,9 +598,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 	if ([contentString restyleTextToFont:[[GlobalPrefs defaultPrefs] noteBodyFont] usingBaseFont:baseFont] > 0) {
 		[undoManager removeAllActions];
-		
-		if ([delegate currentNoteStorageFormat] == RTFTextFormat)
-			[self makeNoteDirtyUpdateTime:NO updateFile:YES];
 	}
 }
 
@@ -1103,469 +841,59 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 								 [idsDict URLEncodedString]]];
 }
 
-- (NSString*)noteFilePath {
-	UniChar chars[256];
-	if ([delegate refreshFileRefIfNecessary:noteFileRefInit(self) withName:filename charsBuffer:chars] == noErr)
-		return [[NSFileManager defaultManager] pathWithFSRef:noteFileRefInit(self)];
-	return nil;
+- (NSString*)titleAsFilename {
+	//the title made safe for use as a file name; no extension
+	NSMutableString *name = [[titleString mutableCopy] autorelease];
+	[name replaceOccurrencesOfString:@":" withString:@"-" options:0 range:NSMakeRange(0, [name length])];
+	[name replaceOccurrencesOfString:@"/" withString:@"-" options:0 range:NSMakeRange(0, [name length])];
+	if ([name hasPrefix:@"."]) [name replaceCharactersInRange:NSMakeRange(0, 1) withString:@"_"];
+	//leave room for an extension and a uniquing suffix
+	return [name filenameExpectingAdditionalCharCount:8];
 }
 
-- (void)invalidateFSRef {
-	//bzero(&noteFileRef, sizeof(FSRef));
-	if (noteFileRef)
-		free(noteFileRef);
-	noteFileRef = NULL;
-}
-
-- (BOOL)writeUsingCurrentFileFormatIfNecessary {
-	//if note had been updated via makeNoteDirty and needed file to be rewritten
-	if (shouldWriteToFile) {
-		return [self writeUsingCurrentFileFormat];
+- (NSString*)temporaryTextFilePath {
+	//for Marked and for dragging a note out as a file: write the note's text to a file in the temporary directory
+	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Notational"];
+	NSString *path = [directory stringByAppendingPathComponent:[[self titleAsFilename] stringByAppendingPathExtension:@"txt"]];
+	
+	if (![[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL] ||
+		![[contentString string] writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
+		NSLog(@"couldn't write a temporary file for note %@", titleString);
+		return nil;
 	}
-	return NO;
+	return path;
 }
 
-- (BOOL)writeUsingCurrentFileFormatIfNonExistingOrChanged {
-    BOOL fileWasCreated = NO;
-    BOOL fileIsOwned = NO;
+- (BOOL)updateFromPlainTextData:(NSMutableData*)data {
 	
-    if ([delegate createFileIfNotPresentInNotesDirectory:noteFileRefInit(self) forFilename:filename fileWasCreated:&fileWasCreated] != noErr)
-		return NO;
-    
-    if (fileWasCreated) {
-		NSLog(@"writing note %@, because it didn't exist", titleString);
-		return [self writeUsingCurrentFileFormat];
-    }
-    
-	//createFileIfNotPresentInNotesDirectory: works by name, so if this file is not owned by us at this point, it was a race with moving it
-    FSCatalogInfo info;
-    if ([delegate fileInNotesDirectory:noteFileRefInit(self) isOwnedByUs:&fileIsOwned hasCatalogInfo:&info] != noErr)
-		return NO;
-    
-    CFAbsoluteTime timeOnDisk, lastTime;
-    OSStatus err = noErr;
-    if ((err = (UCConvertUTCDateTimeToCFAbsoluteTime(&fileModifiedDate, &lastTime) == noErr)) &&
-		(err = (UCConvertUTCDateTimeToCFAbsoluteTime(&info.contentModDate, &timeOnDisk) == noErr))) {
-		
-		if (lastTime > timeOnDisk) {
-			NSLog(@"writing note %@, because it was modified", titleString);
-			return [self writeUsingCurrentFileFormat];
-		}
-    } else {
-		NSLog(@"Could not convert dates: %d", err);
-		return NO;
-    }
-    
-    return YES;
-}
-
-- (BOOL)writeUsingJournal:(WALStorageController*)wal {
-    BOOL wroteAllOfNote = [wal writeEstablishedNote:self];
-	
-    if (wroteAllOfNote) {
-		//update formatID to absolutely ensure we don't reload an earlier note back from disk, from text encoding menu, for example
-		//currentFormatID = SingleDatabaseFormat;
-	} else {
-		[delegate noteDidNotWrite:self errorCode:kWriteJournalErr];
-	}
-    
-    return wroteAllOfNote;
-}
-
-- (BOOL)mirrorTags {
-	if ([delegate currentNoteStorageFormat] == SingleDatabaseFormat)
-		return NO;
-
-	@try {
-        
-		NSArray *newTags=[[NSFileManager defaultManager] mergedTagsForFileAtPath:[[self noteFilePath] UTF8String]];
-        NSString *newLabelString=nil;
-        if ((newTags==nil)||newTags.count==0) {
-            newLabelString=@"";
-        }else{
-            newLabelString=[newTags componentsJoinedByString:@","];
-        }
-        [self setLabelString:newLabelString];
-        if([self writeUsingCurrentFileFormat]){
-            return YES;
-        }
-        
-	}
-	@catch (NSException *exception) {
-		NSLog(@"%@",exception);
-	}
-    NSLog(@"didn't mirrror:>%@<",titleString);
-    return NO;
-
-}
-
-
-- (BOOL)writeUsingCurrentFileFormat {
-
-    NSData *formattedData = nil;
-    NSError *error = nil;
-	NSMutableAttributedString *contentMinusColor = nil;
-	
-    NSInteger formatID = [delegate currentNoteStorageFormat];
-    switch (formatID) {
-		case SingleDatabaseFormat:
-			//we probably shouldn't be here
-			NSAssert(NO, @"Warning! Tried to write data for an individual note in single-db format!");
-			
-			return NO;
-		case PlainTextFormat:
-			
-			if (!(formattedData = [[contentString string] dataUsingEncoding:fileEncoding allowLossyConversion:NO])) {
-				
-				//just make the file unicode and ram it through
-				//unicode is probably better than UTF-8, as it's more easily auto-detected by other programs via the BOM
-				//but we can auto-detect UTF-8, so what the heck
-				[self _setFileEncoding:NSUTF8StringEncoding];
-				//maybe we could rename the file file.utf8.txt here
-				NSLog(@"promoting to unicode (UTF-8)");
-				formattedData = [[contentString string] dataUsingEncoding:fileEncoding allowLossyConversion:YES];
-			}
-			break;
-		case RTFTextFormat:
-			contentMinusColor = [contentString mutableCopy];
-			[contentMinusColor removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, [contentMinusColor length])];
-			formattedData = [contentMinusColor RTFFromRange:NSMakeRange(0, [contentMinusColor length]) documentAttributes:[NSDictionary dictionary]];
-			[contentMinusColor release];
-			
-			break;
-		case HTMLFormat:
-			//export to HTML document here using NSHTMLTextDocumentType;
-			formattedData = [contentString dataFromRange:NSMakeRange(0, [contentString length]) 
-									  documentAttributes:[NSDictionary dictionaryWithObject:NSHTMLTextDocumentType 
-																					 forKey:NSDocumentTypeDocumentAttribute] error:&error];
-			//our links will always be to filenames, so hopefully we shouldn't have to change anything
-			break;
-		default:
-			NSLog(@"Attempted to write using unknown format ID: %ld", (long)formatID);
-			//return NO;
-    }
-    
-    if (formattedData) {
-		BOOL resetFilename = NO;
-		if (!filename || currentFormatID != formatID) {
-			//file will (probably) be renamed
-			//NSLog(@"resetting the file name due to format change: to %d from %d", formatID, currentFormatID);
-			[self setFilenameFromTitle];
-			resetFilename = YES;
-		}
-		
-		currentFormatID = formatID;
-		
-		//perhaps check here to see if the file was updated on disk before we had a chance to do it ourselves
-		//see if the file's fileModDate (if it exists) is newer than this note's current fileModificationDate
-		//could offer to merge or revert changes
-		
-		OSStatus err = noErr;
-		if ((err = [delegate storeDataAtomicallyInNotesDirectory:formattedData withName:filename destinationRef:noteFileRefInit(self)]) != noErr) {
-			NSLog(@"Unable to save note file %@", filename);
-			
-			[delegate noteDidNotWrite:self errorCode:err];
-			return NO;
-		}
-		//if writing plaintext set the file encoding with setxattr
-		if (PlainTextFormat == formatID) {
-			(void)[self writeCurrentFileEncodingToFSRef:noteFileRefInit(self)];
-		}
-		NSFileManager *fileMan = [NSFileManager defaultManager];
-		[fileMan setTags:[self orderedLabelTitles] atFSPath:[[fileMan pathWithFSRef:noteFileRefInit(self)] fileSystemRepresentation]];
-		
-		//always hide the file extension for all types
-		LSSetExtensionHiddenForRef(noteFileRefInit(self), TRUE);
-		
-		if (!resetFilename) {
-			//NSLog(@"resetting the file name just because.");
-			[self setFilenameFromTitle];
-		}
-		
-		(void)[self writeFileDatesAndUpdateTrackingInfo];
-		
-		
-		//finished writing to file successfully
-		shouldWriteToFile = NO;
-		
-		
-		//tell any external editors that we've changed
-		
-    } else {
-		[delegate noteDidNotWrite:self errorCode:kDataFormattingErr];
-		NSLog(@"Unable to convert note contents into format %ld", (long)formatID);
-		return NO;
-    }
-    
-    return YES;
-}
-
-- (OSStatus)writeFileDatesAndUpdateTrackingInfo {
-	if (SingleDatabaseFormat == currentFormatID) return noErr;
-	
-	//sync the file's creation and modification date:
-	FSCatalogInfo catInfo;
-	UCConvertCFAbsoluteTimeToUTCDateTime(createdDate, &catInfo.createDate);
-	UCConvertCFAbsoluteTimeToUTCDateTime(modifiedDate, &catInfo.contentModDate);
-	
-	// if this method is called anywhere else, then use [delegate refreshFileRefIfNecessary:noteFileRefInit(self) withName:filename charsBuffer:chars]; instead
-	// for now, it is not called in any situations where the fsref might accidentally point to a moved file
-	OSStatus err = noErr;
-	do {
-		if (noErr != err || IsZeros(noteFileRefInit(self), sizeof(FSRef))) {
-			if (![delegate notesDirectoryContainsFile:filename returningFSRef:noteFileRefInit(self)]) return fnfErr;
-		}
-		err = FSSetCatalogInfo(noteFileRefInit(self), kFSCatInfoCreateDate | kFSCatInfoContentMod, &catInfo);
-	} while (fnfErr == err);
-
-	if (noErr != err) {
-		NSLog(@"could not set catalog info: %d", err);
-		return err;
-	}
-	
-	//regardless of whether FSSetCatalogInfo was successful, the file mod date could still have changed
-	
-	if ((err = [delegate fileInNotesDirectory:noteFileRefInit(self) isOwnedByUs:NULL hasCatalogInfo:&catInfo]) != noErr) {
-		NSLog(@"Unable to get new modification date of file %@: %d", filename, err);
-		return err;
-	}
-	fileModifiedDate = catInfo.contentModDate;
-	setAttrModifiedDate(self, &catInfo.attributeModDate);
-	setCatalogNodeID(self, catInfo.nodeID);
-	logicalSize = (UInt32)(catInfo.dataLogicalSize & 0xFFFFFFFF);
-	
-	return noErr;
-}
-
-- (OSStatus)writeCurrentFileEncodingToFSRef:(FSRef*)fsRef {
-	NSAssert(fsRef, @"cannot write file encoding to a NULL FSRef");
-	//this is not the note's own fsRef; it could be anywhere
-	
-	NSMutableData *pathData = [NSMutableData dataWithLength:4 * 1024];
-	OSStatus err = noErr;
-	if ((err = FSRefMakePath(fsRef, [pathData mutableBytes], [pathData length])) == noErr) {
-		[[NSFileManager defaultManager] setTextEncodingAttribute:fileEncoding atFSPath:[pathData bytes]];
-	} else {
-		NSLog(@"%@: error getting path from FSRef: %d (IsZeros: %d)", NSStringFromSelector(_cmd), err, IsZeros(fsRef, sizeof(fsRef)));
-	}
-	return err;
-}
-
-- (BOOL)upgradeToUTF8IfUsingSystemEncoding {
-	if (CFStringConvertEncodingToNSStringEncoding(CFStringGetSystemEncoding()) == fileEncoding)
-		return [self upgradeEncodingToUTF8];
-	return NO;
-}
-
-- (BOOL)upgradeEncodingToUTF8 {
-	//"convert" the file to have a UTF-8 encoding
-	BOOL didUpgrade = YES;
-	
-	if (NSUTF8StringEncoding != fileEncoding) {
-		[self _setFileEncoding:NSUTF8StringEncoding];
-		
-		if (!contentsWere7Bit && PlainTextFormat == currentFormatID) {
-			//this note exists on disk as a plaintext file, and its encoding is incompatible with UTF-8
-			
-			if ([delegate currentNoteStorageFormat] == PlainTextFormat) {
-				//actual conversion is expected because notes are presently being maintained as plain text files
-				
-				NSLog(@"rewriting %@ as utf8 data", titleString);
-				didUpgrade = [self writeUsingCurrentFileFormat];
-			} else if ([delegate currentNoteStorageFormat] == SingleDatabaseFormat) {
-				//update last-written-filemod time to guarantee proper encoding at next DB storage format switch, 
-				//in case this note isn't otherwise modified before that happens.
-				//a side effect is that if the user switches to an RTF or HTML format,
-				//this note will be written immediately instead of lazily upon the next modification
-				if (UCConvertCFAbsoluteTimeToUTCDateTime(CFAbsoluteTimeGetCurrent(), &fileModifiedDate) != noErr)
-					NSLog(@"%@: can't set file modification date from current date", NSStringFromSelector(_cmd));
-			}
-		}
-		//make note dirty to ensure these changes are saved
-		[self makeNoteDirtyUpdateTime:NO updateFile:NO];
-	}
-	return didUpgrade;
-}
-
-- (void)_setFileEncoding:(NSStringEncoding)encoding {
-	fileEncoding = encoding;
-}
-
-- (BOOL)setFileEncodingAndReinterpret:(NSStringEncoding)encoding {
-	//"reinterpret" the file using this encoding, also setting the actual file's extended attributes to match
-	BOOL updated = YES;
-	
-	if (encoding != fileEncoding) {
-		[self _setFileEncoding:encoding];
-		
-		//write the file encoding extended attribute before updating from disk. why?
-		//a) to ensure -updateFromData: finds the right encoding when re-reading the file, and
-		//b) because the file is otherwise not being rewritten, and the extended attribute--if it existed--may have been different
-		
-		UniChar chars[256];
-		if ([delegate refreshFileRefIfNecessary:noteFileRefInit(self) withName:filename charsBuffer:chars] != noErr)
-			return NO;
-		
-		if ([self writeCurrentFileEncodingToFSRef:noteFileRefInit(self)] != noErr)
-			return NO;		
-		
-		if ((updated = [self updateFromFile])) {
-			[self makeNoteDirtyUpdateTime:NO updateFile:NO];
-			//need to update modification time manually
-			[self registerModificationWithOwnedServices];
-			//[[delegate delegate] contentsUpdatedForNote:self];
-		}
-	}
-	
-	return updated;
-}
-
-- (BOOL)updateFromFile {
-    NSMutableData *data = [delegate dataFromFileInNotesDirectory:noteFileRefInit(self) forFilename:filename];
-    if (!data) {
-		NSLog(@"Couldn't update note from file on disk");
-		return NO;
-    }
-	
-    if ([self updateFromData:data inFormat:currentFormatID]) {
-		FSCatalogInfo info;
-		if ([delegate fileInNotesDirectory:noteFileRefInit(self) isOwnedByUs:NULL hasCatalogInfo:&info] == noErr) {
-			fileModifiedDate = info.contentModDate;
-			setAttrModifiedDate(self, &info.attributeModDate);
-			setCatalogNodeID(self, info.nodeID);
-			logicalSize = (UInt32)(info.dataLogicalSize & 0xFFFFFFFF);
-			
-			return YES;
-		}
-    }
-    return NO;
-}
-
-- (BOOL)updateFromCatalogEntry:(NoteCatalogEntry*)catEntry {
-	BOOL didRestoreLabels = NO;
-	
-    NSMutableData *data = [delegate dataFromFileInNotesDirectory:noteFileRefInit(self) forCatalogEntry:catEntry];
-    if (!data) {
-		NSLog(@"Couldn't update note from file on disk given catalog entry");
-		return NO;
-    }
-	    
-    if (![self updateFromData:data inFormat:currentFormatID])
-		return NO;
-	
-	[self setFilename:(NSString*)catEntry->filename withExternalTrigger:YES];
-    
-    fileModifiedDate = catEntry->lastModified;
-	setAttrModifiedDate(self, &(catEntry->lastAttrModified));
-    setCatalogNodeID(self, catEntry->nodeID);
-	logicalSize = catEntry->logicalSize;
-	
-	NSMutableData *pathData = [NSMutableData dataWithLength:4 * 1024];
-	if (FSRefMakePath(noteFileRefInit(self), [pathData mutableBytes], [pathData length]) == noErr) {
-		
-		NSArray *openMetaTags = [[NSFileManager defaultManager] getTagsAtFSPath:[pathData bytes]];
-		if (openMetaTags) {
-			//overwrite this note's labels with those from the file; merging may be the wrong thing to do here
-			if ([self _setLabelString:[openMetaTags componentsJoinedByString:@" "]])
-				[self updateTablePreviewString];
-		} else if ([labelString length]) {
-			//this file has either never had tags or has had them cleared by accident (e.g., non-user intervention)
-			//so if this note still has tags, then restore them now.
-			
-			NSLog(@"restoring lost tags for %@", titleString);
-			[[NSFileManager defaultManager] setTags:[self orderedLabelTitles] atFSPath:[pathData bytes]];
-			didRestoreLabels = YES;
-		}
-	}
-	
-	OSStatus err = noErr;
-	CFAbsoluteTime aModDate, aCreateDate;
-	if (noErr == (err = UCConvertUTCDateTimeToCFAbsoluteTime(&fileModifiedDate, &aModDate))) {
-		[self setDateModified:aModDate];
-	}
-	
-	if (createdDate == 0.0 || didRestoreLabels) {
-		//when reading files from disk for the first time, grab their creation date
-		//or if this file has just been altered, grab its newly-changed modification dates
-		
-		FSCatalogInfo info;
-		if ([delegate fileInNotesDirectory:noteFileRefInit(self) isOwnedByUs:NULL hasCatalogInfo:&info] == noErr) {
-			if (createdDate == 0.0 && UCConvertUTCDateTimeToCFAbsoluteTime(&info.createDate, &aCreateDate) == noErr) {
-				[self setDateAdded:aCreateDate];
-			}
-			if (didRestoreLabels) {
-				fileModifiedDate = info.contentModDate;
-				setAttrModifiedDate(self, &info.attributeModDate);
-			}
-		}
-	}
-	
-    return YES;
-}
-
-- (BOOL)updateFromData:(NSMutableData*)data inFormat:(NSInteger)fmt {
-    
-    if (!data) {
+	if (!data) {
 		NSLog(@"%@: Data is nil!", NSStringFromSelector(_cmd));
 		return NO;
-    }
-    
-    NSMutableString *stringFromData = nil;
-    NSMutableAttributedString *attributedStringFromData = nil;
-    //interpret based on format; text, rtf, html, etc...
-    switch (fmt) {
-	case SingleDatabaseFormat:
-	    //hmmmmm
-		NSAssert(NO, @"Warning! Tried to update data from a note in single-db format!");
-	    
-	    break;
-	case PlainTextFormat:
-		//try to merge/re-match attributes?
-	    if ((stringFromData = [NSMutableString newShortLivedStringFromData:data ofGuessedEncoding:&fileEncoding withPath:NULL orWithFSRef:noteFileRefInit(self)])) {
-			attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:stringFromData 
-																			  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
-			[stringFromData release];
-	    } else {
-			NSLog(@"String could not be initialized from data");
-	    }
-	    
-	    break;
-	case RTFTextFormat:
-	    
-		attributedStringFromData = [[NSMutableAttributedString alloc] initWithRTF:data documentAttributes:NULL];
-	    break;
-	case HTMLFormat:
-
-		attributedStringFromData = [[NSMutableAttributedString alloc] initWithHTML:data documentAttributes:NULL];
-		[attributedStringFromData removeAttachments];
-		
-	    break;
-	default:
-	    NSLog(@"%@: Unknown format: %ld", NSStringFromSelector(_cmd), fmt);
-    }
-    
-    if (!attributedStringFromData) {
-		NSLog(@"Couldn't make string out of data for note %@ with format %ld", titleString, (long)fmt);
-		return NO;
-    }
-    
-	[contentString release];
-	contentString = [attributedStringFromData retain];
-	[contentString santizeForeignStylesForImporting];
-	//NSLog(@"%s(%@): %@", _cmd, [self noteFilePath], [contentString string]);
+	}
 	
-	//[contentString setAttributedString:attributedStringFromData];
+	NSStringEncoding encoding = NSUTF8StringEncoding;
+	NSMutableString *stringFromData = [NSMutableString newShortLivedStringFromData:data ofGuessedEncoding:&encoding withPath:NULL orWithFSRef:NULL];
+	if (!stringFromData) {
+		NSLog(@"Couldn't make string out of data for note %@", titleString);
+		return NO;
+	}
+	
+	NSMutableAttributedString *attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:stringFromData 
+																								  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
+	[stringFromData release];
+	
+	[contentString release];
+	contentString = attributedStringFromData;
+	[contentString santizeForeignStylesForImporting];
+	
 	contentCacheNeedsUpdate = YES;
-    [self updateContentCacheCStringIfNecessary];
+	[self updateContentCacheCStringIfNecessary];
 	[undoManager removeAllActions];
 	
 	[self updateTablePreviewString];
-    
+	
 	//don't update the date modified here, as this could be old data
-    
-    [attributedStringFromData release];
-    
-    return YES;
+	return YES;
 }
 
 - (void)updateWithSyncBody:(NSString*)newBody andTitle:(NSString*)newTitle {
@@ -1584,37 +912,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	[self setTitleString:newTitle];
 }
 
-- (void)moveFileToTrash {
-	OSStatus err = noErr;
-	if ((err = [delegate moveFileToTrash:noteFileRefInit(self) forFilename:filename]) != noErr) {
-		NSLog(@"Couldn't move file to trash: %d", err);
-	} else {
-		//file's gone! don't assume it's not coming back. if the storage format was not single-db, this note better be removed
-		//currentFormatID = SingleDatabaseFormat;
-	}
-}
-
-- (void)removeFileFromDirectory {
-#if PERMADELETE
-	OSStatus err = noErr;
-	if ((err = [delegate deleteFileInNotesDirectory:noteFileRefInit(self) forFilename:filename]) != noErr) {
-		
-		if (err != fnfErr) {
-			//what happens if we wanted to undo the deletion? moveFileToTrash will now tell the note that it shouldn't look for the file
-			//so it would not be rewritten on re-creation?
-			NSLog(@"Unable to delete file %@ (%d); moving to trash instead", filename, err);
-			[self moveFileToTrash];
-		}
-	}
-#else
-	[self moveFileToTrash];
-#endif
-}
-
-- (BOOL)removeUsingJournal:(WALStorageController*)wal {
-    return [wal writeRemovalForNote:self];
-}
-
 - (void)registerModificationWithOwnedServices {
 	//mirror this note's current mod date to services with which it is already synced
 	//there is no point calling this method unless the modification time is 
@@ -1628,20 +925,8 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 - (void)makeNoteDirtyUpdateTime:(BOOL)updateTime updateFile:(BOOL)updateFile {
 	
-	if (updateFile)
-		shouldWriteToFile = YES;
-	//else we don't turn file updating off--we might be overwriting the state of a previous note-dirty message
-	
 	if (updateTime) {
 		[self setDateModified:CFAbsoluteTimeGetCurrent()];
-		
-		if ([delegate currentNoteStorageFormat] == SingleDatabaseFormat) {
-			//only set if we're not currently synchronizing to avoid re-reading old data
-			//this will be updated again when writing to a file, but for now we have the newest version
-			//we must do this to allow new notes to be written when switching formats, and for encodingmanager checks
-			if (UCConvertCFAbsoluteTimeToUTCDateTime(modifiedDate, &fileModifiedDate) != noErr)
-				NSLog(@"Unable to set file modification date from current date");
-		}
 	}
 	if (updateFile && updateTime) {
 		//if this is a change that affects the actual content of a note such that we would need to updateFile
@@ -1671,11 +956,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		case SingleDatabaseFormat:
 			NSAssert(NO, @"Warning! Tried to export data in single-db format!?");
 		case PlainTextFormat:
-			if (!(formattedData = [[contentMinusColor string] dataUsingEncoding:fileEncoding allowLossyConversion:NO])) {
-				[self _setFileEncoding:NSUTF8StringEncoding];
-				NSLog(@"promoting to unicode (UTF-8) on export--probably because internal format is singledb");
-				formattedData = [[contentMinusColor string] dataUsingEncoding:fileEncoding allowLossyConversion:YES];
-			}
+			formattedData = [[contentMinusColor string] dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
 			break;
 		case RTFTextFormat:
 			formattedData = [contentMinusColor RTFFromRange:NSMakeRange(0, [contentMinusColor length]) documentAttributes:[NSDictionary dictionary]];
@@ -1699,11 +980,9 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	if (!formattedData)
 		return kDataFormattingErr;
 		
-	//can use our already-determined filename to write here
-	//but what about file names that were the same except for their extension? e.g., .txt vs. .text
-	//this will give them the same extension and cause an overwrite
+	//notes with the same title get the same file name and cause an overwrite prompt
 	NSString *newextension = [NotationPrefs pathExtensionForFormat:storageFormat];
-	NSString *newfilename = userFilename ? userFilename : [[filename stringByDeletingPathExtension] stringByAppendingPathExtension:newextension];
+	NSString *newfilename = userFilename ? userFilename : [[self titleAsFilename] stringByAppendingPathExtension:newextension];
 	//one last replacing, though if the unique file-naming method worked this should be unnecessary
 	newfilename = [newfilename stringByReplacingOccurrencesOfString:@":" withString:@"/"];
 	
@@ -1719,15 +998,14 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		NSLog(@"File already existed!");
 		return dupFNErr;
 	}
-	//yes, the file is probably not on the same volume as our notes directory
-	if ((err = FSRefWriteData(&fileRef, BlockSizeForNotation(delegate), [formattedData length], [formattedData bytes], 0, true)) != noErr) {
+	if ((err = FSRefWriteData(&fileRef, 16 * 1024, [formattedData length], [formattedData bytes], 0, true)) != noErr) {
 		NSLog(@"error writing to temporary file: %d", err);
 		return err;
     }
-	if (PlainTextFormat == storageFormat) {
-		(void)[self writeCurrentFileEncodingToFSRef:&fileRef];
-	}
 	NSFileManager *fileMan = [NSFileManager defaultManager];
+	if (PlainTextFormat == storageFormat) {
+		[fileMan setTextEncodingAttribute:NSUTF8StringEncoding atFSPath:[[fileMan pathWithFSRef:&fileRef] fileSystemRepresentation]];
+	}
 	[fileMan setTags:[self orderedLabelTitles] atFSPath:[[fileMan pathWithFSRef:&fileRef] fileSystemRepresentation]];
 	
 	//also export the note's modification and creation dates
@@ -1753,7 +1031,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		if ([url isFileURL]) markedURL = url;
 	}
 	
-	NSString *path = [self noteFilePath];
+	NSString *path = markedURL ? [self temporaryTextFilePath] : nil;
 	if (markedURL && path) {
 		NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
 		configuration.activates = NO; //andDeactivate:NO
@@ -1769,10 +1047,8 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 	//read path/newPath into NSData and update note contents
 	
-	//can't use updateFromCatalogEntry because it would assign ownership via various metadata
-	
-	if ([self updateFromData:[NSMutableData dataWithContentsOfFile:path options:NSUncachedRead error:NULL] inFormat:PlainTextFormat]) {
-		//reflect the temp file's changes directly back to the backing-store-file, database, and sync services
+	if ([self updateFromPlainTextData:[NSMutableData dataWithContentsOfFile:path options:NSUncachedRead error:NULL]]) {
+		//reflect the temp file's changes directly back to the notes store and Simplenote
 		[self makeNoteDirtyUpdateTime:YES updateFile:YES];
 		
 		[delegate note:self attributeChanged:NotePreviewString];

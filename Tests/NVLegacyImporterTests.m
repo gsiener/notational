@@ -36,7 +36,7 @@
 
 - (NoteObject *)note:(NSString *)title body:(NSString *)body labels:(NSString *)labels {
 	NSAttributedString *text = [[[NSAttributedString alloc] initWithString:body] autorelease];
-	return [[[NoteObject alloc] initWithNoteBody:text title:title delegate:nil format:SingleDatabaseFormat labels:labels] autorelease];
+	return [[[NoteObject alloc] initWithNoteBody:text title:title delegate:nil labels:labels] autorelease];
 }
 
 - (void)markSynced:(NoteObject *)note dirty:(BOOL)dirty {

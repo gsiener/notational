@@ -24,40 +24,6 @@
 
 #define kMaxDataSize 4096
 
-- (NSArray *)mergedTagsForFileAtPath:(const char*)path
-{
-    NSArray *existingFinderTags=(NSArray *)[self getFinderTagsAtFSPath:path];
-    
-	NSArray *openMetaTags = (NSArray *)[self getOpenMetaTagsAtFSPath:path];
-    NSUInteger ct=0;
-    if (openMetaTags!=nil) {
-        ct=openMetaTags.count;
-    }
-    if (existingFinderTags!=nil) {
-        ct+=existingFinderTags.count;
-    }
-    if (ct>0) {
-        NSMutableSet *finalTagSet=[[NSMutableSet alloc]initWithCapacity:ct];
-        if (openMetaTags&&openMetaTags.count>0) {
-            [finalTagSet addObjectsFromArray:openMetaTags];
-        }
-        if ((existingFinderTags!=nil)&&(existingFinderTags.count>0)) {
-            [finalTagSet addObjectsFromArray:existingFinderTags];
-        }
-        NSArray *finalTags;
-        if (finalTagSet.count>0) {
-            finalTags=[NSArray arrayWithArray:[finalTagSet allObjects]];
-        }else{
-            finalTags=@[];
-        }
-        
-        [finalTagSet release];
-        return finalTags;
-    }else{
-        return @[];
-    }
-}
-
 - (id)getTagsAtFSPath:(const char*)path
 {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseFinderTags"])
@@ -200,7 +166,6 @@
 	return YES;
 }
 
-//TODO: use volumeCapabilities in FSExchangeObjectsCompat.c to skip some work on volumes for which we know we would receive ENOTSUP
 //for +setTextEncodingAttribute:atFSPath: and +textEncodingAttributeOfFSPath: (test against VOL_CAP_INT_EXTENDED_ATTR)
 
 - (BOOL)setTextEncodingAttribute:(NSStringEncoding)encoding atFSPath:(const char*)path {

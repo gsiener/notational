@@ -32,8 +32,7 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 																			 attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]] autorelease];
 	[body addLinkAttributesForRange:NSMakeRange(0, [body length])];
 	[body addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [body length])];
-	if ((self = [self initWithNoteBody:body title:[split title] delegate:aDelegate format:SingleDatabaseFormat
-								labels:LabelStringFromTags([record tags])])) {
+	if ((self = [self initWithNoteBody:body title:[split title] delegate:aDelegate labels:LabelStringFromTags([record tags])])) {
 		objc_setAssociatedObject(self, &RecordIDKey, [record noteID], OBJC_ASSOCIATION_COPY);
 		objc_setAssociatedObject(self, &ContentSplitKey, split, OBJC_ASSOCIATION_RETAIN);
 		if ([record creationDate] > 0) [self setDateAdded:[record creationDate] - kCFAbsoluteTimeIntervalSince1970];

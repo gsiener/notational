@@ -124,11 +124,6 @@ CA
                                     <action selector="exportNote:" target="213" id="988"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Mostrar no Finder" keyEquivalent="R" id="1118">
-                                <connections>
-                                    <action selector="revealNote:" target="213" id="1119"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Edit With" tag="88" id="1292">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
@@ -537,14 +532,6 @@ CA
                                     <action selector="shiftRightAction:" target="-1" id="569"/>
                                 </connections>
                             </menuItem>
-                            <menuItem isSeparatorItem="YES" id="565">
-                                <modifierMask key="keyEquivalentModifierMask" command="YES"/>
-                            </menuItem>
-                            <menuItem title="Corrigir Codificação de Texto…" tag="102" id="534">
-                                <connections>
-                                    <action selector="fixFileEncoding:" target="213" id="536"/>
-                                </connections>
-                            </menuItem>
                         </items>
                     </menu>
                 </menuItem>
@@ -884,14 +871,6 @@ DQ
                                     <action selector="shiftRightAction:" target="-1" id="1198"/>
                                 </connections>
                             </menuItem>
-                            <menuItem isSeparatorItem="YES" id="1188">
-                                <modifierMask key="keyEquivalentModifierMask" command="YES"/>
-                            </menuItem>
-                            <menuItem title="Corrigir Codificação de Texto…" tag="102" id="1191">
-                                <connections>
-                                    <action selector="fixFileEncoding:" target="213" id="1194"/>
-                                </connections>
-                            </menuItem>
                         </items>
                     </menu>
                 </menuItem>
@@ -899,11 +878,6 @@ DQ
                 <menuItem title="Buscar ou Criar…" keyEquivalent="l" id="1171">
                     <connections>
                         <action selector="bringFocusToControlField:" target="213" id="1172"/>
-                    </connections>
-                </menuItem>
-                <menuItem title="Mostrar no Finder" keyEquivalent="R" id="1173">
-                    <connections>
-                        <action selector="revealNote:" target="213" id="1174"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Renomear" tag="90" keyEquivalent="r" id="1165">

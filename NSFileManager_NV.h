@@ -36,7 +36,6 @@
 - (BOOL)createFolderAtPath:(NSString *)path withAttributes:(NSDictionary *)attributes;
 - (NSDictionary *)attributesAtPath:(NSString *)path followLink:(BOOL)follow;
 - (NSArray *)folderContentsAtPath:(NSString *)path;
-- (NSArray *)mergedTagsForFileAtPath:(const char*)path;
 - (BOOL)deleteFileAtPath:(NSString *)path;
 
 @end

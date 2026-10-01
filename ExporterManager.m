@@ -65,10 +65,8 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 			//user wanted us to overwrite this one--otherwise dialog would have been cancelled
 			if ([[NSFileManager defaultManager] fileExistsAtPath:[[sheet URL]path]]) overwriteNotes = YES;
 			
-			if ([filename compare:filenameOfNote([notes lastObject]) options:NSCaseInsensitiveSearch] != NSOrderedSame) {
-				//undo any POSIX-safe crap NSSavePanel gave us--otherwise FSCreateFileUnicode will fail
-				filename = [filename stringByReplacingOccurrencesOfString:@":" withString:@"/"];
-			}
+			//undo any POSIX-safe crap NSSavePanel gave us--otherwise FSCreateFileUnicode will fail
+			filename = [filename stringByReplacingOccurrencesOfString:@":" withString:@"/"];
 		}
 		
 		FSRef directoryRef;
@@ -90,8 +88,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 			
 			if (err == dupFNErr) {
 				//ask about overwriting
-				NSString *existingName = filename ? filename : filenameOfNote(note);
-				existingName = [[existingName stringByDeletingPathExtension] stringByAppendingPathExtension:[NotationPrefs pathExtensionForFormat:storageFormat]];
+				NSString *existingName = filename ? filename : [[note titleAsFilename] stringByAppendingPathExtension:[NotationPrefs pathExtensionForFormat:storageFormat]];
 				result = NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"A file named quotemark%@quotemark already exists.",nil), existingName],
 										 NSLocalizedString(@"Replace its current contents with that of the note?", @"replace the file's contents?"),
 										 NSLocalizedString(@"Replace",nil), NSLocalizedString(@"Don't Replace",nil), lastNote ? NSLocalizedString(@"Replace All",nil) : nil);
@@ -138,8 +135,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		
 		[self formatSelectorChanged:formatSelectorPopup];
 		
-		NSString *filename = filenameOfNote([notes lastObject]);
-		filename = [filename stringByDeletingPathExtension];
+		NSString *filename = [[notes lastObject] titleAsFilename];
 		filename = [filename stringByAppendingPathExtension:[NotationPrefs pathExtensionForFormat:[[formatSelectorPopup selectedItem] tag]]];
 		
         savePanel.nameFieldStringValue=filename;

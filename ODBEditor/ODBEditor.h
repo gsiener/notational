@@ -5,24 +5,18 @@
 
 extern NSString * const ODBEditorCustomPathKey;
 
-@class TemporaryFileCachePreparer;
 @class ExternalEditor;
-@class NotationPrefs;
 @class NoteObject;
 
 @interface ODBEditor : NSObject
 {
 	UInt32					_signature;
 	NSMutableDictionary		*_filePathsBeingEdited;
-	
-	TemporaryFileCachePreparer *editingSpacePreparer;
 }
 + (id)sharedODBEditor;
 
 - (void)abortEditingFile:(NSString *)path;
 - (void)abortAllEditingSessionsForClient:(id)client;
-
-- (void)initializeDatabase:(NotationPrefs*)prefs;
 
 // NOTE that client is never retained - it is your reponsibility to
 // make sure the client sticks around and abort editing for that client

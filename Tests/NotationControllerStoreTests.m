@@ -148,8 +148,7 @@
 - (void)testNewNoteIsCreatedInSimplenote {
 	[self openController];
 	NSAttributedString *body = [[[NSAttributedString alloc] initWithString:@"body text"] autorelease];
-	NoteObject *note = [[[NoteObject alloc] initWithNoteBody:body title:@"Brand new" delegate:controller
-													  format:SingleDatabaseFormat labels:@"inbox"] autorelease];
+	NoteObject *note = [[[NoteObject alloc] initWithNoteBody:body title:@"Brand new" delegate:controller labels:@"inbox"] autorelease];
 	[controller addNotes:[NSArray arrayWithObject:note]];
 	[self syncAndDeliver];
 

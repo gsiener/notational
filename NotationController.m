@@ -39,7 +39,6 @@
 #import "FrozenNotation.h"
 #import "AlienNoteImporter.h"
 #import "ODBEditor.h"
-#import "NotationFileManager.h"
 #import "BookmarksController.h"
 #import "nvaDevConfig.h"
 
@@ -47,7 +46,7 @@
 
 - (id)init {
     if (self=[super init]) {
-		directoryChangesFound = notesChanged = aliasNeedsUpdating = NO;
+		notesChanged = NO;
 		
 		allNotes = [[NSMutableArray alloc] init]; //<--the authoritative list of all memory-accessible notes
 		deletedNotes = [[NSMutableSet alloc] init];
@@ -61,25 +60,9 @@
 		lastWordInFilterStr = 0;
 		selectedNoteIndex = NSNotFound;
 		
-		fsCatInfoArray = NULL;
-		HFSUniNameArray = NULL;
-		catalogEntries = NULL;
-		sortedCatalogEntries = NULL;
-		catEntriesCount = totalCatEntriesCount = 0;
-
-#if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-		subscriptionCallback = NewFNSubscriptionUPP(NotesDirFNSubscriptionProc);
-		bzero(&noteDirSubscription, sizeof(FNSubscriptionRef));
-#endif
-		bzero(&noteDatabaseRef, sizeof(FSRef));
-		bzero(&noteDirectoryRef, sizeof(FSRef));
-		volumeSupportsExchangeObjects = -1;
-		
 		lastLayoutStyleGenerated = -1;
 		lastCheckedDateInHours = hoursFromAbsoluteTime(CFAbsoluteTimeGetCurrent());
-		blockSize = 0;
 		
-		lastWriteError = noErr;
 		unwrittenNotes = [[NSMutableSet alloc] init];
     }
     return self;
@@ -91,7 +74,6 @@
 - (id)initWithNotesStore:(NVNotesStore *)store {
 	if ((self = [self init])) {
 		notesStore = [store retain];
-		aliasNeedsUpdating = NO;
 		
 		//per-database settings (fonts, colours, deletion confirmation) live in the store's metadata;
 		//encryption and per-file storage no longer apply
@@ -247,22 +229,6 @@
 	//storage formats no longer apply: notes live in Simplenote (ADR 0001)
 }
 
-- (NSInteger)currentNoteStorageFormat {
-    return [notationPrefs notesStorageFormat];
-}
-
-- (void)noteDidNotWrite:(NoteObject*)note errorCode:(OSStatus)error {
-    [unwrittenNotes addObject:note];
-    
-    if (error != lastWriteError) {
-		NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"Changed notes could not be saved because %@.",
-																	 @"alert title appearing when notes couldn't be written"), 
-			[NSString reasonStringFromCarbonFSError:error]], @"", NSLocalizedString(@"OK",nil), NULL, NULL);
-		
-		lastWriteError = error;
-    }
-}
-
 - (void)synchronizeNoteChanges:(NSTimer*)timer {
 	if ([unwrittenNotes count] > 0) {
 		for (NoteObject *note in unwrittenNotes)
@@ -283,10 +249,6 @@
 	[self flushAllNoteChanges];
 	[syncEngine stop];
 	[allNotes makeObjectsPerformSelector:@selector(disconnectLabels)];
-}
-
-- (void)updateLinksToNote:(NoteObject*)aNoteObject fromOldName:(NSString*)oldname {
-    //O(n)
 }
 
 - (void)updateTitlePrefixConnections {
@@ -569,10 +531,6 @@
 	//force-write any cached note changes to make sure that their LSNs are smaller than this deleted note's LSN
 	[self synchronizeNoteChanges:nil];
     
-    //we do this after removing it from the array to avoid re-discovering a removed file
-    if ([notationPrefs notesStorageFormat] != SingleDatabaseFormat) {
-		[aNoteObject removeFileFromDirectory];
-    }
 	//add journal removal event
 	if (walWriter && ![walWriter writeRemovalForNote:aNoteObject]) {
 		NSLog(@"Couldn't log note removal");
@@ -1049,17 +1007,6 @@
 	[notationPrefs setDelegate:nil];
 	[allNotes makeObjectsPerformSelector:@selector(setDelegate:) withObject:nil];
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-    DisposeFNSubscriptionUPP(subscriptionCallback);
-#endif
-	if (fsCatInfoArray)
-		free(fsCatInfoArray);
-	if (HFSUniNameArray)
-		free(HFSUniNameArray);
-    if (catalogEntries)
-		free(catalogEntries);
-    if (sortedCatalogEntries)
-		free(sortedCatalogEntries);
     if (allNotesBuffer)
 		free(allNotesBuffer);
 	

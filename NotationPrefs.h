@@ -42,13 +42,7 @@ extern NSString *NotationPrefsDidChangeNotification;
 	NSInteger notesStorageFormat;
 	BOOL confirmFileDeletion;
 	
-	unsigned int chosenExtIndices[4];
-    NSMutableArray *typeStrings[4], *pathExtensions[4];
-    OSType *allowedTypes;
-	
 	NSData *masterSalt, *dataSessionSalt, *verifierKey;
-	
-	NSMutableArray *seenDiskUUIDEntries;
 	
 	UInt32 epochIteration;
 	BOOL firstTimeUsed;
@@ -63,8 +57,6 @@ extern NSString *NotationPrefsDidChangeNotification;
 NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serviceName);
 
 + (int)appVersion;
-+ (NSMutableArray*)defaultTypeStringsForFormat:(int)formatID;
-+ (NSMutableArray*)defaultPathExtensionsForFormat:(int)formatID;
 - (BOOL)preferencesChanged;
 - (void)setForegroundTextColor:(NSColor*)aColor;
 - (NSColor*)foregroundColor;
@@ -118,33 +110,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (void)removeSyncPasswordForService:(NSString*)serviceName;
 - (void)setKeyLengthInBits:(unsigned int)newLength;
 
-- (NSUInteger)tableIndexOfDiskUUID:(CFUUIDRef)UUIDRef;
-- (void)checkForKnownRedundantSyncConduitsAtPath:(NSString*)dbPath;
-
 + (NSString*)pathExtensionForFormat:(NSInteger)format;
-
-//used to view tableviews
-- (NSString*)typeStringAtIndex:(NSInteger)typeIndex;
-- (NSString*)pathExtensionAtIndex:(NSInteger)pathIndex;
-- (unsigned int)indexOfChosenPathExtension;
-- (NSString*)chosenPathExtensionForFormat:(NSInteger)format;
-- (NSInteger)typeStringsCount;
-- (NSInteger)pathExtensionsCount;
-
-//used to edit tableviews
-- (void)addAllowedPathExtension:(NSString*)extension;
-- (BOOL)removeAllowedPathExtensionAtIndex:(NSUInteger)extensionIndex;
-- (BOOL)setChosenPathExtensionAtIndex:(NSUInteger)extensionIndex;
-- (BOOL)addAllowedType:(NSString*)type;
-- (void)removeAllowedTypeAtIndex:(NSUInteger)index;
-- (BOOL)setExtension:(NSString*)newExtension atIndex:(unsigned int)oldIndex;
-- (BOOL)setType:(NSString*)newType atIndex:(unsigned int)oldIndex;
-
-- (BOOL)pathExtensionAllowed:(NSString*)anExtension forFormat:(NSInteger)formatID;
-
-//actually used while searching for files
-- (void)updateOSTypesArray;
-- (BOOL)catalogEntryAllowed:(NoteCatalogEntry*)catEntry;
 
 - (id)delegate;
 - (void)setDelegate:(id)aDelegate;
