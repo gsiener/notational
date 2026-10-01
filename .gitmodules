@@ -1,6 +1,3 @@
-[submodule "adium"]
-	path = adium
-	url = https://github.com/adium/adium
 [submodule "MultiMarkdown-4"]
 	path = MultiMarkdown-4
 	url = https://github.com/fletcher/MultiMarkdown-4.git

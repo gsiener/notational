@@ -4,9 +4,19 @@ Trying to keep nvALT alive by providing a CI-built version.
 
 Please keep in mind:
 
-- this project relies on a *very* old and insecure version of OpenSSL.
+- the build is native Apple Silicon (arm64) and needs no Rosetta
 - the CI build will *not* work with SimpleNote as is
-- to build locally you'll need `nix`
+
+To build locally you only need Xcode:
+
+```
+git submodule update --init --recursive
+xcodebuild -target Notation -configuration ForBuilding build
+```
+
+The app lands in `build/ForBuilding/nvALT.app`. Encryption, hashing and link
+detection use macOS's built-in CommonCrypto and Foundation APIs; MultiMarkdown is
+compiled from the `MultiMarkdown-4` submodule during the build.
 
 When you try to open the application, you will likely be greeted by a warning along the lines of:
 

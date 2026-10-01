@@ -20,7 +20,6 @@
 #import "NSCollection_utils.h"
 #import "GlobalPrefs.h"
 #import "NSString_NV.h"
-#import <AutoHyperlinks/AutoHyperlinks.h>
 
 
 NSString *NVHiddenDoneTagAttributeName = @"NVDoneTag";
@@ -206,28 +205,21 @@ static BOOL _StringWithRangeIsProbablyObjC(NSString *string, NSRange blockRange)
 	if (!changedRange.length)
 		return;
 	
-	//lazily loads Adium's BSD-licensed Auto-Hyperlinks:
-	//http://trac.adium.im/wiki/AutoHyperlinksFramework
-	
-	static Class AHHyperlinkScanner = Nil;
-	static Class AHMarkedHyperlink = Nil;
-	if (!AHHyperlinkScanner || !AHMarkedHyperlink) {
-		if (![[NSBundle bundleWithPath:[[[NSBundle mainBundle] privateFrameworksPath] stringByAppendingPathComponent:@"AutoHyperlinks.framework"]] load]) {
-			NSLog(@"Could not load AutoHyperlinks framework");
+	static NSDataDetector *linkDetector = nil;
+	if (!linkDetector) {
+		NSError *error = nil;
+		if (!(linkDetector = [[NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:&error] retain])) {
+			NSLog(@"Could not create link detector: %@", error);
 			return;
 		}
-		AHHyperlinkScanner = NSClassFromString(@"AHHyperlinkScanner");
-		AHMarkedHyperlink = NSClassFromString(@"AHMarkedHyperlink");
 	}
 	
-	id scanner = [AHHyperlinkScanner hyperlinkScannerWithString:[[self string] substringWithRange:changedRange]];
-	id markedLink = nil;
-	while ((markedLink = [scanner nextURI])) {
-		NSURL *markedLinkURL = nil;
-		if ((markedLinkURL = [markedLink URL]) && !([markedLinkURL isFileURL] && [[markedLinkURL absoluteString] 
-																				  rangeOfString:@"/.file/" options:NSLiteralSearch].location != NSNotFound)) {
-			[self addAttribute:NSLinkAttributeName value:markedLinkURL 
-						 range:NSMakeRange([markedLink range].location + changedRange.location, [markedLink range].length)];
+	NSArray *matches = [linkDetector matchesInString:[self string] options:0 range:changedRange];
+	for (NSTextCheckingResult *match in matches) {
+		NSURL *markedLinkURL = [match URL];
+		if (markedLinkURL && !([markedLinkURL isFileURL] && [[markedLinkURL absoluteString] 
+															rangeOfString:@"/.file/" options:NSLiteralSearch].location != NSNotFound)) {
+			[self addAttribute:NSLinkAttributeName value:markedLinkURL range:[match range]];
 		}
 	}
 
