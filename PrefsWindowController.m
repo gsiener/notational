@@ -298,16 +298,15 @@
 
 - (NotationPrefsViewController*)notationPrefsViewController {
 	if (!notationPrefsViewController) {
-		notationPrefsViewController = [[NotationPrefsViewController alloc] init];
+		notationPrefsViewController = [[NotationPrefsViewController alloc] initWithAccount:(id<NVNotesPaneAccount>)[NSApp delegate]];
 	}
 	return notationPrefsViewController;
 }
 
 - (NSView*)databaseView {
-    if (![notationPrefsView subviews] || ![[notationPrefsView subviews] count])
-		[notationPrefsView addSubview:[[self notationPrefsViewController] view]];
-	
-    return databaseView;
+	//built in code; the nib's database view (notes folder row, storage/sync/security tabs) is unused
+	[[self notationPrefsViewController] refresh];
+	return [[self notationPrefsViewController] view];
 }
 
 - (void)addToolbarItemWithName:(NSString*)name {
@@ -400,6 +399,8 @@
     [toolbar setAllowsUserCustomization:NO];
     [toolbar setAutosavesConfiguration:NO]; 
     [window setToolbar:toolbar];
+	//the Settings style: compact, so all four panes fit in the narrow window instead of overflowing behind »
+	[window setToolbarStyle:NSWindowToolbarStylePreference];
     [toolbar release];  //setToolbar retains the toolbar we pass, so release the one we used.
 	
 	[window setShowsToolbarButton:NO];
@@ -454,9 +455,6 @@
 		NSLog(@"unknown sender: %@", sender);
 	}
     
-    if (prefsView == databaseView)
-		[folderLocationsMenuButton setHidden:YES];
-	
 	NSAssert(prefsView != nil, @"switching to a nil prefs view!");
     
 	[[NSFontPanel sharedFontPanel] close];

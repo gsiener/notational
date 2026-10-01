@@ -20,6 +20,9 @@
 - (void)simplenoteSyncNow;
 @end
 
+//one line for the account's sync state, e.g. "Up to date."
+NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error);
+
 @interface NVSimplenoteAccountWindowController : NSWindowController
 
 @property (nonatomic, assign) id<NVSimplenoteAccountDelegate> accountDelegate;

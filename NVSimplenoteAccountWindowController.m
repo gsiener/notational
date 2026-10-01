@@ -97,7 +97,7 @@ static NSTextField *Label(NSRect frame) {
 	[codeField setEnabled:!busy];
 }
 
-static NSString *StatusText(NVSyncStatus status, NSError *error) {
+NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 	switch (status) {
 		case NVSyncStatusSyncing: return NSLocalizedString(@"Syncing…", nil);
 		case NVSyncStatusOffline:
@@ -143,8 +143,8 @@ static NSString *StatusText(NVSyncStatus status, NSError *error) {
 	NVSyncStatus status = [accountDelegate simplenoteSyncStatus];
 	BOOL signedIn = [accountDelegate simplenoteAccountEmail] && status != NVSyncStatusSignedOut;
 	[self showStep:signedIn ? StepSignedIn : StepEmail];
-	[statusLabel setStringValue:signedIn ? StatusText(status, [accountDelegate simplenoteLastError]) :
-	 ([accountDelegate simplenoteAccountEmail] ? StatusText(NVSyncStatusSignedOut, nil) : @"")];
+	[statusLabel setStringValue:signedIn ? NVSyncStatusDescription(status, [accountDelegate simplenoteLastError]) :
+	 ([accountDelegate simplenoteAccountEmail] ? NVSyncStatusDescription(NVSyncStatusSignedOut, nil) : @"")];
 }
 
 - (void)runInBackground:(id (^)(NSError **error))work completion:(void (^)(id result, NSError *error))completion {

@@ -106,8 +106,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (NSData*)WALSessionKey;
 
 - (void)setNotesStorageFormat:(NSInteger)formatID;
-- (BOOL)shouldDisplaySheetForProposedFormat:(NSInteger)proposedFormat;
-- (void)noteFilesCleanupSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 - (void)setConfirmsFileDeletion:(BOOL)value;
 - (void)setDoesEncryption:(BOOL)value;
 - (void)setSecureTextEntry:(BOOL)value;

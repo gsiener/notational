@@ -20,7 +20,6 @@
 #import "GlobalPrefs.h"
 #import "NSString_NV.h"
 #import "NSCollection_utils.h"
-#import "NotationPrefsViewController.h"
 #import "NSData_transformations.h"
 #import "NotationFileManager.h"
 #import "SecureTextEntryManager.h"
@@ -607,42 +606,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		//should notationprefs need to do this?
 		if ([delegate respondsToSelector:@selector(flushEverything)])
 			[delegate flushEverything];
-	}
-}
-
-- (BOOL)shouldDisplaySheetForProposedFormat:(NSInteger)proposedFormat {
-	BOOL notesExist = YES;
-	
-	if ([delegate respondsToSelector:@selector(totalNoteCount)])
-		notesExist = [delegate totalNoteCount] > 0;
-
-	return (proposedFormat == SingleDatabaseFormat && notesStorageFormat != SingleDatabaseFormat && notesExist);
-}
-
-- (void)noteFilesCleanupSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
-	
-	NSAssert(contextInfo, @"No contextInfo passed to noteFilesCleanupSheetDidEnd");
-	NSAssert([(id)contextInfo respondsToSelector:@selector(notesStorageFormatInProgress)],
-			 @"can't get notesStorageFormatInProgress method for changing");
-
-	NSInteger newNoteStorageFormat = [(NotationPrefsViewController*)contextInfo notesStorageFormatInProgress];
-	
-	if (returnCode != NSAlertAlternateReturn)
-		//didn't cancel
-		[self setNotesStorageFormat:newNoteStorageFormat];
-	
-	//but what if the files remain after switching to a single-db format--and then the user deletes a bunch of the files themselves?
-	//should we switch the currentFormatIDs of those notes to single-db? I guess.
-	
-	if ([(id)contextInfo respondsToSelector:@selector(notesStorageFormatDidChange)])
-		[(NotationPrefsViewController*)contextInfo notesStorageFormatDidChange];
-	
-	if (returnCode != NSAlertAlternateReturn) {
-		//run queued method
-		NSAssert([(id)contextInfo respondsToSelector:@selector(runQueuedStorageFormatChangeInvocation)],
-				 @"can't get runQueuedStorageFormatChangeInvocation method for changing");
-
-		[(NotationPrefsViewController*)contextInfo runQueuedStorageFormatChangeInvocation];
 	}
 }
 
