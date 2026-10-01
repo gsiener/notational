@@ -22,6 +22,8 @@ static NSString *const LegacyImportKey = @"legacyImportVersion";
 static NSString *const NotationSettingsKey = @"notationSettings";
 
 static NVSimplenoteAccountWindowController *accountWindow = nil;
+//the saved token is being read from the keychain at launch
+static BOOL loadingToken = NO;
 
 @implementation AppController (Simplenote)
 
@@ -102,8 +104,11 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 
 - (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store {
 	NSString *account = [store metadataValueForKey:AccountKey];
-	NSString *token = [[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account];
-	if (!account || !token) return nil;
+	return [self syncEngineForStore:store token:[[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account]];
+}
+
+- (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store token:(NSString *)token {
+	if (![store metadataValueForKey:AccountKey] || !token) return nil;
 	NVSimplenoteHTTPService *service = [[[NVSimplenoteHTTPService alloc] initWithToken:token clientID:[self clientIDForStore:store]] autorelease];
 	return [[[NVSyncEngine alloc] initWithStore:store service:service] autorelease];
 }
@@ -117,10 +122,26 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	[self migrateLegacyDatabaseIntoStore:store];
 
 	NotationController *notation = [[[NotationController alloc] initWithNotesStore:store] autorelease];
-	NVSyncEngine *engine = [self syncEngineForStore:store];
-	if (engine) {
-		[notation setSyncEngine:engine];
-		[engine start];
+	NSString *account = [store metadataValueForKey:AccountKey];
+	if (account) {
+		//off the main thread: the keychain may put up an access prompt (e.g. after a rebuild changes the
+		//signature), and the window should still appear while it waits (#27)
+		loadingToken = YES;
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+			NSString *token = [[[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account] retain];
+			dispatch_async(dispatch_get_main_queue(), ^{
+				loadingToken = NO;
+				//still the same store and account, and nobody signed in meanwhile
+				if (![notation syncEngine] && [account isEqualToString:[store metadataValueForKey:AccountKey]]) {
+					NVSyncEngine *engine = [self syncEngineForStore:store token:token];
+					[notation setSyncEngine:engine];
+					[engine start];
+				}
+				[token release];
+				[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:nil
+																  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:[self simplenoteSyncStatus]] forKey:@"status"]];
+			});
+		});
 	}
 	return notation;
 }
@@ -182,6 +203,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 
 - (NVSyncStatus)simplenoteSyncStatus {
 	NVSyncEngine *engine = [notationController syncEngine];
+	if (!engine && loadingToken) return NVSyncStatusSyncing;
 	return engine ? [engine status] : NVSyncStatusSignedOut;
 }
 
