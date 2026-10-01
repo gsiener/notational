@@ -1747,10 +1747,18 @@ terminateApp:
 	//to be invoked after loading a notationcontroller
 	
 	NSString *searchString = [prefsController lastSearchString];
-	if ([searchString length])
-		[self searchForString:searchString];
-	else
+	if ([searchString length]) {
+		//set the field's text directly and filter from that same string: going through the
+		//field editor only works while the field is focused, which it often isn't at launch
+		//(hidden menu-bar window, account sheet), and then the list was filtered by text the
+		//field didn't show (#24)
+		[self setDualFieldIsVisible:YES];
+		[field setStringValue:searchString];
+		[notationController filterNotesFromString:searchString];
+	} else {
+		[field setStringValue:@""];
 		[notationController refilterNotes];
+	}
     
 	CFUUIDBytes bytes = [prefsController UUIDBytesOfLastSelectedNote];
 	NSUInteger idx = [self revealNote:[notationController noteForUUIDBytes:&bytes] options:NVDoNotChangeScrollPosition];
