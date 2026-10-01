@@ -3015,12 +3015,6 @@ terminateApp:
         [[NSWorkspace sharedWorkspace] openFile:[[NSFileManager defaultManager] applicationSupportDirectory]];
     }
 
-    - (IBAction)sharePreview:(id)sender
-    {
-        [self ensurePreviewIsVisible];
-        [previewController shareAsk:self];
-    }
-    
     - (IBAction)lockPreview:(id)sender
     {
         if (![previewController previewIsVisible])

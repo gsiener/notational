@@ -483,11 +483,6 @@ see BWToolkit above
 
 --
 
-The markdown preview uses a popover type window MAAttachedWindow.m
-Which was created by Matt Gemmell
-
-
---
 The markdown preview is based on code from Christian Tietze
 
 --

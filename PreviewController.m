@@ -18,33 +18,6 @@
 
 #define kDefaultMarkupPreviewVisible @"markupPreviewVisible"
 
-@interface NSString (MIMEAdditions)
-+ (NSString*)MIMEBoundary;
-+ (NSString*)multipartMIMEStringWithDictionary:(NSDictionary*)dict;
-@end
-
-@implementation NSString (MIMEAdditions)
-//this returns a unique boundary which is used in constructing the multipart MIME body of the POST request
-+ (NSString*)MIMEBoundary
-{
-    static NSString* MIMEBoundary = nil;
-    if(!MIMEBoundary)
-        MIMEBoundary = [[NSString alloc] initWithFormat:@"----_=_nvALT_%@_=_----",[[NSProcessInfo processInfo] globallyUniqueString]];
-    return MIMEBoundary;
-}
-//this create a correctly structured multipart MIME body for the POST request from a dictionary
-+ (NSString*)multipartMIMEStringWithDictionary:(NSDictionary*)dict
-{
-    NSMutableString* result = [NSMutableString string];
-    for (NSString* key in dict)
-    {
-        [result appendFormat:@"--%@\nContent-Disposition: form-data; name=\"%@\"\n\n%@\n",[NSString MIMEBoundary],key,[dict objectForKey:key]];
-    }
-    [result appendFormat:@"\n--%@--\n",[NSString MIMEBoundary]];
-    return result;
-}
-@end
-
 @implementation PreviewController
 
 @synthesize preview;
@@ -71,17 +44,10 @@
             [[self window] orderFront:self];
         }
 
-        NSRect shCon = [[[self window] contentView]visibleRect];
-        shCon.origin.x +=20;
-        shCon.origin.y -= 2;
-        shCon.size.width = 99;
-        shCon.size.height = 28;
         //        tabSwitcher = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
         //        shCon.origin.x = [[[self window] contentView]visibleRect].origin.x + [[[self window] contentView]visibleRect].size.width - 80;
         //        shCon.size.width = 56;
         //        saveButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
-        //        shCon.origin.x -= 65;
-        //        shareButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
         //        shCon.origin.x -= 65;
         //        stickyPreviewButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
         //        shCon.origin.x -= 65;
@@ -90,11 +56,6 @@
         //        [tabSwitcher setTarget:self];
         //        [tabSwitcher setAction:@selector(switchTabs:)];
         //        [tabSwitcher setAutoresizingMask:NSViewMaxXMargin];
-        //        [shareButton setTitle:@"Share"];
-        //        [shareButton setToolTip:@"Make this note available to the public on Peg.gd"];
-        //        [shareButton setTarget:self];
-        //        [shareButton setAction:@selector(shareAsk:)];
-        //        [shareButton setAutoresizingMask:NSViewMinXMargin];
         //        [saveButton setTitle:@"Save"];
         //        [saveButton setToolTip:@"Save the current preview as an HTML file"];
         //        [saveButton setTarget:self];
@@ -111,38 +72,11 @@
         //        [printPreviewButton setAction:@selector(printPreview:)];
         //        [printPreviewButton setAutoresizingMask:NSViewMinXMargin];
         //        [[[self window] contentView] addSubview:tabSwitcher];
-        //        [[[self window] contentView] addSubview:shareButton];
         //        [[[self window] contentView] addSubview:saveButton];
         //        [[[self window] contentView] addSubview:stickyPreviewButton];
         //        [[[self window] contentView] addSubview:printPreviewButton];
         [tabView selectTabViewItem:[tabView tabViewItemAtIndex:0]];
 
-        shCon = [shareConfirmation visibleRect];
-        shCon.origin.x = shCon.size.width - 106;
-        shCon.origin.y = 1;
-        shCon.size.width = 81;
-        shCon.size.height = 28;
-        shareConfirm = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
-        shCon.origin.x = [shareConfirmation visibleRect].origin.x + 25;
-        shareCancel = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
-        [shareConfirm setTitle:@"Yes"];
-        [shareConfirm setTarget:self];
-        [shareConfirm setAction:@selector(shareNote:)];
-        [shareCancel setTitle:@"No, thanks"];
-        [shareCancel setTarget:self];
-        [shareCancel setAction:@selector(cancelShare:)];
-        [shareConfirmation addSubview:shareCancel];
-        [shareConfirmation addSubview:shareConfirm];
-
-        shCon = [shareNotification visibleRect];
-        shCon.size.width = 116;
-        shCon.size.height = 28;
-        shCon.origin.x = 70;
-        viewOnWebButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
-        [viewOnWebButton setTitle:@"View in Browser"];
-        [viewOnWebButton setTarget:self];
-        [viewOnWebButton setAction:@selector(openShareURL:)];
-        [shareNotification addSubview:viewOnWebButton];
         // [[[self window] contentView] setNeedsDisplay:YES];
 
         //		[preview setPolicyDelegate:self];
@@ -258,13 +192,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 
     NSWindow *wnd = [self window];
     if ([wnd isVisible]) {
-        if (attachedWindow) {
-            [[shareButton window] removeChildWindow:attachedWindow];
-            [attachedWindow orderOut:self];
-            [attachedWindow release];
-            attachedWindow = nil;
-            [shareURL release];
-        }
         //      // TODO: should the "stuck" note remain stuck when preview is closed?
         //      if (self.isPreviewSticky)
         //        [self makePreviewNotSticky:self];
@@ -410,12 +337,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 
 }
 
-- (NSString *)urlEncodeValue:(NSString *)str
-{
-    NSString *result = (NSString *) CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)str, NULL, CFSTR("?=&+"), kCFStringEncodingUTF8);
-    return [result autorelease];
-}
-
 -(IBAction)makePreviewSticky:(id)sender
 {
     self.isPreviewSticky = YES;
@@ -423,7 +344,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     [stickyPreviewButton setState:YES];
     [stickyPreviewButton setToolTip:@"Return the preview to normal functionality."];
     [stickyPreviewButton setAction:@selector(makePreviewNotSticky:)];
-    [shareButton setEnabled:NO];
     [saveButton setEnabled:NO];
     [[self window] setHidesOnDeactivate:NO];
 }
@@ -435,7 +355,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     [stickyPreviewButton setState:NO];
     [stickyPreviewButton setToolTip:@"Maintain current note in Preview, even if you switch to other notes."];
     [stickyPreviewButton setAction:@selector(makePreviewSticky:)];
-    [shareButton setEnabled:YES];
     [saveButton setEnabled:YES];
     self.isPreviewOutdated = YES;
     [self performSelector:@selector(preview:) withObject:[[NSApplication sharedApplication] delegate] afterDelay:0.0];
@@ -463,63 +382,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     if (selTab&&(tabView.selectedTabViewItem!=selTab)) {
         [tabView selectTabViewItem:selTab];
     }
-}
-
--(IBAction)shareNote:(id)sender
-{
-    AppController *app = [NSApp delegate];
-    NSString *noteTitle = [NSString stringWithFormat:@"%@",titleOfNote([app selectedNoteObject])];
-    NSString *rawString = [app noteContent];
-    NSString *processedString = [[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]];
-
-
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc]
-                                    initWithURL:
-                                    [NSURL URLWithString:@"http://peg.gd/nvapi.php"]];
-    [request setHTTPMethod:@"POST"];
-    [request addValue:@"8bit" forHTTPHeaderField:@"Content-Transfer-Encoding"];
-    [request addValue: [NSString stringWithFormat:@"multipart/form-data; boundary=%@",[NSString MIMEBoundary]] forHTTPHeaderField: @"Content-Type"];
-    NSDictionary* postData = [NSDictionary dictionaryWithObjectsAndKeys:
-                              @"8c4205ec33d8f6caeaaaa0c10a14138c", @"key",
-                              noteTitle, @"title",
-                              processedString, @"body",
-                              nil];
-    [request setHTTPBody: [[NSString multipartMIMEStringWithDictionary: postData] dataUsingEncoding: NSUTF8StringEncoding]];
-    NSHTTPURLResponse * response = nil;
-    NSError * error = nil;
-    NSData * responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
-    NSString * responseString = [[[NSString alloc] initWithData:responseData encoding:NSASCIIStringEncoding] autorelease];
-    NSLog(@"RESPONSE STRING: %@", responseString);
-    NSLog(@"%ld",(long)response.statusCode);
-    shareURL = [[NSString stringWithString:responseString] retain];
-    if (response.statusCode == 200) {
-        [self showShareURL:[NSString stringWithFormat:@"View %@",shareURL] isError:NO];
-    } else {
-        [self showShareURL:@"Error connecting" isError:YES];
-    }
-
-    [request release];
-
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
-{
-    [receivedData setLength:0];
-}
-
-
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
-{
-    [receivedData appendData:data];
-}
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection
-{
-    NSLog(@"Succeeded! Received %lu bytes of data",(unsigned long)[receivedData length]);
-
-    NSString * responseString = [[[NSString alloc] initWithData:receivedData encoding:NSASCIIStringEncoding] autorelease];
-    NSLog(@"RESPONSE STRING: %@", responseString);
-    [receivedData release];
 }
 
 //the same HTML as the preview, as a page of its own or inside the preview template
@@ -602,127 +464,12 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     }
 }
 
-- (IBAction)shareAsk:(id)sender
-{
-    if (!confirmWindow && !attachedWindow) {
-        int side = 3;
-        NSPoint buttonPoint = NSMakePoint(NSMidX([shareButton frame]),
-                                          NSMidY([shareButton frame]));
-        confirmWindow = [[MAAttachedWindow alloc] initWithView:shareConfirmation
-                                               attachedToPoint:buttonPoint
-                                                      inWindow:[shareButton window]
-                                                        onSide:side
-                                                    atDistance:15.0f];
-        [confirmWindow setBorderColor:[NSColor colorWithCalibratedHue:0.278 saturation:0.000 brightness:0.871 alpha:0.950]];
-        [confirmWindow setBackgroundColor:[NSColor colorWithCalibratedRed:0.134 green:0.134 blue:0.134 alpha:0.950]];
-        [confirmWindow setViewMargin:3.0f];
-        [confirmWindow setBorderWidth:1.0f];
-        [confirmWindow setCornerRadius:10.0f];
-        [confirmWindow setHasArrow:YES];
-        [confirmWindow setDrawsRoundCornerBesideArrow:YES];
-        [confirmWindow setArrowBaseWidth:10.0f];
-        [confirmWindow setArrowHeight:6.0f];
-
-        [[shareButton window] addChildWindow:confirmWindow ordered:NSWindowAbove];
-
-    } else {
-        if (confirmWindow)
-            [self cancelShare:self];
-        else if (attachedWindow)
-            [self hideShareURL:self];
-    }
-}
-
-- (void)showShareURL:(NSString *)url isError:(BOOL)isError
-{
-    if (confirmWindow) {
-        [[shareButton window] removeChildWindow:confirmWindow];
-        [confirmWindow orderOut:self];
-        [confirmWindow release];
-        confirmWindow = nil;
-    }
-    // Attach/detach window
-    if (!attachedWindow) {
-        int side = 3;
-        NSPoint buttonPoint = NSMakePoint(NSMidX([shareButton frame]),
-                                          NSMidY([shareButton frame]));
-        attachedWindow = [[MAAttachedWindow alloc] initWithView:shareNotification
-                                                attachedToPoint:buttonPoint
-                                                       inWindow:[shareButton window]
-                                                         onSide:side
-                                                     atDistance:15.0f];
-        [attachedWindow setBorderColor:[NSColor colorWithCalibratedHue:0.278 saturation:0.000 brightness:0.871 alpha:0.950]];
-        [attachedWindow setBackgroundColor:[NSColor colorWithCalibratedRed:0.134 green:0.134 blue:0.134 alpha:0.950]];
-        [attachedWindow setViewMargin:3.0f];
-        [attachedWindow setBorderWidth:1.0f];
-        [attachedWindow setCornerRadius:10.0f];
-        [attachedWindow setHasArrow:YES];
-        [attachedWindow setDrawsRoundCornerBesideArrow:YES];
-        [attachedWindow setArrowBaseWidth:10.0f];
-        [attachedWindow setArrowHeight:6.0f];
-
-        [[shareButton window] addChildWindow:attachedWindow ordered:NSWindowAbove];
-        
-    }
-    
-    if (isError) {
-        [urlTextField setStringValue:url];
-        [viewOnWebButton setHidden:YES];
-    } else {
-        NSPasteboard *pb = [NSPasteboard generalPasteboard];
-        NSArray *types = [NSArray arrayWithObjects:NSStringPboardType, nil];
-        [pb declareTypes:types owner:self];
-        [pb setString:shareURL forType:NSStringPboardType];
-        [urlTextField setHidden:NO];
-        [urlTextField setStringValue:[@"Copied " stringByAppendingString:[shareURL stringByAppendingString:@" to clipboard"]]];
-        //[viewOnWebButton setTitle:url];
-    }
-    
-    
-}
-
--(void)closeShareURLView
-{
-    [[shareButton window] removeChildWindow:attachedWindow];
-    [attachedWindow orderOut:self];
-    [attachedWindow release];
-    attachedWindow = nil;
-    [shareURL release];
-}
-
-- (IBAction)hideShareURL:(id)sender
-{
-    [self closeShareURLView];
-}
-
-- (IBAction)cancelShare:(id)sender
-{
-    [[shareButton window] removeChildWindow:confirmWindow];
-    [confirmWindow orderOut:self];
-    [confirmWindow release];
-    confirmWindow = nil;
-}
-
-- (IBAction)openShareURL:(id)sender
-{
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:shareURL]];
-    [[shareButton window] removeChildWindow:attachedWindow];
-    [attachedWindow orderOut:self];
-    [attachedWindow release];
-    attachedWindow = nil;
-    [shareURL release];
-}
-
 - (void)dealloc {
     [htmlString release];
     [cssString release];
     [lastNote release];
-    [shareButton release];
     [saveButton release];
     [tabSwitcher release];
-    [viewOnWebButton release];
-    [shareCancel release];
-    [shareConfirm release];
     [[[preview configuration] userContentController] removeScriptMessageHandlerForName:@"log"];
     [preview release];
     [super dealloc];

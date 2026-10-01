@@ -2,7 +2,7 @@
 //  NVMarkupRenderer.h
 //  Notation
 //
-//  Turns note text into HTML for the preview, Save HTML and Share (#4). Owns the markup
+//  Turns note text into HTML for the preview and Save HTML (#4). Owns the markup
 //  formats, the TaskPaper pre-pass, the preview template and running the tools that do
 //  the conversion. Each tool is an adapter behind NVMarkupTool, so swapping one touches
 //  only the tool for that format.
