@@ -19,6 +19,9 @@
 //requests served, by kind: @"index", @"changes", @"get", @"post"
 @property (nonatomic, readonly) NSCountedSet *requestCounts;
 
+//runs after a post has been applied and before it returns, i.e. while the push is "in flight"
+@property (nonatomic, copy) void (^afterPostApplied)(NSString *noteID);
+
 //the next requests fail with these NVSimplenoteErrorDomain codes, in order
 - (void)failNextRequestsWithCodes:(NSArray *)codes;
 
@@ -28,6 +31,9 @@
 - (void)remoteSetData:(NSDictionary *)data ofNote:(NSString *)noteID;
 - (void)remoteTrashNote:(NSString *)noteID;
 - (void)remotePurgeNote:(NSString *)noteID;
+
+//make every existing version of a note except the latest unavailable, as if pruned
+- (void)pruneHistoryOfNote:(NSString *)noteID;
 
 //make every change version issued so far unknown, as if the server pruned its history
 - (void)forgetChangeHistory;

@@ -23,6 +23,26 @@ static NSString *const SyncPointKey = @"syncPoint";
 - (BOOL)openReturningError:(NSError **)error;
 @end
 
+@interface NVNotesStoreTransactionImpl : NSObject <NVNotesStoreTransaction> {
+@public
+	NVNotesStore *store;
+}
+@end
+
+@interface NVNotesStore (QueueOnly)
+- (NVNoteRecord *)_recordWithID:(NSString *)noteID;
+- (BOOL)_writeRecord:(NVNoteRecord *)record;
+- (void)_deleteRecordWithID:(NSString *)noteID;
+- (NSArray *)_recordsWhere:(const char *)where;
+@end
+
+@implementation NVNotesStoreTransactionImpl
+- (NVNoteRecord *)noteWithID:(NSString *)noteID { return [store _recordWithID:noteID]; }
+- (void)putNote:(NVNoteRecord *)record { [store _writeRecord:record]; }
+- (void)removeNoteWithID:(NSString *)noteID { [store _deleteRecordWithID:noteID]; }
+- (NSArray *)allNotes { return [store _recordsWhere:NULL]; }
+@end
+
 @implementation NVNotesStore
 
 @synthesize movedAsideCorruptFile;
@@ -335,14 +355,31 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	dispatch_async(queue, ^{ [self _writeRecord:copy]; });
 }
 
+- (void)_deleteRecordWithID:(NSString *)noteID {
+	sqlite3_stmt *stmt = NULL;
+	if (sqlite3_prepare_v2(db, "DELETE FROM notes WHERE id = ?", -1, &stmt, NULL) != SQLITE_OK) return;
+	BindText(stmt, 1, noteID);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+}
+
 - (void)removeNoteWithID:(NSString *)noteID {
 	NSString *anID = [[noteID copy] autorelease];
-	dispatch_async(queue, ^{
-		sqlite3_stmt *stmt = NULL;
-		if (sqlite3_prepare_v2(db, "DELETE FROM notes WHERE id = ?", -1, &stmt, NULL) != SQLITE_OK) return;
-		BindText(stmt, 1, anID);
-		sqlite3_step(stmt);
-		sqlite3_finalize(stmt);
+	dispatch_async(queue, ^{ [self _deleteRecordWithID:anID]; });
+}
+
+- (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block {
+	dispatch_sync(queue, ^{
+		NVNotesStoreTransactionImpl *transaction = [[NVNotesStoreTransactionImpl alloc] init];
+		transaction->store = self;
+		BOOL began = Exec(db, "BEGIN IMMEDIATE");
+		@try {
+			block(transaction);
+		} @finally {
+			if (began) Exec(db, "COMMIT");
+			transaction->store = nil;
+			[transaction release];
+		}
 	});
 }
 

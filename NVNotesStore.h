@@ -14,6 +14,14 @@
 
 @class NVNoteRecord;
 
+//Operations available inside -performTransaction:. Valid only during the block.
+@protocol NVNotesStoreTransaction <NSObject>
+- (NVNoteRecord *)noteWithID:(NSString *)noteID;
+- (void)putNote:(NVNoteRecord *)record;
+- (void)removeNoteWithID:(NSString *)noteID;
+- (NSArray *)allNotes;
+@end
+
 extern NSString *const NVNotesStoreErrorDomain;
 
 @interface NVNotesStore : NSObject
@@ -44,6 +52,10 @@ extern NSString *const NVNotesStoreErrorDomain;
 //then writes the record back if the block returns YES. Atomic with respect to all
 //other store operations.
 - (void)updateNoteWithID:(NSString *)noteID usingBlock:(BOOL (^)(NVNoteRecord *record))block;
+
+//Runs block on the store's queue inside one SQLite transaction, blocking the caller.
+//Everything the block does commits together; other store operations wait.
+- (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block;
 
 //Writes a record exactly as given (used for server-confirmed notes).
 - (void)putNote:(NVNoteRecord *)record;

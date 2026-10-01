@@ -11,15 +11,16 @@
 	NSMutableDictionary *versions;     //note id -> NSMutableArray of data dictionaries; index = version - 1
 	NSMutableArray *changeLog;         //NVRemoteChange, oldest first
 	NSUInteger changeCounter;
-	NSUInteger forgottenThrough;       //change counters <= this are unknown
+	NSUInteger forgottenThrough;       //change counters below this are unknown
 	NSMutableArray *failureCodes;
 	NSCountedSet *requestCounts;
+	NSMutableDictionary *oldestAvailableVersion; //note id -> NSNumber
 }
 @end
 
 @implementation NVFakeSimplenoteService
 
-@synthesize requestCounts;
+@synthesize requestCounts, afterPostApplied;
 
 - (id)init {
 	if ((self = [super init])) {
@@ -27,6 +28,7 @@
 		changeLog = [[NSMutableArray alloc] init];
 		failureCodes = [[NSMutableArray alloc] init];
 		requestCounts = [[NSCountedSet alloc] init];
+		oldestAvailableVersion = [[NSMutableDictionary alloc] init];
 	}
 	return self;
 }
@@ -36,6 +38,8 @@
 	[changeLog release];
 	[failureCodes release];
 	[requestCounts release];
+	[oldestAvailableVersion release];
+	[afterPostApplied release];
 	[super dealloc];
 }
 
@@ -143,7 +147,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 		if (!history || baseVersion == 0) {
 			//create, or overwrite when the client has no base version
 			[self appendVersion:data toNote:noteID];
-		} else if (baseVersion > current || baseVersion < 1) {
+		} else if (baseVersion > current || baseVersion < MAX(1, [[oldestAvailableVersion objectForKey:noteID] integerValue])) {
 			if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:NVSimplenoteErrorNotFound userInfo:nil];
 			return nil;
 		} else if ([data isEqualToDictionary:[history lastObject]]) {
@@ -168,7 +172,9 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 		}
 		history = [versions objectForKey:noteID];
 		if (newVersion) *newVersion = [history count];
-		return [[[history lastObject] copy] autorelease];
+		NSDictionary *result = [[[history lastObject] copy] autorelease];
+		if (afterPostApplied) afterPostApplied(noteID);
+		return result;
 	}
 }
 
@@ -224,9 +230,16 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 	}
 }
 
+- (void)pruneHistoryOfNote:(NSString *)noteID {
+	@synchronized(self) {
+		[oldestAvailableVersion setObject:[NSNumber numberWithInteger:[[versions objectForKey:noteID] count]] forKey:noteID];
+	}
+}
+
 - (void)forgetChangeHistory {
 	@synchronized(self) {
-		forgottenThrough = changeCounter + 1;
+		//everything older than the current change version becomes unknown
+		forgottenThrough = changeCounter;
 	}
 }
 

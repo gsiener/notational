@@ -130,6 +130,24 @@
 	XCTAssertNil([store noteWithID:@"missing"]);
 }
 
+- (void)testTransactionCreatesUpdatesAndRemovesTogether {
+	NVNotesStore *store = [self openStore];
+	[store putNote:[self serverRecord:@"old" content:@"x" version:1]];
+	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		XCTAssertNil([t noteWithID:@"new"]);
+		NSUInteger i;
+		for (i = 0; i < 300; i++)
+			[t putNote:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:@"y" version:1]];
+		NVNoteRecord *old = [t noteWithID:@"old"];
+		[old setContent:@"changed"];
+		[t putNote:old];
+		[t removeNoteWithID:@"n0"];
+		XCTAssertEqual([[t allNotes] count], (NSUInteger)300);
+	}];
+	XCTAssertEqual([store noteCount], (NSUInteger)300);
+	XCTAssertEqualObjects([[store noteWithID:@"old"] content], @"changed");
+}
+
 - (void)testReadsSeeQueuedWrites {
 	NVNotesStore *store = [self openStore];
 	NSUInteger i;
