@@ -667,7 +667,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 		NSMutableDictionary *attrs = [[NSMutableDictionary dictionaryWithObjectsAndKeys:bodyFont, NSFontAttributeName, nil] retain];
 		
 		//not storing the foreground color in each note will make the database smaller, and black is assumed when drawing text
-		NSColor *fgColor = [(AppController *)[NSApp delegate] foregrndColor];
+		NSColor *fgColor = [self _currentForegroundColor];
 		
 		if (!ColorsEqualWith8BitChannels([NSColor blackColor], fgColor)) {
 			[attrs setObject:fgColor forKey:NSForegroundColorAttributeName];
@@ -685,7 +685,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	}else {
 		//NSLog(@"notebody att4");
 		NSMutableDictionary *attrs = [[NSMutableDictionary dictionaryWithObjectsAndKeys:bodyFont, NSFontAttributeName, nil] retain];
-		NSColor *fgColor = [(AppController *)[NSApp delegate] foregrndColor];
+		NSColor *fgColor = [self _currentForegroundColor];
 		
 		//	if (!ColorsEqualWith8BitChannels([NSColor blackColor], fgColor)) {
 		[attrs setObject:fgColor forKey:NSForegroundColorAttributeName];
@@ -738,6 +738,15 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 		
 		SEND_CALLBACKS();
 	}	
+}
+
+//the app delegate tracks the live theme colour; fall back to the stored preference when
+//there is no app delegate answering (e.g. in unit tests)
+- (NSColor*)_currentForegroundColor {
+	id appDelegate = [NSApp delegate];
+	NSColor *color = [appDelegate respondsToSelector:@selector(foregrndColor)] ? [appDelegate foregrndColor] : nil;
+	if (!color) color = [self foregroundTextColor];
+	return color ? color : [NSColor blackColor];
 }
 
 - (NSColor*)foregroundTextColor {

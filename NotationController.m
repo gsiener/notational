@@ -23,6 +23,10 @@
 
 #import "AppController.h"
 #import "NotationController.h"
+#import "NVNotesStore.h"
+#import "NVSyncEngine.h"
+#import "NVNoteRecord.h"
+#import "NoteObject_NVRecord.h"
 #import "NSCollection_utils.h"
 #import "NoteObject.h"
 #import "DeletedNoteObject.h"
@@ -159,6 +163,122 @@
     }
     
     return self;
+}
+
+#pragma mark Simplenote-backed storage
+
+- (id)initWithNotesStore:(NVNotesStore *)store {
+	if ((self = [self init])) {
+		notesStore = [store retain];
+		aliasNeedsUpdating = NO;
+		
+		//per-database settings (fonts, colours, deletion confirmation) live in the store's metadata;
+		//encryption and per-file storage no longer apply
+		NotationPrefs *prefs = nil;
+		NSString *archived = [store metadataValueForKey:@"notationSettings"];
+		if (archived) {
+			@try {
+				prefs = [NSKeyedUnarchiver unarchiveObjectWithData:[[[NSData alloc] initWithBase64EncodedString:archived options:0] autorelease]];
+			} @catch (NSException *e) {
+				NSLog(@"could not read stored notation settings: %@", [e reason]);
+			}
+		}
+		notationPrefs = [(([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[[NotationPrefs alloc] init] autorelease]) retain];
+		[notationPrefs setNotesStorageFormat:SingleDatabaseFormat];
+		[notationPrefs setDelegate:self];
+		
+		allNotes = [[NSMutableArray alloc] init];
+		deletedNotes = [[NSMutableSet alloc] init];
+		applyingRemoteChanges = YES;
+		for (NVNoteRecord *record in [store allNotes]) {
+			if ([record deleted]) continue;
+			NoteObject *note = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
+			if (note) [allNotes addObject:note];
+			[note release];
+		}
+		applyingRemoteChanges = NO;
+		
+		[prefsController setNotationPrefs:notationPrefs sender:self];
+		[self makeForegroundTextColorMatchGlobalPrefs];
+		[self updateTitlePrefixConnections];
+	}
+	return self;
+}
+
+- (NVNotesStore *)notesStore {
+	return notesStore;
+}
+
+- (void)setSyncEngine:(NVSyncEngine *)engine {
+	if (engine == syncEngine) return;
+	[syncEngine setDelegate:nil];
+	[syncEngine stop];
+	[syncEngine release];
+	syncEngine = [engine retain];
+	[syncEngine setDelegate:(id<NVSyncEngineDelegate>)self];
+}
+
+- (NVSyncEngine *)syncEngine {
+	return syncEngine;
+}
+
+- (NoteObject *)_noteWithRecordID:(NSString *)recordID {
+	for (NoteObject *note in allNotes)
+		if ([[note noteRecordID] isEqualToString:recordID]) return note;
+	return nil;
+}
+
+//NVSyncEngineDelegate, on the main thread
+- (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
+	NSMutableDictionary *byID = [NSMutableDictionary dictionaryWithCapacity:[allNotes count]];
+	for (NoteObject *note in allNotes) [byID setObject:note forKey:[note noteRecordID]];
+	
+	BOOL listChanged = NO;
+	NSMutableArray *removed = [NSMutableArray array];
+	applyingRemoteChanges = YES;
+	for (NVNoteRecord *record in records) {
+		NoteObject *note = [byID objectForKey:[record noteID]];
+		if (note && [unwrittenNotes containsObject:note]) {
+			//edited here since the last save; that save will be pushed and merged by the server
+			continue;
+		}
+		if ([record deleted]) {
+			if (note) [removed addObject:note];
+			continue;
+		}
+		if (note) {
+			if ([note applyNoteRecord:record]) {
+				listChanged = YES;
+				if ([delegate respondsToSelector:@selector(contentsUpdatedForNote:)])
+					[delegate performSelector:@selector(contentsUpdatedForNote:) withObject:note];
+			}
+		} else {
+			NoteObject *added = [[[NoteObject alloc] initWithNoteRecord:record delegate:self] autorelease];
+			if (added) {
+				[allNotes addObject:added];
+				listChanged = YES;
+			}
+		}
+	}
+	applyingRemoteChanges = NO;
+	
+	for (NSString *recordID in noteIDs) {
+		NoteObject *note = [byID objectForKey:recordID];
+		if (note) [removed addObject:note];
+	}
+	for (NoteObject *note in removed) {
+		[note disconnectLabels];
+		[note abortEditingInExternalEditor];
+		[allNotes removeObjectIdenticalTo:note];
+		[[prefsController bookmarksController] removeBookmarkForNote:note];
+		listChanged = YES;
+	}
+	
+	if (listChanged) {
+		[self updateTitlePrefixConnections];
+		[self resortAllNotes];
+		[self refilterNotes];
+	}
 }
 
 - (id)delegate {
@@ -555,6 +675,18 @@ bail:
 }
 
 - (BOOL)flushAllNoteChanges {
+	if (notesStore) {
+		[self synchronizeNoteChanges:changeWritingTimer];
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(synchronizeNoteChanges:) object:nil];
+		if ([notationPrefs preferencesChanged]) {
+			[notesStore setMetadataValue:[[NSKeyedArchiver archivedDataWithRootObject:notationPrefs] base64EncodedStringWithOptions:0]
+								  forKey:@"notationSettings"];
+			[notationPrefs setPreferencesAreStored];
+		}
+		[notesStore waitUntilWritten];
+		notesChanged = NO;
+		return YES;
+	}
     //write only if preferences or notes have been changed
     if (notesChanged || [notationPrefs preferencesChanged]) {
 		
@@ -677,6 +809,14 @@ bail:
 
 - (void)synchronizeNoteChanges:(NSTimer*)timer {
     
+	if (notesStore && [unwrittenNotes count] > 0) {
+		for (NoteObject *note in unwrittenNotes)
+			[notesStore saveLocalEdit:[note noteRecordRepresentation]];
+		[unwrittenNotes removeAllObjects];
+		[syncEngine syncNow];
+		[self scheduleUpdateListForAttribute:NoteDateModifiedColumnString];
+	}
+	
     if ([unwrittenNotes count] > 0) {
 		lastWriteError = noErr;
 		if ([notationPrefs notesStorageFormat] != SingleDatabaseFormat) {
@@ -751,8 +891,9 @@ bail:
 	[deletionManager cancelPanelReturningCode:NSRunStoppedResponse];
 	[self stopSyncServices];
 	[self stopFileNotifications];
-	if ([self flushAllNoteChanges])
+	if ([self flushAllNoteChanges] && !notesStore)
 		[self closeJournal];
+	[syncEngine stop];
 	[allNotes makeObjectsPerformSelector:@selector(disconnectLabels)];
 }
 
@@ -1016,6 +1157,8 @@ bail:
 }
 
 - (void)scheduleWriteForNote:(NoteObject*)note {
+	//applying a change that came from Simplenote is not a local edit
+	if (applyingRemoteChanges) return;
 
 	if ([allNotes containsObject:note]) {
 	
@@ -1097,7 +1240,16 @@ bail:
 	[aNoteObject abortEditingInExternalEditor];
 	
     [allNotes removeObjectIdenticalTo:aNoteObject];
-	DeletedNoteObject *deletedNote = [self _addDeletedNote:aNoteObject];
+	[unwrittenNotes removeObject:aNoteObject];
+	if (notesStore) {
+		//deleting moves the note to Simplenote's trash; undo restores it with the next save
+		NVNoteRecord *trashed = [aNoteObject noteRecordRepresentation];
+		[trashed setDeleted:YES];
+		[trashed setModificationDate:[[NSDate date] timeIntervalSince1970]];
+		[notesStore saveLocalEdit:trashed];
+		[syncEngine syncNow];
+	}
+	DeletedNoteObject *deletedNote = notesStore ? nil : [self _addDeletedNote:aNoteObject];
 	
 	updateForVerifiedDeletedNote(deletionManager, aNoteObject);
     
@@ -1622,6 +1774,9 @@ bail:
 	[deletedNotes release];
 	[notationPrefs release];
 	[unwrittenNotes release];
+	[syncEngine setDelegate:nil];
+	[syncEngine release];
+	[notesStore release];
     
     [super dealloc];
 }

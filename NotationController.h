@@ -45,6 +45,8 @@ typedef struct _NoteCatalogEntry {
 @class DeletionManager;
 @class GlobalPrefs;
 
+@class NVNotesStore, NVSyncEngine;
+
 @interface NotationController : NSObject {
     NSMutableArray *allNotes;
     FastListDataSource *notesListDataSource;
@@ -100,7 +102,18 @@ typedef struct _NoteCatalogEntry {
 	BOOL notesChanged;
 	NSTimer *changeWritingTimer;
 	NSUndoManager *undoManager;
+	
+	//Simplenote-backed storage (ADR 0001); when set, the notes database, journal and
+	//notes-folder code paths are bypassed
+	NVNotesStore *notesStore;
+	NVSyncEngine *syncEngine;
+	BOOL applyingRemoteChanges;
 }
+
+- (id)initWithNotesStore:(NVNotesStore *)store;
+- (NVNotesStore *)notesStore;
+- (void)setSyncEngine:(NVSyncEngine *)engine;
+- (NVSyncEngine *)syncEngine;
 
 - (id)init;
 - (id)initWithAliasData:(NSData*)data error:(OSStatus*)err;
