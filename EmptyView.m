@@ -13,6 +13,7 @@
 #import "EmptyView.h"
 #import "AppController.h"
 //#import "AppController.h"
+#import "NVTheme.h"
 
 @implementation EmptyView
 
@@ -29,7 +30,7 @@
 	outletObjectAwoke(self);
 	/*
 	if (!bgCol) {
-		bgCol = [[[NSApp delegate] backgrndColor] retain];
+		bgCol = [[[NVTheme currentTheme] backgroundColor] retain];
 	}*/
 
 }
@@ -73,7 +74,7 @@
 - (void)drawRect:(NSRect)rect {
 	//NSRect bounds = [self bounds];
 	if (!bgCol) {
-		bgCol = [[[NSApp delegate] backgrndColor] retain];
+		bgCol = [[[NVTheme currentTheme] backgroundColor] retain];
 	}
 	//[bgCol set];
     //NSRectFill(bounds);

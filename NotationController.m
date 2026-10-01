@@ -21,7 +21,6 @@
     along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
 
 
-#import "AppController.h"
 #import "NotationController.h"
 #import "NVNotesStore.h"
 #import "NVSyncEngine.h"
@@ -41,6 +40,7 @@
 #import "ODBEditor.h"
 #import "BookmarksController.h"
 #import "nvaDevConfig.h"
+#import "NVTheme.h"
 
 @implementation NotationController
 
@@ -620,7 +620,7 @@
 - (void)makeForegroundTextColorMatchGlobalPrefs {
 	NSColor *prefsFGColor = [notationPrefs foregroundColor];
 	if (prefsFGColor) {
-		NSColor *fgColor = [(AppController *)[NSApp delegate] foregrndColor];
+		NSColor *fgColor = [[NVTheme currentTheme] foregroundColor];
 		[self setForegroundTextColor:fgColor];
 		//NSColor *fgColor = [prefsController foregroundTextColor];
 		

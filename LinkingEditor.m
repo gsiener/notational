@@ -22,6 +22,7 @@
 #import "NVPasswordGenerator.h"
 #import "ETClipView.h"
 //#import "NVTextFinderAdditions.h"
+#import "NVTheme.h"
 
 
 #include <CoreServices/CoreServices.h>
@@ -216,10 +217,10 @@ if ([selectorString isEqualToString:SEL_STR(setNoteBodyFont:sender:)]) {
 }
 
 - (void)updateTextColors {
-	NSColor *fgColor = [(AppController *)[NSApp delegate] foregrndColor];
+	NSColor *fgColor = [[NVTheme currentTheme] foregroundColor];
 	NSColor *bgColor = [self backgroundColor];
-    if (bgColor!=[(AppController *)[NSApp delegate]backgrndColor]) {
-        bgColor=[(AppController *)[NSApp delegate]backgrndColor];
+    if (bgColor!=[[NVTheme currentTheme] backgroundColor]) {
+        bgColor=[[NVTheme currentTheme] backgroundColor];
         [self setBackgroundColor:bgColor];
     }
 	[[self enclosingScrollView] setBackgroundColor:bgColor];
@@ -340,7 +341,7 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 	return [NSDictionary dictionaryWithObjectsAndKeys:
 			[NSCursor pointingHandCursor], NSCursorAttributeName,
 			[NSNumber numberWithInt:NSUnderlineStyleSingle], NSUnderlineStyleAttributeName,
-			[self _linkColorForForegroundColor:[(AppController *)[NSApp delegate] foregrndColor] backgroundColor:[(AppController *)[NSApp delegate] backgrndColor]],
+			[self _linkColorForForegroundColor:[[NVTheme currentTheme] foregroundColor] backgroundColor:[[NVTheme currentTheme] backgroundColor]],
 			NSForegroundColorAttributeName, nil];
 	
 	/*

@@ -15,13 +15,13 @@
    - Neither the name of Notational Velocity nor the names of its contributors may be used to endorse 
      or promote products derived from this software without specific prior written permission. */
 
-#import "AppController.h"
 #import "NotationPrefs.h"
 #import "GlobalPrefs.h"
 #import "NSString_NV.h"
 #import "NSCollection_utils.h"
 #import "NSData_transformations.h"
 #import "SecureTextEntryManager.h"
+#import "NVTheme.h"
 #include <CoreServices/CoreServices.h>
 #include <Security/Security.h>
 #include <ApplicationServices/ApplicationServices.h>
@@ -57,7 +57,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		keyLengthInBits = DEFAULT_KEY_LENGTH;
 		baseBodyFont = [[[GlobalPrefs defaultPrefs] noteBodyFont] retain];
 		//foregroundColor = [[[GlobalPrefs defaultPrefs] foregroundTextColor] retain];
-		foregroundColor = [[(AppController *)[NSApp delegate] foregrndColor]retain];
+		foregroundColor = [[[NVTheme currentTheme] foregroundColor]retain];
 		epochIteration = 0;
 		
 		firstTimeUsed = preferencesChanged = YES;
@@ -107,7 +107,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		if (!foregroundColor || ![foregroundColor isKindOfClass:[NSColor class]]) {
 			//foregroundColor = [[[GlobalPrefs defaultPrefs] foregroundTextColor] retain];
 			
-			foregroundColor = [[(AppController *)[NSApp delegate] foregrndColor]retain];
+			foregroundColor = [[[NVTheme currentTheme] foregroundColor]retain];
 			preferencesChanged = YES;
 		}
 		

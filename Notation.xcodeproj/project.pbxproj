@@ -344,6 +344,9 @@
 		660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		1C22C292A48F41C818DC9528 /* NVTaskPaperMarkdown.m in Sources */ = {isa = PBXBuildFile; fileRef = A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		711437CC0586B589020F4E59 /* NVTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = E0A0788F1432C8560CA302BD /* NVTheme.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		7BBD2EF5C32C11C0C472D7B1 /* NVTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = E0A0788F1432C8560CA302BD /* NVTheme.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -806,6 +809,9 @@
 		042DDB46E505E2A3C035CA60 /* NVTaskPaperMarkdown.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTaskPaperMarkdown.h; sourceTree = "<group>"; };
 		A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTaskPaperMarkdown.m; sourceTree = "<group>"; };
 		9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTaskPaperMarkdownTests.m; sourceTree = "<group>"; };
+		ECA60B9C7474BFE2351E83F2 /* NVTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTheme.h; sourceTree = "<group>"; };
+		E0A0788F1432C8560CA302BD /* NVTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTheme.m; sourceTree = "<group>"; };
+		8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVThemeTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -851,6 +857,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				E0A0788F1432C8560CA302BD /* NVTheme.m */,
+				ECA60B9C7474BFE2351E83F2 /* NVTheme.h */,
 				A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */,
 				042DDB46E505E2A3C035CA60 /* NVTaskPaperMarkdown.h */,
 				B803B414643106CD651088CB /* NVMarkupRenderer.m */,
@@ -1361,6 +1369,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */,
 				9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */,
 				9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */,
 				0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */,
@@ -1624,6 +1633,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				711437CC0586B589020F4E59 /* NVTheme.m in Sources */,
 				660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */,
 				7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */,
 				CE445F755D155920EB6B4680 /* NVHTMLMarkdown.m in Sources */,
@@ -1720,6 +1730,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */,
+				7BBD2EF5C32C11C0C472D7B1 /* NVTheme.m in Sources */,
 				2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */,
 				1C22C292A48F41C818DC9528 /* NVTaskPaperMarkdown.m in Sources */,
 				8B6F5F6B6BF42A539B3F1F31 /* NVMarkupRendererTests.m in Sources */,

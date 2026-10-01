@@ -14,6 +14,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "NVMarkupRenderer.h"
+#import "NVTheme.h"
 
 #import "NotationController.h"
 #import "NotesTableView.h"

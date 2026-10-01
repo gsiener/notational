@@ -7,6 +7,7 @@
 
 #import "DFView.h"
 #import "AppController.h"
+#import "NVTheme.h"
 
 
 @implementation DFView
@@ -15,7 +16,7 @@
     self = [super initWithFrame:frame];
     if (self) {        
         if (!vColor) {
-            [self setBackgroundColor:[(AppController *)[NSApp delegate] backgrndColor]];
+            [self setBackgroundColor:[[NVTheme currentTheme] backgroundColor]];
         }
         // Initialization code here.
     }

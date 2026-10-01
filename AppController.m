@@ -11,6 +11,7 @@
 //ET NV4
 
 #import "AppController.h"
+#import "NVTheme.h"
 #import "AppController_Simplenote.h"
 #import "NVSyncEngine.h"
 #import "NVTextMerge.h"
@@ -890,20 +891,10 @@ terminateApp:
 		if (currentNote) {
 			[self contentsUpdatedForNote:currentNote];
 		}
-	} else if ([selectorString isEqualToString:SEL_STR(setForegroundTextColor:sender:)]) {
-		if (userScheme!=2) {
-			[self setUserColorScheme:self];
-		}else {
-			[self setForegrndColor:[prefsController foregroundTextColor]];
-			[self updateColorScheme];
-		}
-	} else if ([selectorString isEqualToString:SEL_STR(setBackgroundTextColor:sender:)]) {
-		if (userScheme!=2) {
-			[self setUserColorScheme:self];
-		}else {
-			[self setBackgrndColor:[prefsController backgroundTextColor]];
-			[self updateColorScheme];
-		}
+	} else if ([selectorString isEqualToString:SEL_STR(setForegroundTextColor:sender:)] ||
+			   [selectorString isEqualToString:SEL_STR(setBackgroundTextColor:sender:)]) {
+		//choosing a colour in Settings switches to the custom scheme
+		[self setUserColorScheme:self];
 		
 	} else if ([selectorString isEqualToString:SEL_STR(setTableFontSize:sender:)] || [selectorString isEqualToString:SEL_STR(setTableColumnsShowPreview:sender:)]) {
 		
@@ -2608,10 +2599,7 @@ terminateApp:
     
     - (IBAction)setBWColorScheme:(id)sender{
         userScheme=0;
-        [[NSUserDefaults standardUserDefaults] setInteger:userScheme forKey:@"ColorScheme"];
-        
-        [self setForegrndColor:[[NSColor colorWithCalibratedWhite:0.02f alpha:1.0f]colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
-        [self setBackgrndColor:[[NSColor colorWithCalibratedWhite:0.98f alpha:1.0f]colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]];
+        [self adoptThemeScheme:NVThemeSchemeLight];
         NSMenu *mainM = [NSApp mainMenu];
         NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
         mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
@@ -2628,11 +2616,7 @@ terminateApp:
     
     - (IBAction)setLCColorScheme:(id)sender{
         userScheme=1;
-        [[NSUserDefaults standardUserDefaults] setInteger:userScheme forKey:@"ColorScheme"];
-
-        [self setForegrndColor:[NSColor colorWithCalibratedRed:0.2430 green:0.2430 blue:0.2430 alpha:1.0]];
-        
-        [self setBackgrndColor:[NSColor colorWithCalibratedRed:0.902 green:0.902 blue:0.902 alpha:1.0]];
+        [self adoptThemeScheme:NVThemeSchemeLowContrast];
         NSMenu *mainM = [NSApp mainMenu];
         NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
         mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
@@ -2649,9 +2633,7 @@ terminateApp:
     
     - (IBAction)setUserColorScheme:(id)sender{
         userScheme=2;
-        [[NSUserDefaults standardUserDefaults] setInteger:userScheme forKey:@"ColorScheme"];
-        [self setForegrndColor:[prefsController foregroundTextColor]];
-        [self setBackgrndColor:[prefsController backgroundTextColor]];
+        [self adoptThemeScheme:NVThemeSchemeCustom];
         NSMenu *mainM = [NSApp mainMenu];
         NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
         mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
@@ -2711,6 +2693,13 @@ terminateApp:
     
 }
     
+    //the Theme owns the colours (#5); this keeps the copies the window code uses in step
+    - (void)adoptThemeScheme:(NVThemeScheme)scheme{
+        [[NVTheme currentTheme] setScheme:scheme];
+        [self setForegrndColor:[[NVTheme currentTheme] foregroundColor]];
+        [self setBackgrndColor:[[NVTheme currentTheme] backgroundColor]];
+    }
+    
     - (void)setBackgrndColor:(NSColor *)inColor{
         if (backgrndColor) {
             [backgrndColor release];
@@ -2726,60 +2715,13 @@ terminateApp:
     }
     
     - (NSColor *)backgrndColor{
-        if (!backgrndColor) {
-            NSColor *theColor;
-            if (!userScheme) {
-                userScheme = [[NSUserDefaults standardUserDefaults] integerForKey:@"ColorScheme"];
-            }
-            if (userScheme==0) {
-                theColor = [NSColor colorWithCalibratedRed:1.0f green:1.0f blue:1.0f alpha:1.0f];
-            }else if (userScheme==1) {
-                theColor = [NSColor colorWithCalibratedRed:0.874f green:0.874f blue:0.874f alpha:1.0f];
-            }else if (userScheme==2) {
-                NSData *theData = [[NSUserDefaults standardUserDefaults] dataForKey:@"BackgroundTextColor"];
-                if (theData){
-                    theColor = (NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
-                }else {
-                    theColor = [prefsController backgroundTextColor];
-                }
-                
-            }else{
-                theColor =  [NSColor whiteColor];
-            }
-            [self setBackgrndColor:theColor];
-            
-            return theColor;
-        }else {
-            return backgrndColor;
-        }
-        
+        if (!backgrndColor) [self setBackgrndColor:[[NVTheme currentTheme] backgroundColor]];
+        return backgrndColor;
     }
     
     - (NSColor *)foregrndColor{
-        if (!foregrndColor) {
-            NSColor *theColor = [NSColor blackColor];
-            if (!userScheme) {
-                userScheme = [[NSUserDefaults standardUserDefaults] integerForKey:@"ColorScheme"];
-            }            
-            if (userScheme==0) {
-                theColor = [NSColor colorWithCalibratedRed:0.0f green:0.0f blue:0.0f alpha:1.0f];
-            }else if (userScheme==1) {
-                theColor = [NSColor colorWithCalibratedRed:0.142f green:0.142f blue:0.142f alpha:1.0f];
-            }else if (userScheme==2) {
-                
-                NSData *theData = [[NSUserDefaults standardUserDefaults] dataForKey:@"ForegroundTextColor"];
-                if (theData){
-                    theColor = (NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
-                }else {
-                    theColor = [prefsController foregroundTextColor];
-                }
-            }
-            [self setForegrndColor:theColor];
-            return theColor;
-        }else {
-            return foregrndColor;
-        }
-        
+        if (!foregrndColor) [self setForegrndColor:[[NVTheme currentTheme] foregroundColor]];
+        return foregrndColor;
     }
     
 #pragma mark control/opt key hold down to pop word count/preview window

@@ -7,6 +7,7 @@
 
 #import "ETContentView.h"
 #import "AppController.h"
+#import "NVTheme.h"
 
 @implementation ETContentView
 
@@ -31,7 +32,7 @@
 {
 //    [super drawRect:dirtyRect];
     if (!backColor) {
-        backColor = [[(AppController *)[NSApp delegate] backgrndColor] retain];
+        backColor = [[[NVTheme currentTheme] backgroundColor] retain];
     }
     [backColor set];
     NSRectFill([self bounds]);
@@ -48,7 +49,7 @@
 
 - (NSColor *)backgroundColor{    
     if (!backColor) {
-        backColor = [[(AppController *)[NSApp delegate] backgrndColor] retain];
+        backColor = [[[NVTheme currentTheme] backgroundColor] retain];
     }
     return backColor;
 }

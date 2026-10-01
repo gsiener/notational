@@ -22,6 +22,8 @@
 
 
 #import "GlobalPrefs.h"
+#import "NVTheme.h"
+#import "NVMarkupRenderer.h"
 #import "NSData_transformations.h"
 #import "NotationPrefs.h"
 #import "BookmarksController.h"
@@ -32,7 +34,6 @@
 #import "PTKeyCombo.h"
 #import "PTHotKeyCenter.h"
 #import "NSString_NV.h"
-#import "AppController.h"
 #include "BufferUtils.h"
 
 #define SEND_CALLBACKS() sendCallbacksForGlobalPrefs(self, _cmd, sender)
@@ -740,12 +741,9 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	}	
 }
 
-//the app delegate tracks the live theme colour; fall back to the stored preference when
-//there is no app delegate answering (e.g. in unit tests)
+//the colour scheme's text colour (the Theme falls back to the light scheme)
 - (NSColor*)_currentForegroundColor {
-	id appDelegate = [NSApp delegate];
-	NSColor *color = [appDelegate respondsToSelector:@selector(foregrndColor)] ? [appDelegate foregrndColor] : nil;
-	if (!color) color = [self foregroundTextColor];
+	NSColor *color = [[NVTheme currentTheme] foregroundColor];
 	return color ? color : [NSColor blackColor];
 }
 
