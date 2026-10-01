@@ -57,9 +57,6 @@
                                                             forKey:kDefaultMarkupPreviewVisible];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
-    /* Initialize webInspector. */
-    [[NSUserDefaults standardUserDefaults] setBool:TRUE forKey:@"WebKitDeveloperExtras"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
 }
 
@@ -156,6 +153,7 @@
 
 -(void)awakeFromNib
 {
+    [self installWebView];
     cssString = [[[self class] css] retain];
     htmlString = [[[self class] html] retain];
     lastNote = [[NSApp delegate] selectedNoteObject];
@@ -177,53 +175,55 @@
 #endif
 }
 
-//this returns a nice name for the method in the JavaScript environment
-+(NSString*)webScriptNameForSelector:(SEL)sel
-{
-    if(sel == @selector(logJavaScriptString:))
-        return @"log";
-    return nil;
+//the "Cocoa" object custom templates can call, e.g. Cocoa.log("…"), as they could with the old WebView
+static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { window.webkit.messageHandlers.log.postMessage(String(s)); }};";
+
+//the page is written to a file and loaded from there, so the template can use files from the support
+//folder ({%support%}) and notes can show local images, as the old WebView allowed
++ (NSURL *)previewPageURL {
+	NSString *caches = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+	NSString *folder = [caches stringByAppendingPathComponent:[[NSBundle mainBundle] bundleIdentifier] ?: @"Notational"];
+	[[NSFileManager defaultManager] createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:NULL];
+	return [NSURL fileURLWithPath:[folder stringByAppendingPathComponent:@"preview.html"]];
 }
 
-//this allows JavaScript to call the -logJavaScriptString: method
-+ (BOOL)isSelectorExcludedFromWebScript:(SEL)sel
-{
-    if(sel == @selector(logJavaScriptString:))
-        return NO;
-    return YES;
+- (void)installWebView {
+	if (preview || !previewContainer) return;
+	WKWebViewConfiguration *configuration = [[[WKWebViewConfiguration alloc] init] autorelease];
+	[[configuration preferences] setValue:[NSNumber numberWithBool:YES] forKey:@"developerExtrasEnabled"];
+	WKUserContentController *content = [configuration userContentController];
+	[content addUserScript:[[[WKUserScript alloc] initWithSource:LogBridgeScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart
+												 forMainFrameOnly:YES] autorelease]];
+	[content addScriptMessageHandler:self name:@"log"];
+	
+	preview = [[WKWebView alloc] initWithFrame:[previewContainer bounds] configuration:configuration];
+	[preview setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[preview setNavigationDelegate:self];
+	[preview setUIDelegate:self];
+	[previewContainer addSubview:preview];
 }
 
-//this is a simple log command
-- (void)logJavaScriptString:(NSString*) logText
-{
-    NSLog(@"JavaScript: %@",logText);
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+	NSLog(@"JavaScript: %@", [message body]);
 }
 
-//this is called as soon as the script environment is ready in the webview
-- (void)webView:(WebView *)sender didClearWindowObject:(WebScriptObject *)windowScriptObject forFrame:(WebFrame *)frame
-{
-    //add the controller to the script environment
-    //the "Cocoa" object will now be available to JavaScript
-    [windowScriptObject setValue:self forKey:@"Cocoa"];
+//links clicked in the preview open in the browser; only the preview's own page loads here
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+	NSURL *url = [[navigationAction request] URL];
+	BOOL samePage = [url isFileURL] && [[url path] isEqualToString:[[[self class] previewPageURL] path]];
+	if ([navigationAction navigationType] == WKNavigationTypeOther || (samePage && [url fragment])) {
+		decisionHandler(WKNavigationActionPolicyAllow);
+	} else {
+		[[NSWorkspace sharedWorkspace] openURL:url];
+		decisionHandler(WKNavigationActionPolicyCancel);
+	}
 }
 
-// Above webView methods from <http://stackoverflow.com/questions/2288582/embedded-webkit-script-callbacks-how/2293305#2293305>
-
-- (void)webView:(WebView *)sender decidePolicyForNavigationAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id<WebPolicyDecisionListener>)listener {
-    NSString *targetURL = [[request URL] scheme];
-
-    if (![[actionInformation objectForKey:@"WebActionNavigationTypeKey"] isEqualToNumber:[NSNumber numberWithInt:5]]) {
-        [[NSWorkspace sharedWorkspace] openURL:[request URL]];
-        [listener ignore];
-    } else {
-        [listener use];
-    }
-}
-
-- (void)webView:(WebView *)sender decidePolicyForNewWindowAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request newFrameName:(NSString *)frameName decisionListener:(id<WebPolicyDecisionListener>)listener {
-    NSLog(@"NEW WIN ACTION SENDER: %@",sender);
-    [[NSWorkspace sharedWorkspace] openURL:[actionInformation objectForKey:WebActionOriginalURLKey]];
-    [listener ignore];
+//target="_blank" and window.open
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
+   forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
+	if ([[navigationAction request] URL]) [[NSWorkspace sharedWorkspace] openURL:[[navigationAction request] URL]];
+	return nil;
 }
 
 -(void)requestPreviewUpdate:(NSNotification *)notification
@@ -338,34 +338,40 @@
     if (self.isPreviewSticky) {
         return;
     }
-    NSString *lastScrollPosition = [preview stringByEvaluatingJavaScriptFromString:@"document.getElementsByTagName('body')[0].scrollTop"];
-    //	NSString *lastScrollPosition = [[preview windowScriptObject] evaluateWebScript:@"document.getElementsByTagName('body')[0].scrollTop"];
     AppController *app = object;
     NSString *rawString = [app noteContent];
-
+    NoteObject *note = [app selectedNoteObject];
     NSString *processedString = [[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]];
-    NSString *previewString = processedString;
-    NSString *noteTitle =  ([app selectedNoteObject]) ? [NSString stringWithFormat:@"%@",titleOfNote([app selectedNoteObject])] : @"";
-
-    if (lastNote == [app selectedNoteObject]) {
-        NSString *restoreScrollPosition = [NSString stringWithFormat:@"\n<script>var body = document.getElementsByTagName('body')[0],oldscroll = %@;body.scrollTop = oldscroll;</script>",lastScrollPosition];
-        previewString = [processedString stringByAppendingString:restoreScrollPosition];
-    } else {
+    NSString *noteTitle = note ? [NSString stringWithFormat:@"%@",titleOfNote(note)] : @"";
+    BOOL sameNote = (lastNote == note);
+    if (!sameNote) {
         [cssString release];
         [htmlString release];
         cssString = [[[self class] css] retain];
         htmlString = [[[self class] html] retain];
-        lastNote = [app selectedNoteObject];
+        lastNote = note;
     }
-    NSString *outputString = [NVMarkupRenderer documentWithHTML:previewString title:noteTitle templateHTML:htmlString css:cssString
-                                                    supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
-
-    [[preview mainFrame] loadHTMLString:outputString baseURL:nil];
-    [preview stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"var body = document.getElementsByTagName('body')[0],oldscroll = %@;body.scrollTop = oldscroll;",lastScrollPosition]];
     [[self window] setTitle:noteTitle];
-
     [sourceView replaceCharactersInRange:NSMakeRange(0, [[sourceView string] length]) withString:processedString];
     self.isPreviewOutdated = NO;
+
+    //the same note again: keep the reader's place (the page is replaced, so ask where it was first)
+    [self installWebView];
+    NSString *scrollScript = @"(document.scrollingElement || document.body).scrollTop";
+    [preview evaluateJavaScript:sameNote ? scrollScript : @"0" completionHandler:^(id result, NSError *error) {
+        NSString *previewString = processedString;
+        if (sameNote && [result respondsToSelector:@selector(doubleValue)] && [result doubleValue] > 0) {
+            previewString = [processedString stringByAppendingFormat:@"\n<script>window.addEventListener('load', function() { (document.scrollingElement || document.body).scrollTop = %f; });</script>", [result doubleValue]];
+        }
+        NSString *page = [NVMarkupRenderer documentWithHTML:previewString title:noteTitle templateHTML:htmlString css:cssString
+                                                supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
+        NSURL *pageURL = [[self class] previewPageURL];
+        if (![page writeToURL:pageURL atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
+            [preview loadHTMLString:page baseURL:nil];
+            return;
+        }
+        [preview loadFileURL:pageURL allowingReadAccessToURL:[NSURL fileURLWithPath:@"/"]];
+    }];
 }
 
 + (void) createCustomFiles
@@ -438,16 +444,17 @@
 
 -(IBAction)printPreview:(id)sender
 {
+    //print the rendered preview, so show that tab while printing
     NSTabViewItem *selectedTab=[tabView selectedTabViewItem];
-    //1 is webview   2 is source view
-    if ([selectedTab.identifier integerValue]==1) {
-        [tabView selectNextTabViewItem:self];
-    }
-    NSPrintInfo* printInfo = [NSPrintInfo sharedPrintInfo];
+    [tabView selectTabViewItem:[tabView tabViewItemAtIndex:0]];
+    NSPrintInfo* printInfo = [[[NSPrintInfo sharedPrintInfo] copy] autorelease];
 
     [printInfo setHorizontallyCentered:YES];
     [printInfo setVerticallyCentered:NO];
-    NSPrintOperation *printOp=[[[preview mainFrame] frameView] printOperationWithPrintInfo:printInfo];
+    [printInfo setHorizontalPagination:NSPrintingPaginationModeFit];
+    NSPrintOperation *printOp=[preview printOperationWithPrintInfo:printInfo];
+    //WKWebView's print view needs a frame, or it prints blank pages
+    [[printOp view] setFrame:[preview bounds]];
     [printOp runOperationModalForWindow:tabView.window delegate:self didRunSelector:@selector(printOperationDidRun:success:contextInfo:) contextInfo:selectedTab];
 }
 
@@ -716,6 +723,7 @@
     [viewOnWebButton release];
     [shareCancel release];
     [shareConfirm release];
+    [[[preview configuration] userContentController] removeScriptMessageHandlerForName:@"log"];
     [preview release];
     [super dealloc];
 }

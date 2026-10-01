@@ -23,7 +23,8 @@
 #import "DualField.h"
 #import "AlienNoteImporter.h"
 #import "NSString_NV.h"
-#import <WebKit/WebArchive.h>
+//the pasteboard type Safari and other WebKit views use for a page fragment
+static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard type";
 #import "GlobalPrefs.h"
 #import "NSData_transformations.h"
 #import "AttributedPlainText.h"

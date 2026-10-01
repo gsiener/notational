@@ -19,7 +19,6 @@
 #include <CommonCrypto/CommonDigest.h>
 #include <CommonCrypto/CommonKeyDerivation.h>
 
-#import <WebKit/WebKit.h>
 
 @implementation NSData (NVUtilities)
 
@@ -205,8 +204,12 @@
 
 - (NSString*)pathURLFromWebArchive {
 
-	WebResource *resource = [[[[WebArchive alloc] initWithData:self] autorelease] mainResource];
-	NSURL *url = [resource URL];
+	//a web archive is a property list; its main resource records the page's URL
+	id archive = [NSPropertyListSerialization propertyListWithData:self options:NSPropertyListImmutable format:NULL error:NULL];
+	id mainResource = [archive isKindOfClass:[NSDictionary class]] ? [archive objectForKey:@"WebMainResource"] : nil;
+	id urlString = [mainResource isKindOfClass:[NSDictionary class]] ? [mainResource objectForKey:@"WebResourceURL"] : nil;
+	NSURL *url = [urlString isKindOfClass:[NSString class]] ? [NSURL URLWithString:urlString] : nil;
+	if (!url) return nil;
 	
 	//it's not any kind of URL we want to keep
 	//this is probably text from another app's internal WebKit view

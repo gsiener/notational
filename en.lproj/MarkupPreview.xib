@@ -8,7 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PreviewController">
             <connections>
-                <outlet property="preview" destination="229" id="248"/>
+                <outlet property="previewContainer" destination="229" id="248"/>
                 <outlet property="printPreviewButton" destination="267" id="280"/>
                 <outlet property="saveButton" destination="263" id="282"/>
                 <outlet property="shareButton" destination="265" id="281"/>
@@ -90,17 +90,10 @@ Gw
                                     <rect key="frame" x="0.0" y="0.0" width="445" height="494"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <webView maintainsBackForwardList="NO" id="229">
+                                        <customView id="229" userLabel="preview container">
                                             <rect key="frame" x="0.0" y="0.0" width="445" height="494"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                            <webPreferences key="preferences" identifier="previewWebView" defaultFontSize="12" defaultFixedFontSize="12" plugInsEnabled="NO" javaEnabled="NO"/>
-                                            <connections>
-                                                <outlet property="UIDelegate" destination="-2" id="247"/>
-                                                <outlet property="frameLoadDelegate" destination="-2" id="244"/>
-                                                <outlet property="policyDelegate" destination="-2" id="245"/>
-                                                <outlet property="resourceLoadDelegate" destination="-2" id="246"/>
-                                            </connections>
-                                        </webView>
+                                        </customView>
                                     </subviews>
                                 </view>
                             </tabViewItem>

@@ -171,4 +171,25 @@ static NSData *Utf8(NSString *s) {
 	XCTAssertEqualObjects([compressed uncompressedData], Utf8(text));
 }
 
+#pragma mark Web archives
+
+static NSData *WebArchiveWithURL(NSString *url) {
+	NSDictionary *archive = [NSDictionary dictionaryWithObject:
+							 [NSDictionary dictionaryWithObjectsAndKeys:url, @"WebResourceURL", Utf8(@"<p>x</p>"), @"WebResourceData",
+							  @"text/html", @"WebResourceMIMEType", nil] forKey:@"WebMainResource"];
+	return [NSPropertyListSerialization dataWithPropertyList:archive format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+}
+
+- (void)testWebArchiveGivesItsPageURL {
+	XCTAssertEqualObjects([WebArchiveWithURL(@"https://example.com/page?a=1") pathURLFromWebArchive], @"https://example.com/page?a=1");
+}
+
+- (void)testWebArchiveFromAnAppsOwnViewHasNoURL {
+	XCTAssertNil([WebArchiveWithURL(@"applewebdata://1234/") pathURLFromWebArchive]);
+}
+
+- (void)testGarbageIsNotAWebArchive {
+	XCTAssertNil([Utf8(@"not a plist") pathURLFromWebArchive]);
+}
+
 @end

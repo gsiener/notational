@@ -13,9 +13,10 @@
 @class NoteObject;
 @class ETTransparentButton;
 
-@interface PreviewController : NSWindowController 
+@interface PreviewController : NSWindowController <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
 {
-  IBOutlet WebView *preview;
+  IBOutlet NSView *previewContainer;
+  WKWebView *preview;
 	IBOutlet NSTextView *sourceView;
 	IBOutlet NSTabView *tabView;
 	IBOutlet NSButton *tabSwitcher;
@@ -47,7 +48,7 @@
 }
 
 @property (assign) BOOL isPreviewOutdated;
-@property (retain) WebView *preview;
+@property (readonly) WKWebView *preview;
 @property (assign) BOOL isPreviewSticky;
 
 -(IBAction)saveHTML:(id)sender;
