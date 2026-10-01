@@ -40,14 +40,14 @@
 
 - (NSMenu *)menuForEvent:(NSEvent *)theEvent {
     
-    if ([[self tableView] respondsToSelector:@selector(menuForColumnConfiguration:)]) {
+    if ([[self tableView] respondsToSelector:NSSelectorFromString(@"menuForColumnConfiguration:")]) {
         NSPoint theClickPoint = [self convertPoint:[theEvent locationInWindow] fromView:NULL];
         NSInteger theColumn = [self columnAtPoint:theClickPoint];
         NSTableColumn *theTableColumn = nil;
         if (theColumn > -1)
             theTableColumn = [[[self tableView] tableColumns] objectAtIndex:theColumn];
         
-        NSMenu *theMenu = [[self tableView] performSelector:@selector(menuForColumnConfiguration:) withObject:theTableColumn];
+        NSMenu *theMenu = [[self tableView] performSelector:NSSelectorFromString(@"menuForColumnConfiguration:") withObject:theTableColumn];
         return theMenu;
     }
     
@@ -78,6 +78,10 @@
 
 @end
 
+@interface NSTableHeaderView (PrivateResize)
+- (void)_resizeColumn:(NSInteger)resizedColIdx withEvent:(id)event;
+@end
+
 @implementation HeaderViewWithMenu (Private)
 
 - (void)_resizeColumn:(NSInteger)resizedColIdx withEvent:(id)event {
@@ -88,14 +92,16 @@
 	NSInteger i;
 	//change all user-resizable-only columns
 	for (i=0; i<[[self tableView] numberOfColumns]; i++) {
-		NoteAttributeColumn *col = [[[self tableView] tableColumns] objectAtIndex:i];
+		NSTableColumn *col = [[[self tableView] tableColumns] objectAtIndex:i];
 		if ((originalResizingMask = [col resizingMask]) == NSTableColumnUserResizingMask) {
 			[col setResizingMask: NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask];
 			[col performSelector:@selector(setResizingMaskNumber:) withObject:[NSNumber numberWithUnsignedInteger:originalResizingMask] afterDelay:0];
 		}
 	}
     
-	[super _resizeColumn:resizedColIdx withEvent:event];
+	//private AppKit method; only call through if this system still has it
+	if ([NSTableHeaderView instancesRespondToSelector:@selector(_resizeColumn:withEvent:)])
+		[super _resizeColumn:resizedColIdx withEvent:event];
 }
 
 @end

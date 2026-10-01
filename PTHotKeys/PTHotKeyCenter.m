@@ -110,7 +110,7 @@ static id _sharedHotKeyCenter = nil;
 		return;
 	
 	carbonHotKey = [hotKey carbonHotKey];
-	NSAssert( carbonHotKey != nil, @"" );
+	NSAssert( carbonHotKey != nil, @"hot key has no carbon hot key" );
 
 	(void)UnregisterEventHotKey( carbonHotKey );
 	//Watch as we ignore 'err':

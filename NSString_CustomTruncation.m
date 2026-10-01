@@ -83,7 +83,7 @@ replace:
 
 static NSMutableDictionary *titleTruncAttrs = nil;
 
-void ResetFontRelatedTableAttributes() {
+void ResetFontRelatedTableAttributes(void) {
 	[titleTruncAttrs release];
 	titleTruncAttrs = nil;
 }
@@ -111,7 +111,7 @@ static NSDictionary *LineTruncAttributes() {
 }
 
 #pragma mark fix truncation here
-NSDictionary *LineTruncAttributesForTitle() {
+NSDictionary *LineTruncAttributesForTitle(void) {
 	if (!titleTruncAttrs) {
 		GlobalPrefs *prefs = [GlobalPrefs defaultPrefs];
 		unsigned int bitmap = [prefs tableColumnsBitmap];

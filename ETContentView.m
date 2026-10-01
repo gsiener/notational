@@ -31,7 +31,7 @@
 {
 //    [super drawRect:dirtyRect];
     if (!backColor) {
-        backColor = [[[NSApp delegate] backgrndColor] retain];
+        backColor = [[(AppController *)[NSApp delegate] backgrndColor] retain];
     }
     [backColor set];
     NSRectFill([self bounds]);
@@ -48,7 +48,7 @@
 
 - (NSColor *)backgroundColor{    
     if (!backColor) {
-        backColor = [[[NSApp delegate] backgrndColor] retain];
+        backColor = [[(AppController *)[NSApp delegate] backgrndColor] retain];
     }
     return backColor;
 }

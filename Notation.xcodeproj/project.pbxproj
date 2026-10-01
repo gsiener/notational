@@ -2189,12 +2189,18 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
+				WARNING_CFLAGS = (
+					"$(inherited)",
+					"-Werror=objc-method-access",
+					"-Werror=incompatible-pointer-types",
+				);
 			};
 			name = Development;
 		};
 		212B842809780B5000F3597F /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -2260,20 +2266,18 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				GENERATE_PROFILING_CODE = YES;
+				GENERATE_PROFILING_CODE = NO;
 				IBC_STRIP_NIBS = NO;
 				INFOPLIST_FILE = Info.plist;
 				LD_GENERATE_MAP_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = "-pg";
 				PRIVATE_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/PrivateHeaders";
 				PRODUCT_NAME = Notational;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
 				STRIP_INSTALLED_PRODUCT = NO;
 				VERSION_INFO_BUILDER = "David Halter";
-				WARNING_LDFLAGS = "-pg";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -2282,6 +2286,7 @@
 		5C9CB58B134A7F0400073277 /* ForBuilding */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -2327,7 +2332,7 @@
 				GCC_WARN_ALLOW_INCOMPLETE_PROTOCOL = NO;
 				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
 				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
-				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
 				GCC_WARN_MISSING_PARENTHESES = YES;
 				GCC_WARN_MULTIPLE_DEFINITION_TYPES_FOR_SELECTOR = NO;
@@ -2383,6 +2388,11 @@
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gsiener.notational;
+				WARNING_CFLAGS = (
+					"$(inherited)",
+					"-Werror=objc-method-access",
+					"-Werror=incompatible-pointer-types",
+				);
 			};
 			name = ForBuilding;
 		};
@@ -2404,6 +2414,11 @@
 				SECTORDER_FLAGS = "";
 				WARNING_LDFLAGS = "";
 				WRAPPER_EXTENSION = xctest;
+				WARNING_CFLAGS = (
+					"$(inherited)",
+					"-Werror=objc-method-access",
+					"-Werror=incompatible-pointer-types",
+				);
 			};
 			name = ForBuilding;
 		};
@@ -2425,6 +2440,11 @@
 				SECTORDER_FLAGS = "";
 				WARNING_LDFLAGS = "";
 				WRAPPER_EXTENSION = xctest;
+				WARNING_CFLAGS = (
+					"$(inherited)",
+					"-Werror=objc-method-access",
+					"-Werror=incompatible-pointer-types",
+				);
 			};
 			name = Development;
 		};

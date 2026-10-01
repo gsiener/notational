@@ -267,7 +267,7 @@ static IDEA_INT inverse(unsigned int xin)
 	return((IDEA_INT)b2);
 }
 
-void idea_encrypt(unsigned long *d, IDEA_KEY_SCHEDULE *key)
+static void idea_encrypt(unsigned long *d, IDEA_KEY_SCHEDULE *key)
 {
 	register IDEA_INT *p;
 	register unsigned long x1,x2,x3,x4,t0,t1,ul;

@@ -158,7 +158,7 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 	// second level -> sync keys as parameters
 	// example: nv://find/url%20test/?SN=agtzaW1wbGUtbm90ZXINCxIETm90ZRiY-dEFDA&NV=5WJ0eP3YRaCjyQn%2F8p62iQ%3D%3D
 	
-	NSUInteger j, i = 0;
+	NSUInteger i = 0;
 	
 	if ([[aURL host] isEqualToString:@"find"]) {
 		//dispatch searchForString: and revealNote:options: as appropriate

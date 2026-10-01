@@ -120,7 +120,7 @@
 	}
 }
 
-- (NSUInteger)validModesForFontPanel:(NSFontPanel *)fontPanel {
+- (NSFontPanelModeMask)validModesForFontPanel:(NSFontPanel *)fontPanel {
 	
 	return NSFontPanelSizeModeMask | NSFontPanelCollectionModeMask;
 }
@@ -256,7 +256,7 @@
 
 - (IBAction)changedRTL:(id)sender {
 	[prefsController setRTL:[rtlButton state] sender:self];
-	[[NSApp delegate] updateRTL];
+	[(AppController *)[NSApp delegate] updateRTL];
 }
 
 - (NotationPrefsViewController*)notationPrefsViewController {
@@ -513,7 +513,7 @@ NSRect ScaleRectWithFactor(NSRect rect, float factor) {
 
 - (IBAction)changedAltRows:(id)sender {
 	[prefsController setAlternatingRows:[altRowsButton state] sender:self];
-    [[NSApp delegate] refreshNotesList];
+    [(AppController *)[NSApp delegate] refreshNotesList];
 }
 
 - (IBAction)changedAutoPairing:(id)sender{
@@ -523,7 +523,7 @@ NSRect ScaleRectWithFactor(NSRect rect, float factor) {
 
 - (IBAction)changedShowGrid:(id)sender {
 	[prefsController setShowGrid:[showGridButton state] sender:self];
-    [[NSApp delegate] refreshNotesList];
+    [(AppController *)[NSApp delegate] refreshNotesList];
 }
 
 @end

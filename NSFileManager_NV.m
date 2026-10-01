@@ -175,7 +175,7 @@
 	NSData* dataToSendNS = nil;
 	if (plistObject) {
 		NSString *errorString = nil;
-		dataToSendNS = [NSPropertyListSerialization dataFromPropertyList:plistObject format:kCFPropertyListBinaryFormat_v1_0 errorDescription:&errorString];
+		dataToSendNS = [NSPropertyListSerialization dataFromPropertyList:plistObject format:NSPropertyListBinaryFormat_v1_0 errorDescription:&errorString];
 		if (errorString) {
 			NSLog(@"%@: error serializing labels: %@", NSStringFromSelector(_cmd), errorString);
 			[errorString autorelease];

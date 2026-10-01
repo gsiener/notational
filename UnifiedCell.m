@@ -136,17 +136,6 @@
 	return color;
 }
 
-static NSShadow* ShadowForSnowLeopard() {
-	static NSShadow *sh = nil;
-	if (!sh) {
-		sh = [[NSShadow alloc] init];
-		[sh setShadowOffset:NSMakeSize(0,-1)];
-		[sh setShadowColor:[NSColor colorWithCalibratedWhite:0.15 alpha:0.67]];
-		[sh setShadowBlurRadius:0.5];
-	}
-	return sh;
-}
-
 NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL withShadow) {
 	//used to modify the cell's attributed string before display when it is selected
 	

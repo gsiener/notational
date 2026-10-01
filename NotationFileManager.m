@@ -150,7 +150,7 @@ CFUUIDRef CopyHFSVolumeUUIDForMount(const char *mntonname) {
 	return CFUUIDCreateFromUUIDBytes(NULL, uuidBytes);
 }
 
-CFUUIDRef CopySyntheticUUIDForVolumeCreationDate(FSRef *fsRef) {
+static CFUUIDRef CopySyntheticUUIDForVolumeCreationDate(FSRef *fsRef) {
 	
 	FSCatalogInfo fileInfo;
 	if (FSGetCatalogInfo(fsRef, kFSCatInfoVolume, &fileInfo, NULL, NULL, NULL) == noErr) {
@@ -378,7 +378,7 @@ long BlockSizeForNotation(NotationController *controller) {
 				
 				//directory move successful! //show the user where new notes are
 				NSString *newNotesPath = [[NSFileManager defaultManager] pathWithFSRef:&newNotesDirectory];
-				if (newNotesPath) [[NSWorkspace sharedWorkspace] selectFile:newNotesPath inFileViewerRootedAtPath:nil];
+				if (newNotesPath) [[NSWorkspace sharedWorkspace] selectFile:newNotesPath inFileViewerRootedAtPath:@""];
 				
 				break;
 			} else {

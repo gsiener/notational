@@ -310,8 +310,8 @@
 	NoteBookmark *aBookmark = [[followedLinks lastObject] retain];
 	[followedLinks removeLastObject];
 	 
-	[[NSApp delegate] searchForString:[aBookmark searchString]];
-	[[NSApp delegate] revealNote:[aBookmark noteObject] options:0];
+	[(AppController *)[NSApp delegate] searchForString:[aBookmark searchString]];
+	[(AppController *)[NSApp delegate] revealNote:[aBookmark noteObject] options:0];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(clearFollowedLinks) object:nil];
 
 	return [aBookmark autorelease];
@@ -498,7 +498,7 @@
     
 //    NSLog(@"df mouse down");
 //    [[NSNotificationCenter defaultCenter] postNotificationName:@"ModTimersShouldReset" object:nil];
-    [[NSApp delegate] setIsEditing:NO];
+    [(AppController *)[NSApp delegate] setIsEditing:NO];
 	
 	if ([[self cell] handleMouseDown:anEvent])
 		return;
@@ -508,7 +508,7 @@
 }
 
 - (void)flagsChanged:(NSEvent *)theEvent{
-	[[NSApp delegate] flagsChanged:theEvent];
+	[(AppController *)[NSApp delegate] flagsChanged:theEvent];
 }
 
 @end

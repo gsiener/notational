@@ -39,7 +39,7 @@ unsigned int hoursFromAbsoluteTime(CFAbsoluteTime absTime) {
 }
 
 //should be called after midnight, and then all the notes should have their date-strings recomputed
-void resetCurrentDayTime() {
+void resetCurrentDayTime(void) {
     CFAbsoluteTime current = CFAbsoluteTimeGetCurrent();
     
     CFTimeZoneRef timeZone = CFTimeZoneCopyDefault();

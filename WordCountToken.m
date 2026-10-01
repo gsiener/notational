@@ -28,7 +28,7 @@
 }
 
 - (void)mouseDown:(NSEvent *)theEvent{
-	[[NSApp delegate] toggleWordCount:self];
+	[(AppController *)[NSApp delegate] toggleWordCount:self];
 }
 /*
 - (void)drawRect:(NSRect)dirtyRect {

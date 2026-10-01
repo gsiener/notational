@@ -40,7 +40,7 @@
 
 @interface AppController : NSObject 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-<NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate>
+<NSApplicationDelegate, NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate>
 #endif
 {
 	IBOutlet NSMenuItem *fsMenuItem;
@@ -138,6 +138,8 @@ void outletObjectAwoke(id sender);
 - (IBAction)fieldAction:(id)sender;
 - (NoteObject*)createNoteIfNecessary;
 - (void)searchForString:(NSString*)string;
+- (void)contentsUpdatedForNote:(NoteObject*)aNoteObject;
+- (void)flagsChanged:(NSEvent *)theEvent;
 - (NSUInteger)revealNote:(NoteObject*)note options:(NSUInteger)opts;
 - (BOOL)displayContentsForNoteAtIndex:(NSUInteger)noteIndex;
 - (void)processChangedSelectionForTable:(NSTableView*)table;

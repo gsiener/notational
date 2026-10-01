@@ -7,10 +7,4 @@
 	return [self descriptorWithFileURL: url];
 }
 
-+ (NSAppleEventDescriptor *)descriptorWithFileURL:(NSURL *)fileURL {
-	NSString	*string = [fileURL absoluteString];
-	NSData		*data = [string dataUsingEncoding: NSUTF8StringEncoding];
-	return [self descriptorWithDescriptorType: typeFileURL data: data];
-}
-
 @end

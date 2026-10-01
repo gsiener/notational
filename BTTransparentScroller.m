@@ -29,9 +29,9 @@
         knobTop				= [[NSImage alloc] initWithContentsOfFile:[bundle pathForImageResource:@"greyscrollerverttop3.tif"]];
         knobVerticalFill	= [[NSImage alloc] initWithContentsOfFile:[bundle pathForImageResource:@"greyscrollervertfill3.tif"]];
         knobBottom			= [[NSImage alloc] initWithContentsOfFile:[bundle pathForImageResource:@"greyscrollervertbottom3.tif"]];
-        slotTop				= [NSImage imageNamed:nil];
-        slotVerticalFill	= [NSImage imageNamed:nil];
-        slotBottom			= [NSImage imageNamed:nil];
+        slotTop				= nil;
+        slotVerticalFill	= nil;
+        slotBottom			= nil;
         verticalPaddingLeft = 5.0f;
         verticalPaddingRight = 4.0f;
         verticalPaddingTop = 3.5f;

@@ -45,7 +45,8 @@
 #import "ETContentView.h"
 #import "PreviewController.h"
 #import "ETClipView.h"
-//#import "ETScrollView.h"
+#import "ETScrollView.h"
+#import "ETNoteScrollView.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "nvaDevConfig.h"
 
@@ -850,7 +851,7 @@ terminateApp:
     ExternalEditor *ed = [sender representedObject];
     if ([ed isKindOfClass:[ExternalEditor class]]) {
         NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-        if (kCGEventFlagMaskAlternate == (CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSDeviceIndependentModifierFlagsMask)) {
+        if (kCGEventFlagMaskAlternate == ((NSUInteger)CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSDeviceIndependentModifierFlagsMask)) {
             //allow changing the default editor directly from Notes menu
             [[ExternalEditorListController sharedInstance] setDefaultEditor:ed];
         }
@@ -1186,7 +1187,7 @@ terminateApp:
 			[aTextView deleteWordBackward:nil];
 			return YES;
 		}
-		if (command == @selector(noop:)) {
+		if (command == NSSelectorFromString(@"noop:")) {
 			//control-U is not set to anything by default, so we have to check the event itself for noops
 			NSEvent *event = [window currentEvent];
 			if ([event modifierFlags] & NSControlKeyMask) {
@@ -1675,7 +1676,7 @@ terminateApp:
 - (NSMenu *)textView:(NSTextView *)view menu:(NSMenu *)menu forEvent:(NSEvent *)event atIndex:(NSUInteger)charIndex {
     //    NSLog(@"textview menu for event");
 	NSInteger idx;
-	if ((idx = [menu indexOfItemWithTarget:nil andAction:@selector(_removeLinkFromMenu:)]) > -1)
+	if ((idx = [menu indexOfItemWithTarget:nil andAction:NSSelectorFromString(@"_removeLinkFromMenu:")]) > -1)
 		[menu removeItemAtIndex:idx];
 	if ((idx = [menu indexOfItemWithTarget:nil andAction:@selector(orderFrontLinkPanel:)]) > -1)
 		[menu removeItemAtIndex:idx];
@@ -2945,9 +2946,9 @@ terminateApp:
                 [modifierTimer release];
             }
             if (popped==1) {
-                [self performSelector:@selector(popWordCount:) withObject:NO afterDelay:0.1];
+                [self performSelector:@selector(popWordCount:) withObject:nil afterDelay:0.1];
             }else if (popped==2) {
-                [self performSelector:@selector(popPreview:) withObject:NO afterDelay:0.1];
+                [self performSelector:@selector(popPreview:) withObject:nil afterDelay:0.1];
             }
             popped=0;
         }

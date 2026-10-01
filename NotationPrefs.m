@@ -69,7 +69,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		keyLengthInBits = DEFAULT_KEY_LENGTH;
 		baseBodyFont = [[[GlobalPrefs defaultPrefs] noteBodyFont] retain];
 		//foregroundColor = [[[GlobalPrefs defaultPrefs] foregroundTextColor] retain];
-		foregroundColor = [[[NSApp delegate] foregrndColor]retain];
+		foregroundColor = [[(AppController *)[NSApp delegate] foregrndColor]retain];
 		epochIteration = 0;
 		
 		[self updateOSTypesArray];
@@ -121,7 +121,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		if (!foregroundColor || ![foregroundColor isKindOfClass:[NSColor class]]) {
 			//foregroundColor = [[[GlobalPrefs defaultPrefs] foregroundTextColor] retain];
 			
-			foregroundColor = [[[NSApp delegate] foregrndColor]retain];
+			foregroundColor = [[(AppController *)[NSApp delegate] foregrndColor]retain];
 			preferencesChanged = YES;
 		}
 		
@@ -826,7 +826,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		}
 		if (offendingFileConduitName) {
 			NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning title>", nil), offendingFileConduitName, syncServiceTitle], 
-							[NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning message>", nil), syncServiceTitle], NSLocalizedString(@"OK", nil), nil, nil);
+							@"%@", NSLocalizedString(@"OK", nil), nil, nil, [NSString stringWithFormat:NSLocalizedString(@"<Feedback loop warning message>", nil), syncServiceTitle]);
 		}
 	}
 }

@@ -14,7 +14,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface URLGetter : NSObject
+@interface URLGetter : NSObject <NSURLDownloadDelegate>
 {
     IBOutlet NSButton *cancelButton;
     IBOutlet NSTextField *objectURLStatus;

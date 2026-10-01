@@ -32,9 +32,7 @@
 }
 
 - (IBAction)formatSelectorChanged:(id)sender {
-	NSSavePanel *panel = (NSSavePanel *)[sender window];
 	
-	NSInteger storageFormat = [[formatSelectorPopup selectedItem] tag];
 //	[panel setRequiredFileType:[NotationPrefs pathExtensionForFormat:storageFormat]];
 }
 
@@ -107,7 +105,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 				NSString *exportErrorTitleString = [NSString stringWithFormat:NSLocalizedString(@"The note quotemark%@quotemark couldn't be exported because %@.",nil), 
 					titleOfNote(note), [NSString reasonStringFromCarbonFSError:err]];
 				if (!lastNote) {
-					NSRunAlertPanel(exportErrorTitleString, @"", NSLocalizedString(@"OK",nil), nil, nil, nil);
+					NSRunAlertPanel(exportErrorTitleString, @"%@", NSLocalizedString(@"OK",nil), nil, nil, @"");
 				} else {
 					result = NSRunAlertPanel(exportErrorTitleString, NSLocalizedString(@"Continue exporting?", @"alert title for exporter interruption"), 
 											 NSLocalizedString(@"Continue", @"(exporting notes?)"), NSLocalizedString(@"Stop Exporting", @"(notes?)"), nil);
@@ -159,7 +157,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		[openPanel setCanChooseDirectories:YES];
 		[openPanel setPrompt:NSLocalizedString(@"Export",@"title of button to export notes from folder selection dialog")];
 		[openPanel setTitle:NSLocalizedString(@"Export Notes", @"title of export notes dialog")];
-		[openPanel setMessage:[NSString stringWithFormat:NSLocalizedString(@"Choose a folder into which %d notes will be exported",nil), [notes count]]];
+		[openPanel setMessage:[NSString stringWithFormat:NSLocalizedString(@"Choose a folder into which %lu notes will be exported",nil), (unsigned long)[notes count]]];
         
 //		[openPanel beginSheetForDirectory:nil file:nil types:nil modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:[notes retain]];
         [openPanel beginSheetModalForWindow:window completionHandler:^(NSInteger result) {

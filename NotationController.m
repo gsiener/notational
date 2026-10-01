@@ -380,7 +380,7 @@
 		//NSLog(@"registering %s", _cmd);
 		[undoManager registerUndoWithTarget:self selector:@selector(removeNotes:) object:noteArray];		
 		if (! [[self undoManager] isUndoing] && ! [[self undoManager] isRedoing])
-			[undoManager setActionName:[NSString stringWithFormat:NSLocalizedString(@"Add %d Notes", @"undo action name for creating multiple notes"), [noteArray count]]];	
+			[undoManager setActionName:[NSString stringWithFormat:NSLocalizedString(@"Add %lu Notes", @"undo action name for creating multiple notes"), (unsigned long)[noteArray count]]];	
 	}
 	[self resortAllNotes];
 	[self refilterNotes];
@@ -539,7 +539,7 @@
 	}
 	[undoManager endUndoGrouping];
 	if (! [[self undoManager] isUndoing] && ! [[self undoManager] isRedoing])
-		[undoManager setActionName:[NSString stringWithFormat:NSLocalizedString(@"Delete %d Notes",@"undo action name for deleting notes"), [noteArray count]]];
+		[undoManager setActionName:[NSString stringWithFormat:NSLocalizedString(@"Delete %lu Notes",@"undo action name for deleting notes"), (unsigned long)[noteArray count]]];
 	
 }
 
@@ -561,7 +561,7 @@
 		[notesStore saveLocalEdit:trashed];
 		[syncEngine syncNow];
 	}
-	DeletedNoteObject *deletedNote = notesStore ? nil : [self _addDeletedNote:aNoteObject];
+	if (!notesStore) [self _addDeletedNote:aNoteObject];
 	
     
     notesChanged = YES;
@@ -662,7 +662,7 @@
 - (void)makeForegroundTextColorMatchGlobalPrefs {
 	NSColor *prefsFGColor = [notationPrefs foregroundColor];
 	if (prefsFGColor) {
-		NSColor *fgColor = [[NSApp delegate] foregrndColor];
+		NSColor *fgColor = [(AppController *)[NSApp delegate] foregrndColor];
 		[self setForegroundTextColor:fgColor];
 		//NSColor *fgColor = [prefsController foregroundTextColor];
 		
@@ -816,7 +816,7 @@
     
 	//PHASE 3: reset found pointers in case have been cleared
 	NSUInteger filteredNoteCount = [notesListDataSource count];
-	NoteObject **notesBuffer = [notesListDataSource immutableObjects];
+	NoteObject **notesBuffer = (NoteObject **)[notesListDataSource immutableObjects];
 	
     if (didFilterNotes) {
 		

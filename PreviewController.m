@@ -90,7 +90,7 @@
     [self installWebView];
     cssString = [[[self class] css] retain];
     htmlString = [[[self class] html] retain];
-    lastNote = [[NSApp delegate] selectedNoteObject];
+    lastNote = [(AppController *)[NSApp delegate] selectedNoteObject];
     [sourceView setTextContainerInset:NSMakeSize(10.0,12.0)];
     NSScrollView *scrlView=[sourceView enclosingScrollView];
     if (!IsLionOrLater) {
@@ -396,8 +396,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 - (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
     if (returnCode == NSFileHandlingPanelOKButton) {
 
-        AppController *app = [[NSApplication sharedApplication] delegate];
-        NSString *rawString = [app noteContent];
+        AppController *app = (AppController *)[[NSApplication sharedApplication] delegate];
         NSString *processedString = [self savedHTMLForApp:app];
         NSURL *file = [sheet URL];
         NSError *error;
@@ -416,7 +415,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 
     }
     // TODO high coupling; too many assumptions on architecture:
-    AppController *app = [NSApp delegate];
+    AppController *app = (AppController *)[NSApp delegate];
 
     NSSavePanel *savePanel = [NSSavePanel savePanel];
     [savePanel setAccessoryView:accessoryView];

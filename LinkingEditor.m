@@ -238,7 +238,7 @@ CGFloat _perceptualDarkness(NSColor*a) {
 
 	return 1 - (0.299 * _CM(aRed) + 0.587 * _CM(aGreen) + 0.114 * _CM(aBlue))/255;
 }
-CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
+static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 	//acceptable: 500
 	CGFloat aRed, aGreen, aBlue, bRed, bGreen, bBlue;
 	[a getRed:&aRed green:&aGreen blue:&aBlue alpha:NULL];
@@ -425,7 +425,7 @@ CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 						if ([self shouldChangeTextInRange:selectedRange replacementString:[newString string]]) {
 
 							[self replaceCharactersInRange:selectedRange withRTF:[newString RTFFromRange:
-																				  NSMakeRange(0, [newString length]) documentAttributes:nil]];
+																				  NSMakeRange(0, [newString length]) documentAttributes:[NSDictionary dictionary]]];
 
 							//paragraph styles will ALWAYS be added _after_ replaceCharactersInRange, it seems
 							//[[self textStorage] removeAttribute:NSParagraphStyleAttributeName range:NSMakeRange(0, [[self string] length])];
@@ -465,7 +465,7 @@ CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 		if (![type isEqualToString:NVPTFPboardType])
 			[newString removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, [newString length])];
 
-		NSData *rtfData = [newString RTFFromRange:NSMakeRange(0, [newString length]) documentAttributes:nil];;
+		NSData *rtfData = [newString RTFFromRange:NSMakeRange(0, [newString length]) documentAttributes:[NSDictionary dictionary]];;
 		if (rtfData) [pboard setData:rtfData forType:type];
 		[newString release];
 		return YES;
@@ -1122,8 +1122,8 @@ copyRTFType:
 		method_setImplementation(defaultIBeamCursorMethod, shouldBeWhite ? whiteIBeamCursorIMP : defaultIBeamCursorIMP);
 		
 		NSCursor *currentCursor = [NSCursor currentCursor];
-		NSCursor *whiteCursor = whiteIBeamCursorIMP;
-		NSCursor *defaultCursor = defaultIBeamCursorIMP;
+		NSCursor *whiteCursor = (NSCursor *)whiteIBeamCursorIMP;
+		NSCursor *defaultCursor = (NSCursor *)defaultIBeamCursorIMP;
       
 		//if the current cursor is set incorrectly, and and it's not a non-IBeam cursor, then update it (IBeamCursor points to our recently-set implementation)
 		if ((currentCursor == whiteCursor) != shouldBeWhite && (currentCursor == whiteCursor || currentCursor == defaultCursor)) {
@@ -2367,26 +2367,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         return;       
     }
 #endif
-    [self prepareTextFinderPreLion];
 }
-
-- (void)prepareTextFinderPreLion{
-    [self setUsesFindPanel:YES];
-    textFinder=[NSClassFromString(@"NSTextFinder")sharedTextFinder];
-    [[textFinder findPanel:YES] setDelegate:self];
-    NSArray *sViews = [[[textFinder findPanel:YES] contentView] subviews];
-    for (id thing in sViews){
-        if ([[thing className] isEqualToString:@"NSButton"]) {
-            NSButton *aBut = thing;
-            //            if (![aBut target]==nil) {
-            [aBut setTarget:self];
-            [aBut setAction:@selector(performFindPanelAction:)];
-            //            }
-        }
-    }    
-    [[textFinder findPanel:YES] update];
-}
-
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 - (void)textFinderShouldResetContext:(NSNotification *)aNotification{
@@ -2511,17 +2492,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         return;
     }
 #endif
-    //not lion do it the old, hacky way
-    if([sender tag]==1){
-        if(lastImportedFindString&&(lastImportedFindString.length>0)&&([textFinder respondsToSelector:@selector(loadFindStringFromPasteboard)])){                
-            if(![textFinder loadFindStringFromPasteboard]){
-                [textFinder setFindString:lastImportedFindString writeToPasteboard:YES updateUI:YES];
-            }
-        }
-//        else{
-//            NSLog(@"Apple changed NSTextFinder (loadFindStringFromPasteboard)");
-//        }	
-    }
     [super performFindPanelAction:sender];    
 }
 
@@ -2614,7 +2584,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         }else{
             BOOL didIt=NO;
             NSArray *paragraphArray=[actPar componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-            NSMutableCharacterSet *trimSet=[NSCharacterSet characterSetWithCharactersInString:insertString];            
+            NSMutableCharacterSet *trimSet=[[[NSCharacterSet characterSetWithCharactersInString:insertString] mutableCopy] autorelease];            
             [trimSet formUnionWithCharacterSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
             NSString *replaceString;
             NSUInteger xtraLength=0;

@@ -26,11 +26,12 @@
 #import "NSCollection_utils.h"
 #import "LabelColumnCell.h"
 #import "UnifiedCell.h"
-#import "HeaderViewWithMenu.h"
+#import "HeaderViewWIthMenu.h"
 #import "NSString_NV.h"
 #import "NotesTableHeaderCell.h"
 #import "LinkingEditor.h"
 #import "AppController.h"
+#import "AppController_Importing.h"
 //#import "NotesTableCornerView.h"
 
 #define STATUS_STRING_FONT_SIZE 16.0f
@@ -204,11 +205,11 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	if ([sender draggingSource] == self)
 		return NO;
 	
-	return [[NSApp delegate] addNotesFromPasteboard:[sender draggingPasteboard]];
+	return [(AppController *)[NSApp delegate] addNotesFromPasteboard:[sender draggingPasteboard]];
 }
 
 - (void)paste:(id)sender {
-	[[NSApp delegate] addNotesFromPasteboard:[NSPasteboard generalPasteboard]];
+	[(AppController *)[NSApp delegate] addNotesFromPasteboard:[NSPasteboard generalPasteboard]];
 }
 
 - (float)tableFontHeight {
@@ -573,7 +574,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		[theMenuItem setTarget:self];
 		[theMenuItem setRepresentedObject:theColumn];
 		[theMenuItem setState:[[theColumn identifier] isEqualToString:sortKey]];
-        [theMenuItem setOnStateImage:[NSImage imageNamed:nil]];
+        [theMenuItem setOnStateImage:nil];
         [theMenuItem setOnStateImage:sortArrow];
 		[theMenu addItem:theMenuItem];
     }
@@ -636,7 +637,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	
 	if ([sender isKindOfClass:[NSMenuItem class]]){
 		tableColumn = [sender representedObject];        
-        [sender setOnStateImage:[NSImage imageNamed:nil]];
+        [sender setOnStateImage:nil];
         NSImage *sortArrow;
         if(!sortDescending){
             sortArrow=[NSImage imageNamed:@"NSDescendingSortIndicator"];
@@ -856,7 +857,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 			return;
 		}
     } else if (keyChar == NSDeleteCharacter || keyChar == NSDeleteFunctionKey || keyChar == NSDeleteCharFunctionKey) {
-		[[NSApp delegate] deleteNote:self];
+		[(AppController *)[NSApp delegate] deleteNote:self];
 		return;
 	} else if (keyChar == NSTabCharacter) {
 		[[self window] selectNextKeyView:self];
@@ -1206,12 +1207,12 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 
 - (void)cancelOperation:(id)sender {
 	[self abortEditing];
-	[[NSApp delegate] cancelOperation:sender];
+	[(AppController *)[NSApp delegate] cancelOperation:sender];
 }
 
 - (void)textDidChange:(NSNotification *)aNotification {
 	NSInteger col = [self editedColumn];
-	if (col > -1 && [self attributeSetterForColumn:[[self tableColumns] objectAtIndex:col]] == @selector(setLabelString:)) {
+	if (col > -1 && [self attributeSetterForColumn:(NoteAttributeColumn *)[[self tableColumns] objectAtIndex:col]] == @selector(setLabelString:)) {
 		//text changed while editing tags; autocomplete!
 		
 		NSTextView *editor = [aNotification object];
@@ -1322,7 +1323,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 }
 
 - (void)flagsChanged:(NSEvent *)theEvent{
-	[[NSApp delegate] flagsChanged:theEvent];
+	[(AppController *)[NSApp delegate] flagsChanged:theEvent];
 }
 
 - (BOOL)needsGridLines{

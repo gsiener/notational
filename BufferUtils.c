@@ -392,7 +392,7 @@ void CopyPerDiskInfoGroupsToOrder(PerDiskInfo **flippedGroups, unsigned int *exi
 	}
 }
 
-CFStringRef CreateRandomizedFileName() {
+CFStringRef CreateRandomizedFileName(void) {
     static int sequence = 0;
     
     sequence++;
@@ -402,8 +402,8 @@ CFStringRef CreateRandomizedFileName() {
     if ((err = GetCurrentProcess(&psn)) != noErr) {
 	printf("error getting process serial number: %d\n", (int)err);
 	
-	//just use the location of our memory
-	psn.lowLongOfPSN = (UInt32)&psn;
+	//fall back to a random value
+	psn.lowLongOfPSN = arc4random();
     }
     
     CFStringRef name = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR(".%u%u-%d-%d"), 

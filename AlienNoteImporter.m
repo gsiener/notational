@@ -386,7 +386,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 		//make it guess for us, but if it's a webarchive we'll get the URL
 		NSData *data = [NSData uncachedDataFromFile:filename];
 		NSString *path = [data pathURLFromWebArchive];
-		attributedStringFromData = [[NSMutableAttributedString alloc] initWithData:data options:nil documentAttributes:NULL error:NULL];
+		attributedStringFromData = [[NSMutableAttributedString alloc] initWithData:data options:[NSDictionary dictionary] documentAttributes:NULL error:NULL];
 		
 		if ([path length] > 0 && [attributedStringFromData length] > 0)
 			sourceIdentifierString = path;
@@ -398,7 +398,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 				id doc = [[PdfDocClass alloc] initWithURL:[NSURL fileURLWithPath:filename]];
 				if (doc) {
 					//this method reliably crashes in 64-bit Leopard, and sometimes elsewhere as well
-					id sel = [doc performSelector:@selector(selectionForEntireDocument)];
+					id sel = [doc performSelector:NSSelectorFromString(@"selectionForEntireDocument")];
 					if (sel) {
 						attributedStringFromData = [[NSMutableAttributedString alloc] initWithAttributedString:[sel attributedString]];
 						//maybe we could check pages and boundsForPage: to try to determine where a line was soft-wrapped in the document?

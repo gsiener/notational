@@ -623,7 +623,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	
 	[newString restyleTextToFont:noteBodyFont usingBaseFont:oldFont];
 	
-	if ((ptfData = [newString RTFFromRange:NSMakeRange(0, [newString length]) documentAttributes:nil])) {
+	if ((ptfData = [newString RTFFromRange:NSMakeRange(0, [newString length]) documentAttributes:[NSDictionary dictionary]])) {
 		[[NSPasteboard generalPasteboard] setData:ptfData forType:NVPTFPboardType];
 	}
 	[oldFont release];

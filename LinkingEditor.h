@@ -114,7 +114,6 @@
 - (void)updateTextColors;
 - (IBAction)insertLink:(id)sender;
 - (void)prepareTextFinder;
-- (void)prepareTextFinderPreLion;
 - (BOOL)textFinderIsVisible;
 - (IBAction)pasteMarkdownLink:(id)sender;
 - (void)insertStringAtStartOfSelectedParagraphs:(NSString *)insertString;

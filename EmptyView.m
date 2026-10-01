@@ -43,7 +43,7 @@
 		
 		NSString *statusString = nil;
 		if (notesNumber > 1) {
-			statusString = [NSString stringWithFormat:NSLocalizedString(@"%d Notes Selected",nil), notesNumber];
+			statusString = [NSString stringWithFormat:NSLocalizedString(@"%ld Notes Selected",nil), (long)notesNumber];
 		} else {
 			statusString = NSLocalizedString(@"No Note Selected",nil); //\nPress return to create one.";
 		}
