@@ -372,6 +372,7 @@
 		C9A29ECF90A9B7BA1DBB4D36 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21B54C011134F2E800E163A1 /* IOKit.framework */; };
 		2A4B64FEF1B5962E028F0534 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2191926609C52AA600586B15 /* libz.tbd */; };
 		D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */; };
+		F2ACCC151AB01313434785BF /* RealDatabaseCompatibilityTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -917,6 +918,7 @@
 		C9E1D6AD973487800280D642 /* NotationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NSDataTransformationsTests.m; sourceTree = "<group>"; };
 		6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotesDatabaseTests.m; sourceTree = "<group>"; };
+		33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RealDatabaseCompatibilityTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1527,6 +1529,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				33C0AFE26F45D76490B581B6 /* RealDatabaseCompatibilityTests.m */,
 				6E5749EAE1DF82E13D954E6E /* NotesDatabaseTests.m */,
 				1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */,
 			);
@@ -1894,6 +1897,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2ACCC151AB01313434785BF /* RealDatabaseCompatibilityTests.m in Sources */,
 				D5612037FDFC9800326C24E4 /* NotesDatabaseTests.m in Sources */,
 				A89DDACA50CBE829E56A0DB3 /* AppController.m in Sources */,
 				606B82838E83B0C6BA5817C4 /* NotationController.m in Sources */,
