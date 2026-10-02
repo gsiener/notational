@@ -139,8 +139,6 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
         [savePanel beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
             [self exportPanelDidEnd:savePanel returnCode:result contextInfo:(__bridge void *)notes];
         }];
-        
-//		[savePanel beginSheetForDirectory:nil file:filename modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:notes];
 		
 	} else if ([notes count] > 1) {
 		NSOpenPanel *openPanel = [NSOpenPanel openPanel];
@@ -152,7 +150,6 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		[openPanel setTitle:NSLocalizedString(@"Export Notes", @"title of export notes dialog")];
 		[openPanel setMessage:[NSString stringWithFormat:NSLocalizedString(@"Choose a folder into which %lu notes will be exported",nil), (unsigned long)[notes count]]];
         
-//		[openPanel beginSheetForDirectory:nil file:nil types:nil modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:notes];
         [openPanel beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
             [self exportPanelDidEnd:openPanel returnCode:result contextInfo:(__bridge void *)notes];
         }];

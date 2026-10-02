@@ -217,12 +217,8 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 			}
 		}
         if (urlTxt) {
-            //  NSPasteboard *pboard = [NSPasteboard pasteboardWithUniqueName];
             NSURL *theURL = [NSURL URLWithString:urlTxt];
-            //	NSData *data = [urlTxt dataUsingEncoding:NSUTF8StringEncoding];
             if (theURL) {                
-                // [pboard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
-                //[pboard setData:data forType:NSPasteboardTypeString];
                 NSString *linkTitle = nil;
                 if (title) {
                     linkTitle = title;

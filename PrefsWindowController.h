@@ -18,9 +18,7 @@
 @class GlobalPrefs;
 
 @interface PrefsWindowController : NSObject 
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
 <NSWindowDelegate, NSToolbarDelegate>
-#endif
 {
     IBOutlet NSButton *useETScrollbarsOnLionButton;
     IBOutlet NSTextField *bodyTextFontField;

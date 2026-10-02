@@ -78,9 +78,6 @@ static void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out);
 	fWhite = [borderCol whiteComponent];
     
 	NSColor *endColor;
-//	CGFloat fWhite;
-//	fWhite = [[startColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent];
-//    NSLog(@"hia:%f",fWhite);
 	if (fWhite < 0.75f) {
 		if (fWhite<0.15f) {
 //			fWhite += 0.2f;
@@ -113,7 +110,6 @@ static void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out);
 //    endColor=[backCol shadowWithLevel:fract*1.9f];
     endColor=[[backCol blendedColorWithFraction:fract ofColor:endColor] shadowWithLevel:0.13f];
 	borderCol = fColor;// [backCol blendedColorWithFraction:0.35f ofColor:fColor];
-//    borderCol = [NSColor colorWithCalibratedWhite:fWhite alpha:1.0f];
     
     
 	colorSpaceRef = CGColorSpaceCreateDeviceRGB();
@@ -228,8 +224,6 @@ void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out) {
 - (void)drawCenteredInRect:(NSRect)aRect fraction:(float)aFraction {
 	NSRect cent = centeredRectInRect(aRect, [self size]);
 	cent = [[NSView focusView] centerScanRect:cent];
-//	[self compositeToPoint:NSMakePoint(cent.origin.x, cent.origin.y + cent.size.height) operation:NSCompositingOperationSourceOver fraction:aFraction];
-    
 [self drawInRect:cent fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:aFraction respectFlipped:YES hints:nil];
 }
 

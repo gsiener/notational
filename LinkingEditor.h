@@ -20,9 +20,7 @@
 @class GlobalPrefs;
 
 @interface LinkingEditor : NSTextView
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
 <NSLayoutManagerDelegate>
-#endif
 {	
     id textFinder;
     IBOutlet NSTextField *controlField;
@@ -120,22 +118,14 @@
 - (void)removeStringAtStartOfSelectedParagraphs:(NSString *)removeString;
 - (BOOL)clipboardHasLink;
 - (BOOL)updateNumberedListFromRange:(NSRange)currentRange startingNum:(NSInteger)listNum;
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 - (void)textFinderShouldResetContext:(NSNotification *)aNotification;
 - (void)textFinderShouldUpdateContext:(NSNotification *)aNotification;
 - (void)textFinderShouldNoteChanges:(NSNotification *)aNotification;
 - (void)hideTextFinderIfNecessary:(NSNotification *)aNotification;
 - (IBAction)toggleLayoutOrientation:(id)sender;
-#endif
 //
 @end
 
 @interface NSTextView (Private)
-#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6
-- (void)toggleAutomaticTextReplacement:(id)sender;
-- (BOOL)isAutomaticTextReplacementEnabled;
-- (void)setAutomaticTextReplacementEnabled:(BOOL)flag;
-- (void)moveToLeftEndOfLine:(id)sender;
-#endif
 
 @end

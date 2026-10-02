@@ -307,7 +307,6 @@ static NSString *BMNoteUUIDStringKey = @"NoteUUIDString";
 		//communicate with revealer here--tell it to search for this string and highlight note
 		isRestoringSearch = YES;
 		
-		//BOOL inBG = ([[window currentEvent] modifierFlags] & NSEventModifierFlagCommand) == 0;
 		[appController bookmarksController:self restoreNoteBookmark:bookmark inBackground:inBG];
 		[self selectBookmarkInTableView:bookmark];
 		

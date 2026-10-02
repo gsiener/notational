@@ -192,12 +192,7 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision) {
 
 - (NSArray*)labelCompatibleWords {
 	NSArray *array = nil;
-	if (IsLeopardOrLater) {
-		array = [self componentsSeparatedByCharactersInSet:[NSCharacterSet labelSeparatorCharacterSet]];
-	} else {
-		BOOL lacksSpace = [self rangeOfString:@" " options:NSLiteralSearch].location == NSNotFound;
-		array = [self componentsSeparatedByString: lacksSpace ? @"," : @" "];
-	}
+	array = [self componentsSeparatedByCharactersInSet:[NSCharacterSet labelSeparatorCharacterSet]];
     if (array&&([array count]>0)) {
         NSMutableArray *titles = [[NSMutableArray alloc]initWithCapacity:[array count]];
         for (NSString *aWord in array) {

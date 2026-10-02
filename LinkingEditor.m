@@ -19,18 +19,13 @@
 #import "NSCollection_utils.h"
 #import "AttributedPlainText.h"
 #import "NSString_NV.h"
-#import "NVPasswordGenerator.h"
 #import "ETClipView.h"
 //#import "NVTextFinderAdditions.h"
 #import "NVTheme.h"
 
 
 #include <CoreServices/CoreServices.h>
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5
 #include <Carbon/Carbon.h>
-#endif
-
-#define PASSWORD_SUGGESTIONS 0
 
 //replaces -stringByAddingPercentEscapesUsingEncoding:, which left reserved characters (and brackets) alone
 static NSCharacterSet *NVLinkingEditorURLAllowedSet(void) {
@@ -102,10 +97,8 @@ CGFloat _perceptualDarkness(NSColor*a);
     [self prepareTextFinder];
     
 	[[self window] setAcceptsMouseMovedEvents:YES];
-	if (IsLeopardOrLater) {
-		defaultIBeamCursorIMP = method_getImplementation(class_getClassMethod([NSCursor class], @selector(IBeamCursor)));
-		whiteIBeamCursorIMP = method_getImplementation(class_getClassMethod([NSCursor class], @selector(whiteIBeamCursor)));
-	}
+	defaultIBeamCursorIMP = method_getImplementation(class_getClassMethod([NSCursor class], @selector(IBeamCursor)));
+	whiteIBeamCursorIMP = method_getImplementation(class_getClassMethod([NSCursor class], @selector(whiteIBeamCursor)));
 	
 	didRenderFully = NO;
 	[[self layoutManager] setDelegate:self];
@@ -192,9 +185,7 @@ if ([selectorString isEqualToString:SEL_STR(setNoteBodyFont:sender:)]) {
 }
 
 - (void)indicateRange:(NSValue*)rangeValue {
-	if (IsLeopardOrLater) {
-		[self showFindIndicatorForRange:[rangeValue rangeValue]];
-	}
+	[self showFindIndicatorForRange:[rangeValue rangeValue]];
 }
 
 - (BOOL)resignFirstResponder {
@@ -224,7 +215,7 @@ if ([selectorString isEqualToString:SEL_STR(setNoteBodyFont:sender:)]) {
         [self setBackgroundColor:bgColor];
     }
 	[[self enclosingScrollView] setBackgroundColor:bgColor];
-    if (IsLionOrLater&&[self textFinderIsVisible]) {
+    if ([self textFinderIsVisible]) {
         [[self window]invalidateCursorRectsForView:[[self enclosingScrollView]findBarView]];
     }
     
@@ -1117,7 +1108,7 @@ copyRTFType:
 
 - (void)fixCursorForBackgroundUpdatingMouseInside:(BOOL)checkMouseLoc {
 	
-	if (IsLeopardOrLater && whiteIBeamCursorIMP && defaultIBeamCursorIMP) {
+	if (whiteIBeamCursorIMP && defaultIBeamCursorIMP) {
         if (checkMouseLoc) {
             mouseInside=[self mouseIsHere];
         }
@@ -1195,16 +1186,9 @@ copyRTFType:
         //for ElasticThreads Find... fix. Also make sure all Find menuItems point their targets to LinkingEditor instead of firstResponder
         
         //hide Find and Replace... on Pre-Lion machines
-        if (!IsLionOrLater){
-            if([menuItem tag]==12) {
-            [menuItem setHidden:YES];
-            return NO;
-            }
-        }else{
-            if ([menuItem tag]==7) {
-                if (![textFinder validateAction:[menuItem tag]]) {
-                    return NO;
-                }
+        if ([menuItem tag]==7) {
+            if (![textFinder validateAction:[menuItem tag]]) {
+                return NO;
             }
         }
         return YES;
@@ -1438,15 +1422,11 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 	
 	BOOL currentKeyboardInputIsSystemLanguage = NO;
 	
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5
     TISInputSourceRef inputRef = TISCopyCurrentKeyboardInputSource();
     NSArray* inputLangs = (__bridge NSArray*)TISGetInputSourceProperty(inputRef, kTISPropertyInputSourceLanguages);
     CFRelease(inputRef);
     NSString *preferredLang = [[NSLocale autoupdatingCurrentLocale] objectForKey:NSLocaleLanguageCode];
     currentKeyboardInputIsSystemLanguage = nil != preferredLang && [inputLangs containsObject:preferredLang];
-#else
-	currentKeyboardInputIsSystemLanguage = GetScriptManagerVariable(smSysScript) == GetScriptManagerVariable(smKeyScript);
-#endif
 	
 	if (currentKeyboardInputIsSystemLanguage) {
 		//only attempt to restore fonts (with styles of course) if the current script is system default--that is, not using an input method that would change the font
@@ -1496,13 +1476,8 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 		
 		//sometimes the temporary attributes are split across juxtaposing characters for some reason, so longest-effective-range is necessary
 		//unfortunately there is no such method on Tiger, and I'm not about to emulate its coalescing behavior here
-		if (IsLeopardOrLater) {
-			bulletIndicator = [[self layoutManager] temporaryAttribute:NVHiddenBulletIndentAttributeName atCharacterIndex:NSMaxRange(effectiveRange) 
-												 longestEffectiveRange:&effectiveRange inRange:aRange];
-		} else {
-			NSDictionary *dict = [[self layoutManager] temporaryAttributesAtCharacterIndex:NSMaxRange(effectiveRange) effectiveRange:&effectiveRange];
-			bulletIndicator = [dict objectForKey:NVHiddenBulletIndentAttributeName];
-		}
+		bulletIndicator = [[self layoutManager] temporaryAttribute:NVHiddenBulletIndentAttributeName atCharacterIndex:NSMaxRange(effectiveRange) 
+											 longestEffectiveRange:&effectiveRange inRange:aRange];
 		if (bulletIndicator && NSEqualRanges(effectiveRange, aRange)) {
 			return YES;
 		}
@@ -1607,12 +1582,10 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 - (void)setupFontMenu {
 	NSMenu *theMenu = [[NSMenu alloc] initWithTitle:@"NVFontMenu"];
 	NSMenuItem *theMenuItem;
-	if(IsLeopardOrLater){
-        
-        theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Enter Full Screen",@"menu item title for entering fullscreen") action:@selector(switchFullScreen:) keyEquivalent:@""];
-        [theMenuItem setTarget:[NSApp delegate]];
-        [theMenu addItem:theMenuItem];         
-	}
+    
+    theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Enter Full Screen",@"menu item title for entering fullscreen") action:@selector(switchFullScreen:) keyEquivalent:@""];
+    [theMenuItem setTarget:[NSApp delegate]];
+    [theMenu addItem:theMenuItem];         
     theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert Link",@"insert link menu item title") action:@selector(insertLink:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
@@ -1662,7 +1635,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 	[self setMenu:theMenu];
     
 	
-    // Insert Password menus
     static BOOL additionalEditItems = YES;
     
     if (additionalEditItems) {
@@ -1684,58 +1656,8 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         
 		[editMenu addItem:[NSMenuItem separatorItem]];
         
-#if PASSWORD_SUGGESTIONS
-        theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"New Password...", "new password command in the edit menu")
-												 action:@selector(showGeneratedPasswords:) keyEquivalent:@"\\"];
-        [theMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
-        [theMenuItem setTarget:nil]; // First Responder being the current Link Editor
-        [editMenu addItem:theMenuItem];
-#endif
-        
-//        theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert New Password", "insert new password command in the edit menu")
-//												 action:@selector(insertGeneratedPassword:) keyEquivalent:@"\\"];
-//#if PASSWORD_SUGGESTIONS
-//        [theMenuItem setAlternate:YES];
-//#endif
-//        [theMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand|NSEventModifierFlagOption];
-//        [theMenuItem setTarget:nil]; // First Responder being the current Link Editor
-//        [editMenu addItem:theMenuItem];
-//        [theMenuItem release];
     }
 
-}
-
-- (void)insertPassword:(NSString*)password
-{
-    [self insertText:password replacementRange:NSMakeRange(NSNotFound, 0)];
-    @try {
-    NSPasteboard *pb = [NSPasteboard generalPasteboard];
-    #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
-    NSPasteboardItem *pbitem = [[NSPasteboardItem alloc] init];
-    [pbitem setData:[password dataUsingEncoding:NSUTF8StringEncoding] forType:@"public.plain-text"];
-    [pb writeObjects:[NSArray arrayWithObject:pbitem]];
-    #else
-    [pb declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
-    [pb setString:password forType:NSPasteboardTypeString];
-    #endif
-    } @catch (NSException *e) {}
-}
-
-- (void)insertGeneratedPassword:(id)sender {
-    NSString *password = [NVPasswordGenerator strong];
-    [self insertPassword:password];
-}
-
-- (void)showGeneratedPasswords:(id)sender {
-    #ifdef notyet
-    NSArray *suggestedPasswords = [NVPasswordGenerator suggestions];
-    
-    // display modal overlay, get user selection and insert it
-    // Nice to have:
-    // keep stats on the user's selection and then use the most frequent choice in [insertGeneratedPassword] (instead of just [strong])
-    #else
-    [self insertGeneratedPassword:nil];
-    #endif
 }
 
 - (void)dealloc {
@@ -1746,8 +1668,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     [self unbind:@"continuousSpellCheckingEnabled"];
     [self unbind:@"smartInsertDeleteEnabled"];
 	[[NSNotificationCenter defaultCenter] removeObserver: self];
-    if (IsLionOrLater) {
-    }
     
 }
 
@@ -1765,21 +1685,17 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 - (BOOL)mouseIsHere{
     NSPoint mPt;
     NSRect vRect=[[self enclosingScrollView]visibleRect];
-    if (IsLionOrLater) {
-        NSRect aRect=NSZeroRect;
-        aRect.origin=[NSEvent mouseLocation];
-        mPt=[[self enclosingScrollView] convertPoint:[[self window] convertRectFromScreen:aRect].origin fromView:nil];
-        if ([self textFinderIsVisible]) {
-            NSView *fbView=[[self enclosingScrollView]findBarView];
-            if (NSMouseInRect(mPt,[fbView frame],[fbView isFlipped])) {
-                if (backgroundIsDark) {
-                    [[self window]invalidateCursorRectsForView:fbView];
-                }
-                return NO;
+    NSRect aRect=NSZeroRect;
+    aRect.origin=[NSEvent mouseLocation];
+    mPt=[[self enclosingScrollView] convertPoint:[[self window] convertRectFromScreen:aRect].origin fromView:nil];
+    if ([self textFinderIsVisible]) {
+        NSView *fbView=[[self enclosingScrollView]findBarView];
+        if (NSMouseInRect(mPt,[fbView frame],[fbView isFlipped])) {
+            if (backgroundIsDark) {
+                [[self window]invalidateCursorRectsForView:fbView];
             }
+            return NO;
         }
-    }else{
-        mPt=NSZeroPoint; // unreachable: deployment target is past Lion
     }
     //    vRect.size.width=[[self enclosingScrollView]visibleRect].size.width;
     //     NSLog(@"mPt:%@     vRect :>%@<",NSStringFromPoint(mPt),NSStringFromRect(vRect));
@@ -2332,67 +2248,50 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 
 #pragma mark - ElasticThreads Lion Find... implementation
 - (void)prepareTextFinder{        
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
-    if (IsLionOrLater) {
-        
-        
-        [self setUsesFindBar:YES];
-        
-        [self setIncrementalSearchingEnabled:YES];
-        textFinder=[[NSTextFinder alloc]init];
-        [textFinder setClient:self];
-        
-        [textFinder setIncrementalSearchingEnabled:YES];
+    
+    
+    [self setUsesFindBar:YES];
+    
+    [self setIncrementalSearchingEnabled:YES];
+    textFinder=[[NSTextFinder alloc]init];
+    [textFinder setClient:self];
+    
+    [textFinder setIncrementalSearchingEnabled:YES];
 //        [textFinder setIncrementalSearchingShouldDimContentView:NO];
-        NSNotificationCenter *dc=[NSNotificationCenter defaultCenter];
-        [dc addObserver:self selector:@selector(textFinderShouldUpdateContext:) name:@"TextFindContextShouldUpdate" object:nil];
-        [dc addObserver:self selector:@selector(textFinderShouldNoteChanges:) name:@"TextFindContextShouldNoteChanges" object:nil];
-        [dc addObserver:self selector:@selector(textFinderShouldResetContext:) name:@"TextFindContextShouldReset" object:nil];
-         [dc addObserver:self selector:@selector(hideTextFinderIfNecessary:) name:@"TextFinderShouldHide" object:nil];
-        return;       
-    }
-#endif
+    NSNotificationCenter *dc=[NSNotificationCenter defaultCenter];
+    [dc addObserver:self selector:@selector(textFinderShouldUpdateContext:) name:@"TextFindContextShouldUpdate" object:nil];
+    [dc addObserver:self selector:@selector(textFinderShouldNoteChanges:) name:@"TextFindContextShouldNoteChanges" object:nil];
+    [dc addObserver:self selector:@selector(textFinderShouldResetContext:) name:@"TextFindContextShouldReset" object:nil];
+     [dc addObserver:self selector:@selector(hideTextFinderIfNecessary:) name:@"TextFinderShouldHide" object:nil];
 }
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 - (void)textFinderShouldResetContext:(NSNotification *)aNotification{
     
-    if (IsLionOrLater){
-        [textFinder cancelFindIndicator];
-        [textFinder noteClientStringWillChange];
-    }
+    [textFinder cancelFindIndicator];
+    [textFinder noteClientStringWillChange];
 }
 
 - (void)textFinderShouldNoteChanges:(NSNotification *)aNotification{
-    if (IsLionOrLater){
-        [textFinder noteClientStringWillChange];
-    }
+    [textFinder noteClientStringWillChange];
 }
 
 - (void)textFinderShouldUpdateContext:(NSNotification *)aNotification{
     
-    if (IsLionOrLater){
-        [textFinder setFindIndicatorNeedsUpdate:YES];
-    }
+    [textFinder setFindIndicatorNeedsUpdate:YES];
 }
 
 - (void)hideTextFinderIfNecessary:(NSNotification *)aNotification{
-    if (IsLionOrLater){        
-        if([self textFinderIsVisible]){            
-            [textFinder setFindIndicatorNeedsUpdate:YES];
-            [textFinder cancelFindIndicator];
-            [textFinder performAction:NSTextFinderActionHideFindInterface];
-        }
+    if([self textFinderIsVisible]){            
+        [textFinder setFindIndicatorNeedsUpdate:YES];
+        [textFinder cancelFindIndicator];
+        [textFinder performAction:NSTextFinderActionHideFindInterface];
     }
 }
-#endif
 
 - (BOOL)textFinderIsVisible{
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
-    if ((IsLionOrLater)&&([[self enclosingScrollView]findBarView]!=nil)) {
+    if ([[self enclosingScrollView]findBarView]!=nil) {
         return [[[self enclosingScrollView] subviews]containsObject:[[self enclosingScrollView]findBarView]];
     }
-#endif
     return NO;
 }
 
@@ -2404,13 +2303,8 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     NSInteger findTag=[sender tag];
     
     [sender setTarget:self];
-    if(!IsLionOrLater||([sender tag]!=7)){
-        NSString *pbType;
-        if (IsSnowLeopardOrLater) {
-            pbType=NSPasteboardTypeString;
-        }else{
-            pbType=NSPasteboardTypeString;
-        }
+    if ([sender tag]!=7) {
+        NSString *pbType=NSPasteboardTypeString;
         NSString *typedString = [controller typedString];
         if (!typedString) typedString = [controlField stringValue];
         if (!typedString||([typedString length]==0)) {
@@ -2432,50 +2326,44 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     if ([[self window] firstResponder]!=self) {
         [[self window]makeFirstResponder:self];
     }
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
-    if (IsLionOrLater) {
-        
-        id newSender=[sender copy];
-        if((findTag!=1)&&(findTag!=12)&&(findTag!=7)&&(![self textFinderIsVisible])){            
+    
+    id newSender=[sender copy];
+    if((findTag!=1)&&(findTag!=12)&&(findTag!=7)&&(![self textFinderIsVisible])){            
+        [newSender setTag:NSTextFinderActionShowFindInterface];
+        [super performTextFinderAction:newSender];
+    } 
+    if (findTag==1) {
+        findTag=NSTextFinderActionShowFindInterface;
+    }else if (findTag==2) {            
+        findTag=NSTextFinderActionNextMatch;
+    }else if (findTag==3) {
+        findTag=NSTextFinderActionPreviousMatch;
+    }else if (findTag==4) {
+        findTag=NSTextFinderActionReplaceAll;
+    }else if (findTag==5) {
+        findTag=NSTextFinderActionReplace;
+    }else if (findTag==6) {
+        findTag=NSTextFinderActionReplaceAndFind;
+    }else if (findTag==7) {
+        findTag=(NSTextFinderActionSetSearchString);
+    }else if (findTag==9) {
+        findTag=NSTextFinderActionSelectAll;
+    }else if (findTag==12) {
+        findTag=NSTextFinderActionShowReplaceInterface;
+    }//NSTextFinderActionSelectAll = 9,
+    [newSender setTag:findTag];
+    
+    if ([textFinder validateAction:findTag]) {
+        [super performTextFinderAction:newSender]; 
+        if ((findTag==NSTextFinderActionSetSearchString)&&(![self textFinderIsVisible])) {
             [newSender setTag:NSTextFinderActionShowFindInterface];
             [super performTextFinderAction:newSender];
-        } 
-        if (findTag==1) {
-            findTag=NSTextFinderActionShowFindInterface;
-        }else if (findTag==2) {            
-            findTag=NSTextFinderActionNextMatch;
-        }else if (findTag==3) {
-            findTag=NSTextFinderActionPreviousMatch;
-        }else if (findTag==4) {
-            findTag=NSTextFinderActionReplaceAll;
-        }else if (findTag==5) {
-            findTag=NSTextFinderActionReplace;
-        }else if (findTag==6) {
-            findTag=NSTextFinderActionReplaceAndFind;
-        }else if (findTag==7) {
-            findTag=(NSTextFinderActionSetSearchString);
-        }else if (findTag==9) {
-            findTag=NSTextFinderActionSelectAll;
-        }else if (findTag==12) {
-            findTag=NSTextFinderActionShowReplaceInterface;
-        }//NSTextFinderActionSelectAll = 9,
-        [newSender setTag:findTag];
-        
-        if ([textFinder validateAction:findTag]) {
-            [super performTextFinderAction:newSender]; 
-            if ((findTag==NSTextFinderActionSetSearchString)&&(![self textFinderIsVisible])) {
-                [newSender setTag:NSTextFinderActionShowFindInterface];
-                [super performTextFinderAction:newSender];
-            }
-            
-//            [textFinder setFindIndicatorNeedsUpdate:YES];
-        }else{
-            NSLog(@"find action was invalid");
         }
-        return;
+        
+//            [textFinder setFindIndicatorNeedsUpdate:YES];
+    }else{
+        NSLog(@"find action was invalid");
     }
-#endif
-    [super performFindPanelAction:sender];    
 }
 
 - (IBAction)toggleLayoutOrientation:(id)sender {

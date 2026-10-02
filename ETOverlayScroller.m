@@ -10,13 +10,12 @@
 
 @implementation ETOverlayScroller
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 + (BOOL)isCompatibleWithOverlayScrollers {
     return self == [ETOverlayScroller class];
 }
 
 - (void)setScrollerStyle:(NSScrollerStyle)newScrollerStyle{
-    if (IsLionOrLater&&(newScrollerStyle==NSScrollerStyleOverlay)) {
+    if (newScrollerStyle==NSScrollerStyleOverlay) {
         verticalPaddingLeft = 4.5f;
     }else{
         verticalPaddingLeft = 4.0f;
@@ -29,12 +28,11 @@
     return [[NSScroller class]preferredScrollerStyle];
 }
 
-#endif
 
 - (id)initWithFrame:(NSRect)frameRect{
 	if ((self=[super initWithFrame:frameRect])) {	
         verticalPaddingRight = 3.0f;
-        if (IsLionOrLater&&([self scrollerStyle]==NSScrollerStyleOverlay)) {
+        if ([self scrollerStyle]==NSScrollerStyleOverlay) {
             verticalPaddingLeft = 4.5f;
         }else{
             verticalPaddingLeft = 4.0f;

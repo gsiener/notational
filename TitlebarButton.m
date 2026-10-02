@@ -206,25 +206,7 @@
     _initialDragPoint.x -= frame.origin.x;
     _initialDragPoint.y -= frame.origin.y;
 	
-	//on 10.4 prevent the menu from appearing until mouse-up
-	
-	if (IsLeopardOrLater) {
-		[super mouseDown:theEvent];
-		return;
-	}
-    while (1) {
-        theEvent = [[self window] nextEventMatchingMask: NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDragged | 
-					NSEventMaskRightMouseUp | NSEventTypeRightMouseDragged];
-		NSEventType type = [theEvent type];
-		
-		if (type == NSEventTypeLeftMouseUp || type == NSEventTypeRightMouseUp) {
-			
-			if ([self mouse:[self convertPoint:[theEvent locationInWindow] fromView:nil] inRect:[self bounds]]) {
-				[[self cell] performClickWithFrame:[self bounds] inView:self];
-			}
-			break;
-		}		
-    }	
+	[super mouseDown:theEvent];
 }
 
 - (BOOL)mouseDownCanMoveWindow {

@@ -200,7 +200,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	[cell setPreviewIsHidden:NO];
 
 	BOOL rowSelected = [tv isRowSelected:row];
-	BOOL drawShadow = IsSnowLeopardOrLater || (IsLeopardOrLater && rowSelected && [tv currentEditor]);
+	BOOL drawShadow = YES;
 	
 	id obj = note->tableTitleString ? (rowSelected ? (id)AttributedStringForSelection(note->tableTitleString, drawShadow) : 
 									   (id)note->tableTitleString) : (id)titleOfNote(note);
@@ -768,8 +768,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 				if (onRight) {
 					[images addObject:img];
 				} else {
-//					[img compositeToPoint:nextBoxPoint operation:NSCompositingOperationSourceOver];
-                    
                     [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 					nextBoxPoint.x += [img size].width + 4.0;
 				}
@@ -788,7 +786,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 				nextBoxPoint.x -= [img size].width + 4.0;
                 dRect.origin=nextBoxPoint;
                 dRect.size=[img size];
-//				[img compositeToPoint:nextBoxPoint operation:NSCompositingOperationSourceOver];
               [img drawInRect:dRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 			}
 		}
@@ -821,11 +818,10 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 - (NSString*)temporaryTextFilePath {
 	//for Marked and for dragging a note out as a file: write the note's text to a file in the temporary directory
-	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Notational"];
+	NSString *directory = [[NSFileManager defaultManager] temporaryNotesDirectory];
 	NSString *path = [directory stringByAppendingPathComponent:[[self titleAsFilename] stringByAppendingPathExtension:@"txt"]];
 	
-	if (![[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL] ||
-		![[contentString string] writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
+	if (!directory || ![[contentString string] writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
 		NSLog(@"couldn't write a temporary file for note %@", titleString);
 		return nil;
 	}

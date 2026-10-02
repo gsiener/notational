@@ -37,7 +37,6 @@ extern NSString *RetrievedPasswordKey;
 	NSMutableDictionary *documentSettings;
 	BOOL shouldGrabCreationDates;
     
-    BOOL shouldUseReadability;
 }
 
 //a directory containing notes, a custom bundle, or custom file format in which more than one note could be expected
@@ -62,9 +61,6 @@ extern NSString *RetrievedPasswordKey;
 
 - (NSArray*)notesInDirectory:(NSString*)filename;
 - (NSArray*)notesInFile:(NSString*)filename;
-
-- (BOOL)shouldUseReadability;
-- (void)setShouldUseReadability:(BOOL)value;
 
 - (NSString *)stringFromHTMLFile:(NSString *)filename;
 @end

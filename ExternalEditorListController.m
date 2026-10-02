@@ -285,12 +285,7 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 - (void)_updateMenu:(NSMenu*)theMenu {
 	//for allowing the user to configure external editors in the preferences window
 
-	if (IsSnowLeopardOrLater) {
-		[theMenu performSelector:@selector(removeAllItems)];
-	} else {
-		while ([theMenu numberOfItems])
-			[theMenu removeItemAtIndex:0];
-	}
+	[theMenu performSelector:@selector(removeAllItems)];
 	
 	BOOL isPrefsMenu = [editorPrefsMenus containsObject:theMenu];
 	BOOL didAddItem = NO;

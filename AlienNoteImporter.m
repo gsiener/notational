@@ -175,33 +175,6 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 }
 
 
-//- (void)openPanelDidEnd:(NSOpenPanel *)panel returnCode:(int)returnCode contextInfo:(void  *)contextInfo {
-//	id delegate = (id)contextInfo;
-//	
-//	if (delegate && [delegate respondsToSelector:@selector(noteImporter:importedNotes:)]) {
-//		
-//		if (returnCode == NSModalResponseOK) {
-//			shouldGrabCreationDates = [grabCreationDatesButton state] == NSControlStateValueOn;
-//			[[NSUserDefaults standardUserDefaults] setBool:shouldGrabCreationDates forKey:ShouldImportCreationDates];
-//            NSArray *importedFiles=[[panel URLs]valueForKey:@"path"];
-//            if (!importedFiles||importedFiles.count==0) {
-//                return;
-//            }
-//			NSArray *notes = [self notesWithPaths:importedFiles];
-//			if (notes && [notes count])
-//				[delegate noteImporter:self importedNotes:notes];
-//			else
-//				NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"None of the selected files could be imported.",nil), 
-//								NSLocalizedString(@"Please choose other files.",nil), NSLocalizedString(@"OK",nil),nil,nil);
-//		}
-//	} else {
-//		NSLog(@"Where's my note importing delegate?");
-//		NSBeep();
-//	}
-//	
-//	[self release];
-//}
-
 - (void)importNotesFromDialogAroundWindow:(NSWindow*)mainWindow receptionDelegate:(id)receiver {
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 	[openPanel setCanChooseFiles:YES];
@@ -351,7 +324,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	if (fileType == HTML_TYPE_ID || [extension isEqualToString:@"htm"] || [extension isEqualToString:@"html"] || [extension isEqualToString:@"shtml"]) {
 		//should convert to text with markdown here
         if ([[GlobalPrefs defaultPrefs] useMarkdownImport]) {
-			BOOL articleOnly = [[GlobalPrefs defaultPrefs] useReadability] || [self shouldUseReadability];
+			BOOL articleOnly = [[GlobalPrefs defaultPrefs] useReadability];
 			NSString *markdown = [NVHTMLMarkdown markdownFromHTML:[self stringFromHTMLFile:filename] baseURL:[NSURL fileURLWithPath:filename] articleOnly:articleOnly];
 			attributedStringFromData = [[NSMutableAttributedString alloc] initWithString:markdown attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
         } else {
@@ -524,16 +497,6 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	if (!string) string = [[NSString alloc] initWithData:data encoding:NSWindowsCP1252StringEncoding];
 	if (!string) string = [[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
 	return string ? string : @"";
-}
-
--(BOOL)shouldUseReadability
-{
-    return shouldUseReadability;
-}
-
--(void) setShouldUseReadability:(BOOL)value
-{
-	shouldUseReadability = value;
 }
 
 @end

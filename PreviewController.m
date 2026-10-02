@@ -11,13 +11,23 @@
 #import "AppController_Preview.h"
 #import "NVMarkupRenderer.h"
 #import "NoteObject.h"
-#import "ETTransparentButtonCell.h"
-#import "ETTransparentButton.h"
 #import "BTTransparentScroller.h"
 #import "NSFileManager_NV.h"
 #import "NSFileManager+DirectoryLocations.h"
 
 #define kDefaultMarkupPreviewVisible @"markupPreviewVisible"
+
+//a WKUserContentController retains its script message handlers, so handing it the controller would keep the
+//controller alive for good (and the removal in -dealloc would never run); this forwards to it without owning it
+@interface NVWeakScriptMessageHandler : NSObject <WKScriptMessageHandler>
+@property (nonatomic, weak) id<WKScriptMessageHandler> target;
+@end
+
+@implementation NVWeakScriptMessageHandler
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+	[[self target] userContentController:userContentController didReceiveScriptMessage:message];
+}
+@end
 
 @implementation PreviewController
 
@@ -45,37 +55,6 @@
             [[self window] orderFront:self];
         }
 
-        //        tabSwitcher = [[ETTransparentButton alloc]initWithFrame:shCon];
-        //        shCon.origin.x = [[[self window] contentView]visibleRect].origin.x + [[[self window] contentView]visibleRect].size.width - 80;
-        //        shCon.size.width = 56;
-        //        saveButton = [[ETTransparentButton alloc]initWithFrame:shCon];
-        //        shCon.origin.x -= 65;
-        //        stickyPreviewButton = [[ETTransparentButton alloc]initWithFrame:shCon];
-        //        shCon.origin.x -= 65;
-        //        printPreviewButton = [[ETTransparentButton alloc]initWithFrame:shCon];
-        //        [tabSwitcher setTitle:@"View Source"];
-        //        [tabSwitcher setTarget:self];
-        //        [tabSwitcher setAction:@selector(switchTabs:)];
-        //        [tabSwitcher setAutoresizingMask:NSViewMaxXMargin];
-        //        [saveButton setTitle:@"Save"];
-        //        [saveButton setToolTip:@"Save the current preview as an HTML file"];
-        //        [saveButton setTarget:self];
-        //        [saveButton setAction:@selector(saveHTML:)];
-        //        [saveButton setAutoresizingMask:NSViewMinXMargin];
-        //        [stickyPreviewButton setTitle:@"Stick"];
-        //        [stickyPreviewButton setToolTip:@"Maintain current note in Preview, even if you switch to other notes."];
-        //        [stickyPreviewButton setTarget:self];
-        //        [stickyPreviewButton setAction:@selector(makePreviewSticky:)];
-        //        [stickyPreviewButton setAutoresizingMask:NSViewMinXMargin];
-        //        [printPreviewButton setTitle:@"Print"];
-        //        [printPreviewButton setToolTip:@"Print to Printer or PDF."];
-        //        [printPreviewButton setTarget:self];
-        //        [printPreviewButton setAction:@selector(printPreview:)];
-        //        [printPreviewButton setAutoresizingMask:NSViewMinXMargin];
-        //        [[[self window] contentView] addSubview:tabSwitcher];
-        //        [[[self window] contentView] addSubview:saveButton];
-        //        [[[self window] contentView] addSubview:stickyPreviewButton];
-        //        [[[self window] contentView] addSubview:printPreviewButton];
         [tabView selectTabViewItem:[tabView tabViewItemAtIndex:0]];
 
         // [[[self window] contentView] setNeedsDisplay:YES];
@@ -94,19 +73,10 @@
     lastNote = [(AppController *)[NSApp delegate] selectedNoteObject];
     [sourceView setTextContainerInset:NSMakeSize(10.0,12.0)];
     NSScrollView *scrlView=[sourceView enclosingScrollView];
-    if (!IsLionOrLater) {
-        NSRect vsRect=[[scrlView verticalScroller]frame];
-        BTTransparentScroller *theScroller=[[BTTransparentScroller alloc]initWithFrame:vsRect];
-        [scrlView setVerticalScroller:theScroller];
-    }
     [scrlView setScrollsDynamically:YES];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
-    if (IsLionOrLater) {
-        [scrlView setHorizontalScrollElasticity:NSScrollElasticityNone];
-        [scrlView setVerticalScrollElasticity:NSScrollElasticityAutomatic];
-        [scrlView setScrollerStyle:NSScrollerStyleOverlay];
-    }
-#endif
+    [scrlView setHorizontalScrollElasticity:NSScrollElasticityNone];
+    [scrlView setVerticalScrollElasticity:NSScrollElasticityAutomatic];
+    [scrlView setScrollerStyle:NSScrollerStyleOverlay];
 }
 
 //the "Cocoa" object custom templates can call, e.g. Cocoa.log("…"), as they could with the old WebView
@@ -115,10 +85,14 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 //the page is written to a file and loaded from there, so the template can use files from the support
 //folder ({%support%}) and notes can show local images, as the old WebView allowed
 + (NSURL *)previewPageURL {
-	NSString *caches = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-	NSString *folder = [caches stringByAppendingPathComponent:[[NSBundle mainBundle] bundleIdentifier] ?: @"Notational"];
-	[[NSFileManager defaultManager] createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:NULL];
-	return [NSURL fileURLWithPath:[folder stringByAppendingPathComponent:@"preview.html"]];
+	static NSURL *url = nil;
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		NSString *folder = [[NSFileManager defaultManager] findOrCreateDirectory:NSCachesDirectory inDomain:NSUserDomainMask
+														   appendPathComponent:[[NSBundle mainBundle] bundleIdentifier] ?: @"Notational" error:NULL];
+		url = [NSURL fileURLWithPath:[(folder ?: NSTemporaryDirectory()) stringByAppendingPathComponent:@"preview.html"]];
+	});
+	return url;
 }
 
 - (void)installWebView {
@@ -128,7 +102,9 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 	WKUserContentController *content = [configuration userContentController];
 	[content addUserScript:[[WKUserScript alloc] initWithSource:LogBridgeScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart
 												 forMainFrameOnly:YES]];
-	[content addScriptMessageHandler:self name:@"log"];
+	NVWeakScriptMessageHandler *logHandler = [[NVWeakScriptMessageHandler alloc] init];
+	[logHandler setTarget:self];
+	[content addScriptMessageHandler:logHandler name:@"log"];
 	
 	preview = [[WKWebView alloc] initWithFrame:[previewContainer bounds] configuration:configuration];
 	[preview setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];

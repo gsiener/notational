@@ -69,7 +69,6 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2);
 
 - (void)registerWithTarget:(id)sender forChangesInSettings:(SEL)firstSEL, ...;
 - (void)registerForSettingChange:(SEL)selector withTarget:(id)sender;
-- (void)unregisterForNotificationsFromSelector:(SEL)selector sender:(id)sender;
 - (void)notifyCallbacksForSelector:(SEL)selector excludingSender:(id)sender;
 
 - (void)setNotationPrefs:(NotationPrefs*)newNotationPrefs sender:(id)sender;
@@ -123,14 +122,11 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2);
 - (void)setPastePreservesStyle:(BOOL)value sender:(id)sender;
 - (BOOL)pastePreservesStyle;
 
-- (void)setAutoFormatsDoneTag:(BOOL)value sender:(id)sender;
 - (BOOL)autoFormatsDoneTag;
 
 - (BOOL)autoIndentsNewLines;
-- (void)setAutoIndentsNewLines:(BOOL)value sender:(id)sender;
 
 - (BOOL)autoFormatsListBullets;
-- (void)setAutoFormatsListBullets:(BOOL)value sender:(id)sender;
 
 - (void)setLinksAutoSuggested:(BOOL)value sender:(id)sender;
 - (BOOL)linksAutoSuggested;

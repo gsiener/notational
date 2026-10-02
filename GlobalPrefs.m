@@ -221,20 +221,6 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 	[self registerWithTarget:sender forChangesInSettings:selector, nil];
 }
 
-- (void)unregisterForNotificationsFromSelector:(SEL)selector sender:(id)sender {
-	NSString *selectorKey = NSStringFromSelector(selector);
-	
-	NSMutableArray *senders = [selectorObservers objectForKey:selectorKey];
-	if (senders) {
-		[senders removeObjectIdenticalTo:sender];
-		
-		if (![senders count])
-			[selectorObservers removeObjectForKey:selectorKey];
-	} else {
-		NSLog(@"Selector %@ has no observers?", NSStringFromSelector(selector));
-	}
-}
-
 - (void)notifyCallbacksForSelector:(SEL)selector excludingSender:(id)sender {
 	NSArray *observers = nil;
 	id observer = nil;
@@ -375,30 +361,15 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
     return [defaults boolForKey:PastePreservesStyleKey];
 }
 
-- (void)setAutoFormatsDoneTag:(BOOL)value sender:(id)sender {
-    [defaults setBool:value forKey:AutoFormatsDoneTagKey];
-	
-	SEND_CALLBACKS();
-}
 - (BOOL)autoFormatsDoneTag {
 	return [defaults boolForKey:AutoFormatsDoneTagKey];
 }
 - (BOOL)autoFormatsListBullets {
 	return [defaults boolForKey:AutoFormatsListBulletsKey];
 }
-- (void)setAutoFormatsListBullets:(BOOL)value sender:(id)sender {
-	[defaults setBool:value forKey:AutoFormatsListBulletsKey];
-	
-	SEND_CALLBACKS();
-}
 
 - (BOOL)autoIndentsNewLines {
 	return [defaults boolForKey:AutoIndentsNewLinesKey];
-}
-- (void)setAutoIndentsNewLines:(BOOL)value sender:(id)sender {
-	[defaults setBool:value forKey:AutoIndentsNewLinesKey];
-	
-	SEND_CALLBACKS();
 }
 
 - (void)setLinksAutoSuggested:(BOOL)value sender:(id)sender {
@@ -535,19 +506,12 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 }
 
 - (void)setUseFinderTags:(id)sender {
-	if (!IsMavericksOrLater) {
-		[defaults setBool:NO forKey:UseFinderTagsKey];
-		return;
-	}
 	[defaults setBool:YES forKey:UseFinderTagsKey];
 	SEND_CALLBACKS();
 }
 
 - (BOOL)useFinderTags
 {
-    if (!IsMavericksOrLater) {
-        return NO;
-    }
 	return [defaults boolForKey:UseFinderTagsKey];
 }
 

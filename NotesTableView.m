@@ -294,16 +294,14 @@ static id<NSDraggingSource> NVNoteFileDragSource(void) {
 		[[[allColumns objectAtIndex:i] dataCell] setFont:font];
 	}	
 	BOOL isOneRow = !horiz || (![globalPrefs tableColumnsShowPreview] && !ColumnIsSet(NoteLabelsColumn, [globalPrefs tableColumnsBitmap]));
-    if (IsLeopardOrLater){
 //        [self setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
-        usesSourceListHighlight = !isOneRow;
-        //the source-list highlight is deprecated in favour of NSTableViewStyleSourceList, which also changes the table's
-        //metrics and insets; keep the look the list has always had
+    usesSourceListHighlight = !isOneRow;
+    //the source-list highlight is deprecated in favour of NSTableViewStyleSourceList, which also changes the table's
+    //metrics and insets; keep the look the list has always had
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        [self setSelectionHighlightStyle:isOneRow ? NSTableViewSelectionHighlightStyleRegular : NSTableViewSelectionHighlightStyleSourceList];
+    [self setSelectionHighlightStyle:isOneRow ? NSTableViewSelectionHighlightStyleRegular : NSTableViewSelectionHighlightStyleSourceList];
 #pragma clang diagnostic pop
-    }
 	NSLayoutManager *lm = [[NSLayoutManager alloc] init];
 	tableFontHeight = [lm defaultLineHeightForFont:font];
 	float h[4] = {(tableFontHeight * 3.0 + 5.0f), (tableFontHeight * 2.0 + 6.0f), (tableFontHeight + 2.0f), tableFontHeight + 2.0f};
