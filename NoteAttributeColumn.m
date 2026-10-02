@@ -38,8 +38,8 @@
 + (NSDictionary*)standardDictionary {
 	static NSDictionary *standardDictionary = nil;
 	if (!standardDictionary)
-		standardDictionary = [[NSDictionary dictionaryWithObjectsAndKeys:
-			[NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NSFontAttributeName, nil] retain];	
+		standardDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+			[NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NSFontAttributeName, nil];	
 
 	return standardDictionary;
 }
@@ -70,19 +70,19 @@ id columnAttributeForObject(NotesTableView *tv, NoteAttributeColumn *col, id obj
     objectAttribute = attributeFunction;
 }
 
-- (void)setSortingFunction:(NSInteger (*)(id *, id *))aFunction {
+- (void)setSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))aFunction {
     sortFunction = aFunction;
 }
 
-- (NSInteger (*)(id *, id *))sortFunction {
+- (NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))sortFunction {
     return sortFunction;
 }
 
-- (void)setReverseSortingFunction:(NSInteger (*)(id*, id*))aFunction {
+- (void)setReverseSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))aFunction {
     reverseSortFunction = aFunction;
 }
 
-- (NSInteger (*)(id*, id*))reverseSortFunction {
+- (NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))reverseSortFunction {
     return reverseSortFunction;
 }
 id (*dereferencingFunction(NoteAttributeColumn *col))(id, id, NSInteger) {

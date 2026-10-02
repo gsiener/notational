@@ -18,20 +18,19 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
 	[[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
 }
 
 - (void)tearDown {
 	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
 	[super tearDown];
 }
 
 - (NSString *)importedContentOfFile:(NSString *)name text:(NSString *)text {
 	NSString *path = [directory stringByAppendingPathComponent:name];
 	XCTAssertTrue([text writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
-	AlienNoteImporter *importer = [[[AlienNoteImporter alloc] initWithStoragePath:path] autorelease];
+	AlienNoteImporter *importer = [[AlienNoteImporter alloc] initWithStoragePath:path];
 	NoteObject *note = [importer noteWithFile:path];
 	XCTAssertNotNil(note);
 	return [[note noteRecordRepresentation] content];

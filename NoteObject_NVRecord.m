@@ -28,8 +28,8 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 
 - (id)initWithNoteRecord:(NVNoteRecord *)record delegate:(id)aDelegate {
 	NVNoteContent *split = [NVNoteContent contentWithString:[record content]];
-	NSMutableAttributedString *body = [[[NSMutableAttributedString alloc] initWithString:[split body]
-																			 attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]] autorelease];
+	NSMutableAttributedString *body = [[NSMutableAttributedString alloc] initWithString:[split body]
+																			 attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
 	[body addLinkAttributesForRange:NSMakeRange(0, [body length])];
 	[body addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [body length])];
 	if ((self = [self initWithNoteBody:body title:[split title] delegate:aDelegate labels:LabelStringFromTags([record tags])])) {
@@ -53,7 +53,7 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 - (NVNoteRecord *)noteRecordRepresentation {
 	NVNoteContent *split = objc_getAssociatedObject(self, &ContentSplitKey);
 	if (!split) split = [NVNoteContent contentWithString:@""];
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:[self noteRecordID]];
 	[record setContent:[split stringWithTitle:titleOfNote(self) body:[[self contentString] string]]];
 	[record setTags:TagsFromLabelString(labelsOfNote(self))];

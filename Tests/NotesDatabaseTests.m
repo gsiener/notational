@@ -27,22 +27,21 @@
 
 - (void)setUp {
 	[super setUp];
-	tempDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:
-					  [[NSProcessInfo processInfo] globallyUniqueString]] retain];
+	tempDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:
+					  [[NSProcessInfo processInfo] globallyUniqueString]];
 	[[NSFileManager defaultManager] createDirectoryAtPath:tempDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
 }
 
 - (void)tearDown {
 	[[NSFileManager defaultManager] removeItemAtPath:tempDirectory error:NULL];
-	[tempDirectory release];
 	[super tearDown];
 }
 
 #pragma mark Helpers
 
 - (NoteObject *)noteWithTitle:(NSString *)title body:(NSString *)body {
-	NSAttributedString *bodyText = [[[NSAttributedString alloc] initWithString:body] autorelease];
-	return [[[NoteObject alloc] initWithNoteBody:bodyText title:title delegate:nil labels:@""] autorelease];
+	NSAttributedString *bodyText = [[NSAttributedString alloc] initWithString:body];
+	return [[NoteObject alloc] initWithNoteBody:bodyText title:title delegate:nil labels:@""];
 }
 
 - (NSMutableArray *)sampleNotes {
@@ -54,7 +53,7 @@
 }
 
 - (NotationPrefs *)encryptedPrefsWithPassphrase:(NSString *)passphrase {
-	NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setDoesEncryption:YES];
 	//low iteration count keeps the test fast; the derivation path is the same
 	[prefs setPassphraseData:[passphrase dataUsingEncoding:NSUTF8StringEncoding] inKeychain:NO withIterations:1000];
@@ -83,7 +82,7 @@
 #pragma mark Notes database
 
 - (void)testUnencryptedDatabaseRoundTrip {
-	NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	NSMutableArray *notes = [self sampleNotes];
 
 	FrozenNotation *frozen = [self reloadedFrozenNotationFromNotes:notes prefs:prefs];
@@ -150,14 +149,13 @@
 		XCTAssertTrue([writer writeNoteObject:note]);
 	XCTAssertTrue([writer synchronize]);
 	//simulate a crash: release without destroying the journal
-	[writer release];
+	writer = nil;
 
 	//a leftover journal blocks a new writer, which is how launch detects a crash
 	WALStorageController *blocked = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertNil(blocked);
-	[blocked release];
 
-	WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key] autorelease];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertNotNil(recovery);
 	NSDictionary *recovered = [recovery recoveredNotes];
 	XCTAssertEqual([recovered count], [notes count]);
@@ -174,13 +172,13 @@
 
 	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertTrue([writer writeNoteObject:note]);
-	[note setContentString:[[[NSAttributedString alloc] initWithString:@"version 2"] autorelease]];
+	[note setContentString:[[NSAttributedString alloc] initWithString:@"version 2"]];
 	[note incrementLSN];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	XCTAssertTrue([writer synchronize]);
-	[writer release];
+	writer = nil; //release the journal writer
 
-	WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key] autorelease];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
 	NSArray *recovered = [[recovery recoveredNotes] allValues];
 	XCTAssertEqual([recovered count], (NSUInteger)1);
 	XCTAssertEqualObjects([[[recovered lastObject] contentString] string], @"version 2");
@@ -196,9 +194,9 @@
 	[note incrementLSN];
 	XCTAssertTrue([writer writeRemovalForNote:note]);
 	XCTAssertTrue([writer synchronize]);
-	[writer release];
+	writer = nil; //release the journal writer
 
-	WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key] autorelease];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
 	NSArray *recovered = [[recovery recoveredNotes] allValues];
 	XCTAssertEqual([recovered count], (NSUInteger)1);
 	XCTAssertTrue([[recovered lastObject] isKindOfClass:[DeletedNoteObject class]]);
@@ -210,10 +208,10 @@
 	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:[self journalKey]];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	XCTAssertTrue([writer synchronize]);
-	[writer release];
+	writer = nil; //release the journal writer
 
 	NSData *otherKey = [[self encryptedPrefsWithPassphrase:@"someone else"] WALSessionKey];
-	WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:otherKey] autorelease];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:otherKey];
 	XCTAssertEqual([[recovery recoveredNotes] count], (NSUInteger)0);
 	[recovery destroyLogFile];
 }

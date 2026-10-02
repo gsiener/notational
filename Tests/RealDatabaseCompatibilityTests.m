@@ -106,8 +106,8 @@
 
 	NSString *journalDirectory = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_JOURNAL_DIR"];
 	if ([journalDirectory length]) {
-		WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[journalDirectory fileSystemRepresentation]
-																		 encryptionKey:[prefs WALSessionKey]] autorelease];
+		WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[journalDirectory fileSystemRepresentation]
+																		 encryptionKey:[prefs WALSessionKey]];
 		XCTAssertNotNil(recovery, @"journal could not be opened");
 		NSDictionary *recovered = [recovery recoveredNotes];
 
@@ -131,7 +131,7 @@
 	}
 	
 	//what migration to the Simplenote-backed store would import as nvalt-recovered notes
-	NVLegacyImporter *importer = [[[NVLegacyImporter alloc] initWithDatabasePath:path journalDirectory:journalDirectory] autorelease];
+	NVLegacyImporter *importer = [[NVLegacyImporter alloc] initWithDatabasePath:path journalDirectory:journalDirectory];
 	XCTAssertEqual([importer read], NVLegacyImportRead);
 	NSLog(@"[compat] migration: total=%lu synced=%lu wouldRecover=%lu journalRecords=%lu",
 		  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes],

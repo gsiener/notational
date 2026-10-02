@@ -19,11 +19,12 @@
 #import "FastListDataSource.h"
 #import "NotesTableView.h"
 #import "NoteAttributeColumn.h"
+#import <objc/message.h>
 
 @implementation FastListDataSource
 
-- (const id *)immutableObjects {
-	return (const id *)objects;
+- (const __unsafe_unretained id *)immutableObjects {
+	return (const __unsafe_unretained id *)objects;
 }
 
 - (NSUInteger)count {
@@ -67,7 +68,7 @@
 		}
 	}
 	
-    return [objectsInIndexSet autorelease];
+    return objectsInIndexSet;
 }
 
 //as long as this class is only used for temporary display, we probably do not need to uncomment the retains and releases
@@ -82,12 +83,12 @@
 			//objRelease(objects[i], @selector(release));
 	}
 	
-	count = CFArrayGetCount((CFArrayRef)array);	
+	count = CFArrayGetCount((__bridge CFArrayRef)array);	
 	if (count > oldArraySize) {
-	    objects = (id*)realloc(objects, count * sizeof(id));
+	    objects = (__unsafe_unretained id*)realloc(objects, count * sizeof(id));
 	}
 
-	CFArrayGetValues((CFArrayRef)array, CFRangeMake(0, count), (const void **)objects);
+	CFArrayGetValues((__bridge CFArrayRef)array, CFRangeMake(0, count), (const void **)(void *)objects);
 	
 	//retain new ones
 	//for (i=0; i<count; i++)
@@ -116,7 +117,7 @@
 	return (count != oldCount);
 }
 
-- (void)sortStableUsingFunction:(NSInteger (*)(id *, id *))compare {
+- (void)sortStableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare {
 	
 	mergesort((void *)objects, (size_t)count, sizeof(id), (int (*)(const void *, const void *))compare);
 }
@@ -127,7 +128,9 @@
 	//allow the tableview to override the selector destination for this object value
 	SEL colAttributeMutator = [(NotesTableView*)aTableView attributeSetterForColumn:(NoteAttributeColumn*)aTableColumn];
 	
-	[objects[rowIndex] performSelector:colAttributeMutator ? colAttributeMutator : columnAttributeMutator((NoteAttributeColumn*)aTableColumn) withObject:anObject];
+	//the selector is chosen at runtime and is always a setter returning void
+	SEL mutator = colAttributeMutator ? colAttributeMutator : columnAttributeMutator((NoteAttributeColumn*)aTableColumn);
+	((void (*)(id, SEL, id))objc_msgSend)(objects[rowIndex], mutator, anObject);
 }
 
 

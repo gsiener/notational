@@ -48,7 +48,7 @@ typedef struct _NoteFilterContext {
 //	NSString *wordCountString;
 	NSString *dateModifiedString, *dateCreatedString;
 	
-	id delegate; //the notes controller
+	__weak id delegate; //the notes controller
 	
 	BOOL didUnarchive;
 	
@@ -72,17 +72,17 @@ typedef struct _NoteFilterContext {
 }
 
 
-NSInteger compareDateModified(id *a, id *b);
-NSInteger compareDateCreated(id *a, id *b);
-NSInteger compareLabelString(id *a, id *b);
-NSInteger compareTitleString(id *a, id *b);
-NSInteger compareUniqueNoteIDBytes(id *a, id *b);
+NSInteger compareDateModified(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareDateCreated(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareLabelString(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareTitleString(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareUniqueNoteIDBytes(__unsafe_unretained id *a, __unsafe_unretained id *b);
 
 
-NSInteger compareDateModifiedReverse(id *a, id *b);
-NSInteger compareDateCreatedReverse(id *a, id *b);
-NSInteger compareLabelStringReverse(id *a, id *b);
-NSInteger compareTitleStringReverse(id *a, id *b);
+NSInteger compareDateModifiedReverse(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareDateCreatedReverse(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareLabelStringReverse(__unsafe_unretained id *a, __unsafe_unretained id *b);
+NSInteger compareTitleStringReverse(__unsafe_unretained id *a, __unsafe_unretained id *b);
 
 //syncing w/ server and from journal
 - (CFUUIDBytes *)uniqueNoteIDBytes;

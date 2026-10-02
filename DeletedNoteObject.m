@@ -22,7 +22,7 @@
 @implementation DeletedNoteObject
 
 + (id)deletedNoteWithNote:(id <SynchronizedNote>)aNote {
-	return [[[DeletedNoteObject alloc] initWithExistingObject:aNote] autorelease];
+	return [[DeletedNoteObject alloc] initWithExistingObject:aNote];
 }
 
 - (id)initWithExistingObject:(id<SynchronizedNote>)note {
@@ -32,7 +32,7 @@
 		syncServicesMD = [[note syncServicesMD] mutableCopy];
 		logSequenceNumber = [note logSequenceNumber];
 		//not serialized: for runtime lookup purposes only
-		originalNote = [note retain];
+		originalNote = note;
     
         return self;
     }
@@ -46,11 +46,11 @@
 			NSUInteger decodedByteCount;
 			const uint8_t *decodedBytes = [decoder decodeBytesForKey:VAR_STR(uniqueNoteIDBytes) returnedLength:&decodedByteCount];
 			memcpy(&uniqueNoteIDBytes, decodedBytes, MIN(decodedByteCount, sizeof(CFUUIDBytes)));
-			syncServicesMD = [[decoder decodeObjectForKey:VAR_STR(syncServicesMD)] retain];
+			syncServicesMD = [decoder decodeObjectForKey:VAR_STR(syncServicesMD)];
 			logSequenceNumber = [decoder decodeInt32ForKey:VAR_STR(logSequenceNumber)];
 		} else {
 			[decoder decodeValueOfObjCType:@encode(CFUUIDBytes) at:&uniqueNoteIDBytes];
-			syncServicesMD = [[decoder decodeObject] retain];
+			syncServicesMD = [decoder decodeObject];
 			[decoder decodeValueOfObjCType:@encode(unsigned int) at:&logSequenceNumber];
 		}
     
@@ -81,11 +81,5 @@
 }
 
 #include "SynchronizedNoteMixIns.h"
-
-- (void)dealloc {
-	[syncServicesMD release];
-	[originalNote release];
-	[super dealloc];
-}
 
 @end

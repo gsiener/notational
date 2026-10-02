@@ -44,20 +44,12 @@
 	return self;
 }
 
-- (void)dealloc {
-	
-	[labelImages release];
-	[allLabels release];
-	[filteredLabels release];
-	[super dealloc];
-}
-
 - (void)unfilterLabels {
     [filteredLabels setSet:allLabels];
     
     if ([filteredLabels count] > count) {
 		count = [filteredLabels count];
-		objects = (id*)realloc(objects, count * sizeof(id));
+		objects = (__unsafe_unretained id*)realloc(objects, count * sizeof(id));
     }
     [filteredLabels getObjects:objects];
     
@@ -82,10 +74,10 @@
         return @[];
     }
 
-    NSMutableArray *objs = [[[allLabels allObjects] mutableCopy] autorelease];
+    NSMutableArray *objs = [[allLabels allObjects] mutableCopy];
     NSMutableArray *titles = [NSMutableArray arrayWithCapacity:[allLabels count]];
 
-    [objs sortUnstableUsingFunction:(NSInteger (*)(id *, id *))compareLabel];
+    [objs sortUnstableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compareLabel];
 
     NSUInteger  titleLen, j = 0, shortestTitleLen = UINT_MAX;
     for (LabelObject *aLabelObject in objs) {
@@ -146,7 +138,7 @@
 		
 		[img unlockFocus];
 		
-		[labelImages setObject:[img autorelease] forKey:imgKey];
+		[labelImages setObject:img forKey:imgKey];
 	}
 	return img;
 }
@@ -175,7 +167,7 @@
 	[notesOfLabels unionSet:[objects[labelIndex] noteSet]];
     }
     free(labelsBuffer);
-    return [notesOfLabels autorelease];
+    return notesOfLabels;
 }
 
 

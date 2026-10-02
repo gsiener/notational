@@ -44,7 +44,7 @@
 
 @interface NSSet (Private)
 //in Foundation
-- (void)getObjects:(id *)aBuffer;
+- (void)getObjects:(__unsafe_unretained id *)aBuffer;
 @end
 
 @interface NSArray (NoteUtilities)
@@ -57,7 +57,7 @@
 
 @interface NSMutableArray (Sorting)
 
-- (void)sortUnstableUsingFunction:(NSInteger (*)(id *, id *))compare;
-- (void)sortStableUsingFunction:(NSInteger (*)(id *, id *))compare usingBuffer:(id **)buffer ofSize:(unsigned int*)bufSize;
+- (void)sortUnstableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare;
+- (void)sortStableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare usingBuffer:(__unsafe_unretained id **)buffer ofSize:(unsigned int*)bufSize;
 @end
 

@@ -226,11 +226,11 @@
 
 @implementation NSMutableArray (Sorting)
 
-- (void)sortUnstableUsingFunction:(NSInteger (*)(id *, id *))compare {
+- (void)sortUnstableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare {
 	[self sortUsingFunction:(NSInteger (*)(id, id, void *))genericSortContextLast context:compare];
 }
 
-- (void)sortStableUsingFunction:(NSInteger (*)(id *, id *))compare usingBuffer:(id **)buffer ofSize:(unsigned int*)bufSize {
+- (void)sortStableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare usingBuffer:(__unsafe_unretained id **)buffer ofSize:(unsigned int*)bufSize {
 	CFIndex count = CFArrayGetCount((CFArrayRef)self);
 	
 	ResizeArray(buffer, count, bufSize);

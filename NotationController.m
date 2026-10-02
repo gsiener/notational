@@ -73,7 +73,7 @@
 
 - (id)initWithNotesStore:(NVNotesStore *)store {
 	if ((self = [self init])) {
-		notesStore = [store retain];
+		notesStore = store;
 		
 		//per-database settings (fonts, colours, deletion confirmation) live in the store's metadata;
 		//encryption and per-file storage no longer apply
@@ -81,12 +81,12 @@
 		NSString *archived = [store metadataValueForKey:@"notationSettings"];
 		if (archived) {
 			@try {
-				prefs = [NSKeyedUnarchiver unarchiveObjectWithData:[[[NSData alloc] initWithBase64EncodedString:archived options:0] autorelease]];
+				prefs = [NSKeyedUnarchiver unarchiveObjectWithData:[[NSData alloc] initWithBase64EncodedString:archived options:0]];
 			} @catch (NSException *e) {
 				NSLog(@"could not read stored notation settings: %@", [e reason]);
 			}
 		}
-		notationPrefs = [(([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[[NotationPrefs alloc] init] autorelease]) retain];
+		notationPrefs = ([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[NotationPrefs alloc] init];
 		[notationPrefs setNotesStorageFormat:SingleDatabaseFormat];
 		[notationPrefs setDelegate:self];
 		
@@ -97,7 +97,6 @@
 			if ([record deleted]) continue;
 			NoteObject *note = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (note) [allNotes addObject:note];
-			[note release];
 		}
 		applyingRemoteChanges = NO;
 		
@@ -116,8 +115,7 @@
 	if (engine == syncEngine) return;
 	[syncEngine setDelegate:nil];
 	[syncEngine stop];
-	[syncEngine release];
-	syncEngine = [engine retain];
+	syncEngine = engine;
 	[syncEngine setDelegate:(id<NVSyncEngineDelegate>)self];
 }
 
@@ -161,7 +159,7 @@
 					[delegate performSelector:@selector(contentsUpdatedForNote:) withObject:note];
 			}
 		} else {
-			NoteObject *added = [[[NoteObject alloc] initWithNoteRecord:record delegate:self] autorelease];
+			NoteObject *added = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (added) {
 				[allNotes addObject:added];
 				listChanged = YES;
@@ -239,7 +237,6 @@
 	}
 	if (changeWritingTimer) {
 		[changeWritingTimer invalidate];
-		[changeWritingTimer release];
 		changeWritingTimer = nil;
 	}
 }
@@ -283,7 +280,6 @@
 		} while (isAPrefix && ++j<count);
 	}
 
-	[allNotesAlpha release];
 }
 
 - (void)addNewNote:(NoteObject*)note {
@@ -388,7 +384,7 @@
 	NSArray *unknownPaths = filenames; //(this is not a requirement for -notesWithFilenames:unknownFiles:)
 	
 	//NSLog(@"paths not found in DB: %@", unknownPaths);
-	NSArray *createdNotes = [[[[AlienNoteImporter alloc] initWithStoragePaths:unknownPaths] autorelease] importedNotes];
+	NSArray *createdNotes = [[[AlienNoteImporter alloc] initWithStoragePaths:unknownPaths] importedNotes];
 	if (!createdNotes) return NO;
 	
 	[self addNotes:createdNotes];
@@ -443,9 +439,9 @@
 		
 		//always synchronize absolutely no matter what 15 seconds after any change
 		if (!changeWritingTimer)
-			changeWritingTimer = [[NSTimer scheduledTimerWithTimeInterval:(immediately ? 0.0 : 15.0) target:self 
+			changeWritingTimer = [NSTimer scheduledTimerWithTimeInterval:(immediately ? 0.0 : 15.0) target:self 
 									 selector:@selector(synchronizeNoteChanges:)
-									 userInfo:nil repeats:NO] retain];
+									 userInfo:nil repeats:NO];
 		
 		//next user change always invalidates queued write from performSelector, but not queued write from timer
 		//this avoids excessive writing and any potential and unnecessary disk access while user types
@@ -508,8 +504,6 @@
 - (void)removeNote:(NoteObject*)aNoteObject {
     //reset linking labels and their notes
     
-	[aNoteObject retain];
-	
 	[aNoteObject disconnectLabels];
 	[aNoteObject abortEditingInExternalEditor];
 	
@@ -544,8 +538,6 @@
 	
 	//rebuild the prefix tree, as this note may have been a prefix of another, or vise versa
 	[self updateTitlePrefixConnections];
-    
-    [aNoteObject release];
     
     [self refilterNotes];
 }
@@ -593,8 +585,7 @@
 
 
 - (void)setUndoManager:(NSUndoManager*)anUndoManager {
-    [undoManager autorelease];
-    undoManager = [anUndoManager retain];
+    undoManager = anUndoManager;
 }
 
 - (NSUndoManager*)undoManager {
@@ -774,7 +765,7 @@
     
 	//PHASE 3: reset found pointers in case have been cleared
 	NSUInteger filteredNoteCount = [notesListDataSource count];
-	NoteObject **notesBuffer = (NoteObject **)[notesListDataSource immutableObjects];
+	__unsafe_unretained NoteObject **notesBuffer = (__unsafe_unretained NoteObject **)[notesListDataSource immutableObjects];
 	
     if (didFilterNotes) {
 		
@@ -845,7 +836,7 @@
 		NoteObject *thisNote = [allNotes objectAtIndex:i];
 		if (noteTitleHasPrefixOfUTF8String(thisNote, searchString, strLen)) {
 			[objs addObject:titleOfNote(thisNote)];
-			if (anIndex && (titleLen = CFStringGetLength((CFStringRef)titleOfNote(thisNote))) < shortestTitleLen) {
+			if (anIndex && (titleLen = CFStringGetLength((__bridge CFStringRef)titleOfNote(thisNote))) < shortestTitleLen) {
 				*anIndex = j;
 				shortestTitleLen = titleLen;
 			}
@@ -875,7 +866,7 @@
 	
 	NSUInteger i, noteCount = [noteArray count];
 	
-	id *notes = (id*)malloc(noteCount * sizeof(id));
+	__unsafe_unretained id *notes = (__unsafe_unretained id*)malloc(noteCount * sizeof(id));
 	[noteArray getObjects:notes];
 	
 	for (i=0; i<noteCount; i++) {
@@ -887,7 +878,7 @@
 	
 	free(notes);
 	
-	return [noteIndexes autorelease];
+	return noteIndexes;
 }
 
 - (NSUInteger)indexInFilteredListForNoteIdenticalTo:(NoteObject*)note {
@@ -904,8 +895,7 @@
 
 - (void)setSortColumn:(NoteAttributeColumn*)col { 
 	
-    [sortColumn release];
-	sortColumn = [col retain];
+	sortColumn = col;
 	
 	[self sortAndRedisplayNotes];
 }
@@ -918,8 +908,8 @@
 	NoteAttributeColumn *col = sortColumn;
 	if (col) {
 		BOOL reversed = [prefsController tableIsReverseSorted];
-		NSInteger (*sortFunction) (id *, id *) = (reversed ? [col reverseSortFunction] : [col sortFunction]);
-		NSInteger (*stringSortFunction) (id*, id*) = (reversed ? compareTitleStringReverse : compareTitleString);
+		NSInteger (*sortFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? [col reverseSortFunction] : [col sortFunction]);
+		NSInteger (*stringSortFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? compareTitleStringReverse : compareTitleString);
 		
 		[allNotes sortStableUsingFunction:stringSortFunction usingBuffer:&allNotesBuffer ofSize:&allNotesBufferSize];
 		if (sortFunction != stringSortFunction)
@@ -948,8 +938,8 @@
 	if (col) {
 		BOOL reversed = [prefsController tableIsReverseSorted];
 	
-		NSInteger (*sortFunction) (id*, id*) = (reversed ? [col reverseSortFunction] : [col sortFunction]);
-		NSInteger (*stringSortFunction) (id*, id*) = (reversed ? compareTitleStringReverse : compareTitleString);
+		NSInteger (*sortFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? [col reverseSortFunction] : [col sortFunction]);
+		NSInteger (*stringSortFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? compareTitleStringReverse : compareTitleString);
 
 		[allNotes sortStableUsingFunction:stringSortFunction usingBuffer:&allNotesBuffer ofSize:&allNotesBufferSize];
 		if (sortFunction != stringSortFunction)
@@ -974,8 +964,8 @@
 		
 		//regenerate previews for visible rows immediately and post a delayed message to regenerate previews for all rows
 		if (rows.length > 0) {
-			CFArrayRef visibleNotes = CFArrayCreate(NULL, (const void **)([notesListDataSource immutableObjects] + rows.location), rows.length, NULL);
-			[(NSArray*)visibleNotes makeObjectsPerformSelector:@selector(updateTablePreviewString)];
+			CFArrayRef visibleNotes = CFArrayCreate(NULL, (const void **)(void *)([notesListDataSource immutableObjects] + rows.location), rows.length, NULL);
+			[(__bridge NSArray*)visibleNotes makeObjectsPerformSelector:@selector(updateTablePreviewString)];
 			CFRelease(visibleNotes);
 		}
 		
@@ -1009,19 +999,10 @@
 
     if (allNotesBuffer)
 		free(allNotesBuffer);
+	free(currentFilterStr);
+	free(manglingString);
 	
-    [undoManager release];
-    [notesListDataSource release];
-    [labelsListController release];
-    [allNotes release];
-	[deletedNotes release];
-	[notationPrefs release];
-	[unwrittenNotes release];
 	[syncEngine setDelegate:nil];
-	[syncEngine release];
-	[notesStore release];
-    
-    [super dealloc];
 }
 
 #pragma mark nvALT stuff

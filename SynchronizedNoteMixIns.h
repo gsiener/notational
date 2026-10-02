@@ -18,7 +18,6 @@
 		dict = [[NSMutableDictionary alloc] initWithDictionary:aDict];
 		if (!syncServicesMD) syncServicesMD = [[NSMutableDictionary alloc] init];
 		[syncServicesMD setObject:dict forKey:serviceName];
-		[dict release];
 	} else {
 		[dict addEntriesFromDictionary:aDict];
 	}

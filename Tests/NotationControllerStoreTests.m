@@ -36,9 +36,9 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
 	server = [[NVFakeSimplenoteService alloc] init];
-	store = [[NVNotesStore storeAtPath:[directory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL] retain];
+	store = [NVNotesStore storeAtPath:[directory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
 	engine = [[NVSyncEngine alloc] initWithStore:store service:server];
 }
 
@@ -46,13 +46,8 @@
 	[controller closeAllResources];
 	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
 	[controller setSyncEngine:nil];
-	[controller release];
-	[engine release];
 	[store close];
-	[store release];
-	[server release];
 	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
 	[super tearDown];
 }
 
@@ -95,7 +90,7 @@
 	[self openController];
 
 	NoteObject *note = [self noteTitled:@"Groceries"];
-	[note setContentString:[[[NSAttributedString alloc] initWithString:@"eggs\nmilk"] autorelease]];
+	[note setContentString:[[NSAttributedString alloc] initWithString:@"eggs\nmilk"]];
 	[controller synchronizeNoteChanges:nil];
 	XCTAssertTrue([[store noteWithID:noteID] pending]);
 
@@ -147,8 +142,8 @@
 
 - (void)testNewNoteIsCreatedInSimplenote {
 	[self openController];
-	NSAttributedString *body = [[[NSAttributedString alloc] initWithString:@"body text"] autorelease];
-	NoteObject *note = [[[NoteObject alloc] initWithNoteBody:body title:@"Brand new" delegate:controller labels:@"inbox"] autorelease];
+	NSAttributedString *body = [[NSAttributedString alloc] initWithString:@"body text"];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:body title:@"Brand new" delegate:controller labels:@"inbox"];
 	[controller addNotes:[NSArray arrayWithObject:note]];
 	[self syncAndDeliver];
 
@@ -164,7 +159,6 @@
 	XCTAssertTrue([controller flushAllNoteChanges]);
 	[controller closeAllResources];
 	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
-	[controller release];
 	controller = nil;
 	[self openController];
 	XCTAssertFalse([[controller notationPrefs] confirmFileDeletion]);

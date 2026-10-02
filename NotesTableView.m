@@ -77,8 +77,8 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		NSString *colStrings[] = { NoteTitleColumnString, NoteLabelsColumnString, NoteDateModifiedColumnString, NoteDateCreatedColumnString };
 		SEL colMutators[] = { @selector(setTitleString:), @selector(setLabelString:), NULL, NULL };
 		id (*colReferencors[])(id, id, NSInteger) = {titleReferencor, labelColumnCellForNote, dateModifiedStringOfNote, dateCreatedStringOfNote };
-		NSInteger (*sortFunctions[])(id*, id*) = { compareTitleString, compareLabelString, compareDateModified, compareDateCreated };
-		NSInteger (*reverseSortFunctions[])(id*, id*) = { compareTitleStringReverse, compareLabelStringReverse, compareDateModifiedReverse, 
+		NSInteger (*sortFunctions[])(__unsafe_unretained id *, __unsafe_unretained id *) = { compareTitleString, compareLabelString, compareDateModified, compareDateCreated };
+		NSInteger (*reverseSortFunctions[])(__unsafe_unretained id *, __unsafe_unretained id *) = { compareTitleStringReverse, compareLabelStringReverse, compareDateModifiedReverse, 
 			compareDateCreatedReverse };
 		
 		NSUInteger i;

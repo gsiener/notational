@@ -24,8 +24,8 @@
 */
 @interface NoteAttributeColumn : NSTableColumn {
 	
-    NSInteger (*sortFunction) (id*, id*);
-    NSInteger (*reverseSortFunction) (id*, id*);
+    NSInteger (*sortFunction) (__unsafe_unretained id *, __unsafe_unretained id *);
+    NSInteger (*reverseSortFunction) (__unsafe_unretained id *, __unsafe_unretained id *);
     id (*objectAttribute) (id, id, NSInteger);
 	SEL mutateObjectSelector;
 	float absoluteMinimumWidth;
@@ -40,10 +40,10 @@ id columnAttributeForObject(NotesTableView *tv, NoteAttributeColumn *col, id obj
 
 id (*dereferencingFunction(NoteAttributeColumn *col))(id, id, NSInteger);
 - (void)setDereferencingFunction:(id (*)(id, id, NSInteger))attributeFunction;
-- (void)setSortingFunction:(NSInteger (*)(id*, id*))sortFunction;
-- (NSInteger (*)(id*, id*))sortFunction;
-- (void)setReverseSortingFunction:(NSInteger (*)(id*, id*))aFunction;
-- (NSInteger (*)(id*, id*))reverseSortFunction;
+- (void)setSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))sortFunction;
+- (NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))sortFunction;
+- (void)setReverseSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))aFunction;
+- (NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))reverseSortFunction;
 
 - (void)setResizingMaskNumber:(NSNumber*)resizingMaskNumber;
 

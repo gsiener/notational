@@ -50,15 +50,6 @@ static NSString *const LegacySeparatorKey = @"SepStr";
 	return self;
 }
 
-- (void)dealloc {
-	[databasePath release];
-	[journalDirectory release];
-	[recoveredNotes release];
-	[bodyFont release];
-	[textColor release];
-	[super dealloc];
-}
-
 static NSData *UUIDKey(id note) {
 	return [NSData dataWithBytes:[note uniqueNoteIDBytes] length:sizeof(CFUUIDBytes)];
 }
@@ -71,7 +62,7 @@ static BOOL NeedsRecovery(NoteObject *note) {
 
 - (NVNoteRecord *)recordForNote:(NoteObject *)note {
 	NSDictionary *sn = [[note syncServicesMD] objectForKey:LegacySimplenoteService];
-	NVNoteRecord *record = [[[NVNoteRecord alloc] init] autorelease];
+	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	//a new id: the recovered copy sits beside whatever Simplenote has, never on top of it
 	[record setNoteID:[NVNoteRecord newNoteID]];
 	[record setContent:[note combinedContentWithContextSeparator:[sn objectForKey:LegacySeparatorKey]]];
@@ -104,10 +95,8 @@ static BOOL NeedsRecovery(NoteObject *note) {
 	if (![frozen isKindOfClass:[FrozenNotation class]]) return NVLegacyImportUnreadable;
 
 	NotationPrefs *prefs = [frozen notationPrefs];
-	[bodyFont release];
-	bodyFont = [[prefs baseBodyFont] retain];
-	[textColor release];
-	textColor = [[prefs foregroundColor] retain];
+	bodyFont = [prefs baseBodyFont];
+	textColor = [prefs foregroundColor];
 	confirmsDeletion = [prefs confirmFileDeletion];
 	securesTextEntry = [prefs secureTextEntry];
 	if ([prefs doesEncryption]) return NVLegacyImportEncrypted;
@@ -123,8 +112,8 @@ static BOOL NeedsRecovery(NoteObject *note) {
 	}
 	if ([journalDirectory length] && [[NSFileManager defaultManager] fileExistsAtPath:
 									  [journalDirectory stringByAppendingPathComponent:@"Interim Note-Changes"]]) {
-		WALRecoveryController *recovery = [[[WALRecoveryController alloc] initWithParentFSRep:[journalDirectory fileSystemRepresentation]
-																			 encryptionKey:[prefs WALSessionKey]] autorelease];
+		WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[journalDirectory fileSystemRepresentation]
+																			 encryptionKey:[prefs WALSessionKey]];
 		for (id record in [[recovery recoveredNotes] allValues]) {
 			journalRecords++;
 			NSData *key = UUIDKey(record);

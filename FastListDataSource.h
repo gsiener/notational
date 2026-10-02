@@ -34,7 +34,7 @@
 - (void)fillArrayFromArray:(NSArray*)array;
 - (BOOL)filterArrayUsingFunction:(BOOL (*)(id, void*))present context:(void*)context;
 
-- (void)sortStableUsingFunction:(NSInteger (*)(id *, id *))compare;
+- (void)sortStableUsingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))compare;
 
 - (void)tableView:(NSTableView *)aTableView setObjectValue:(id)anObject 
    forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;

@@ -1292,7 +1292,7 @@ copyRTFType:
 		return;
 	}
 	
-	if ([aLink isKindOfClass:[NSURL class]] && ([[aLink scheme] isEqualToString:@"nvalt"] || [[aLink scheme] isEqualToString:@"notational"])) {
+	if ([aLink isKindOfClass:[NSURL class]] && ([[(NSURL *)aLink scheme] isEqualToString:@"nvalt"] || [[(NSURL *)aLink scheme] isEqualToString:@"notational"])) {
         NSUInteger flags=[currentEvent modifierFlags];
         if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagCommand))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) {
             NSString *newURLString=[[aLink lastPathComponent]stringByAddingPercentEncodingWithAllowedCharacters:NVLinkingEditorURLAllowedSet()];

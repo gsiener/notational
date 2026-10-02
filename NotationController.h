@@ -39,7 +39,7 @@
     FastListDataSource *notesListDataSource;
     LabelsListController *labelsListController;
 	GlobalPrefs *prefsController;
-	id delegate;
+	__weak id delegate;
 	
 	float titleColumnWidth;
 	NoteAttributeColumn* sortColumn;
@@ -144,8 +144,6 @@
 - (id)notesListDataSource;
 
 - (NotationPrefs*)notationPrefs;
-
-- (void)dealloc;
 
 #pragma mark nvALT stuff
 

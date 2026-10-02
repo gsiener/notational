@@ -20,23 +20,20 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
-	databasePath = [[directory stringByAppendingPathComponent:@"Notes & Settings"] retain];
-	journalDirectory = [[directory stringByAppendingPathComponent:@"Caches"] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
+	databasePath = [directory stringByAppendingPathComponent:@"Notes & Settings"];
+	journalDirectory = [directory stringByAppendingPathComponent:@"Caches"];
 	[[NSFileManager defaultManager] createDirectoryAtPath:journalDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
 }
 
 - (void)tearDown {
 	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
-	[databasePath release];
-	[journalDirectory release];
 	[super tearDown];
 }
 
 - (NoteObject *)note:(NSString *)title body:(NSString *)body labels:(NSString *)labels {
-	NSAttributedString *text = [[[NSAttributedString alloc] initWithString:body] autorelease];
-	return [[[NoteObject alloc] initWithNoteBody:text title:title delegate:nil labels:labels] autorelease];
+	NSAttributedString *text = [[NSAttributedString alloc] initWithString:body];
+	return [[NoteObject alloc] initWithNoteBody:text title:title delegate:nil labels:labels];
 }
 
 - (void)markSynced:(NoteObject *)note dirty:(BOOL)dirty {
@@ -47,12 +44,12 @@
 }
 
 - (void)writeDatabase:(NSArray *)notes prefs:(NotationPrefs *)prefs {
-	NSData *bytes = [FrozenNotation frozenDataWithExistingNotes:[[notes mutableCopy] autorelease] deletedNotes:[NSMutableSet set] prefs:prefs];
+	NSData *bytes = [FrozenNotation frozenDataWithExistingNotes:[notes mutableCopy] deletedNotes:[NSMutableSet set] prefs:prefs];
 	XCTAssertTrue([bytes writeToFile:databasePath atomically:YES]);
 }
 
 - (NVLegacyImporter *)importer {
-	return [[[NVLegacyImporter alloc] initWithDatabasePath:databasePath journalDirectory:journalDirectory] autorelease];
+	return [[NVLegacyImporter alloc] initWithDatabasePath:databasePath journalDirectory:journalDirectory];
 }
 
 - (void)testNoDatabase {
@@ -62,7 +59,7 @@
 - (void)testSyncedNotesAreNotImported {
 	NoteObject *a = [self note:@"Synced" body:@"fine" labels:@""];
 	[self markSynced:a dirty:NO];
-	[self writeDatabase:[NSArray arrayWithObject:a] prefs:[[[NotationPrefs alloc] init] autorelease]];
+	[self writeDatabase:[NSArray arrayWithObject:a] prefs:[[NotationPrefs alloc] init]];
 
 	NVLegacyImporter *importer = [self importer];
 	XCTAssertEqual([importer read], NVLegacyImportRead);
@@ -77,7 +74,7 @@
 	[self markSynced:dirty dirty:YES];
 	NoteObject *clean = [self note:@"Clean" body:@"in sync" labels:@""];
 	[self markSynced:clean dirty:NO];
-	[self writeDatabase:[NSArray arrayWithObjects:never, dirty, clean, nil] prefs:[[[NotationPrefs alloc] init] autorelease]];
+	[self writeDatabase:[NSArray arrayWithObjects:never, dirty, clean, nil] prefs:[[NotationPrefs alloc] init]];
 
 	NVLegacyImporter *importer = [self importer];
 	XCTAssertEqual([importer read], NVLegacyImportRead);
@@ -97,18 +94,18 @@
 - (void)testJournalChangesNewerThanTheDatabaseCount {
 	NoteObject *note = [self note:@"Journal" body:@"v1" labels:@""];
 	[self markSynced:note dirty:NO];
-	NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[self writeDatabase:[NSArray arrayWithObject:note] prefs:prefs];
 
 	//after the last database save, the note was edited and the edit only reached the journal
-	[note setContentString:[[[NSAttributedString alloc] initWithString:@"v2 only in the journal"] autorelease]];
+	[note setContentString:[[NSAttributedString alloc] initWithString:@"v2 only in the journal"]];
 	[note incrementLSN];
 	[self markSynced:note dirty:YES];
 	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[journalDirectory fileSystemRepresentation]
 																	  encryptionKey:[prefs WALSessionKey]];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	XCTAssertTrue([writer synchronize]);
-	[writer release];
+	writer = nil; //release the journal writer
 
 	NVLegacyImporter *importer = [self importer];
 	XCTAssertEqual([importer read], NVLegacyImportRead);
@@ -120,7 +117,7 @@
 }
 
 - (void)testEncryptedDatabaseIsReportedNotRead {
-	NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setDoesEncryption:YES];
 	[prefs setPassphraseData:[@"secret" dataUsingEncoding:NSUTF8StringEncoding] inKeychain:NO withIterations:1000];
 	[self writeDatabase:[NSArray arrayWithObject:[self note:@"Locked" body:@"x" labels:@""]] prefs:prefs];
@@ -135,7 +132,7 @@
 }
 
 - (void)testSettingsAreExtracted {
-	NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setConfirmsFileDeletion:NO];
 	[prefs setBaseBodyFont:[NSFont fontWithName:@"Menlo" size:15]];
 	[self writeDatabase:[NSArray array] prefs:prefs];
