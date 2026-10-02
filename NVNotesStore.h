@@ -48,18 +48,10 @@ extern NSString *const NVNotesStoreErrorDomain;
 
 #pragma mark Sync
 
-//Runs block with a copy of the stored record (nil if absent) on the store's queue,
-//then writes the record back if the block returns YES. Atomic with respect to all
-//other store operations.
-- (void)updateNoteWithID:(NSString *)noteID usingBlock:(BOOL (^)(NVNoteRecord *record))block;
-
 //Runs block on the store's queue inside one SQLite transaction, blocking the caller.
 //Everything the block does commits together; other store operations wait.
 - (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block;
 
-//Writes a record exactly as given (used for server-confirmed notes).
-- (void)putNote:(NVNoteRecord *)record;
-- (void)removeNoteWithID:(NSString *)noteID;
 - (void)removeAllNotes;
 
 //the account change version the replica is up to date with; nil before the first full sync

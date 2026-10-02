@@ -346,18 +346,6 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	});
 }
 
-- (void)updateNoteWithID:(NSString *)noteID usingBlock:(BOOL (^)(NVNoteRecord *record))block {
-	dispatch_sync(queue, ^{
-		NVNoteRecord *record = [self _recordWithID:noteID];
-		if (block(record) && record) [self _writeRecord:record];
-	});
-}
-
-- (void)putNote:(NVNoteRecord *)record {
-	NVNoteRecord *copy = [record copy];
-	dispatch_async(queue, ^{ [self _writeRecord:copy]; });
-}
-
 - (void)_deleteRecordWithID:(NSString *)noteID {
 	if (!db) return;
 	sqlite3_stmt *stmt = NULL;
@@ -365,11 +353,6 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	BindText(stmt, 1, noteID);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
-}
-
-- (void)removeNoteWithID:(NSString *)noteID {
-	NSString *anID = [noteID copy];
-	dispatch_async(queue, ^{ [self _deleteRecordWithID:anID]; });
 }
 
 - (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block {

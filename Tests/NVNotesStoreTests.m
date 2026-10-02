@@ -41,9 +41,16 @@
 	return [NVNoteRecord recordWithNoteID:noteID serverData:data version:version];
 }
 
+//writes server-confirmed records the way the Sync engine does, in one transaction
+- (void)put:(NSArray *)records into:(NVNotesStore *)store {
+	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		for (NVNoteRecord *record in records) [t putNote:record];
+	}];
+}
+
 - (void)testServerNoteRoundTripsAcrossReopen {
 	NVNotesStore *store = [self openStore];
-	[store putNote:[self serverRecord:@"a" content:@"Title\nbody" version:4]];
+	[self put:@[[self serverRecord:@"a" content:@"Title\nbody" version:4]] into:store];
 	[store setSyncPoint:@"cv123"];
 	[store close];
 
@@ -64,8 +71,10 @@
 	NSArray *samples = [NSArray arrayWithObjects:@"", @"no newline", @"trailing\n", @"crlf\r\nline\r\n", @"tabs\tand  spaces  ",
 						@"🗒️ emoji 👍🏽 and àéîõü", [NSString stringWithFormat:@"nul%Cinside", (unichar)0], @"\n\n\nleading", nil];
 	NSUInteger i;
+	NSMutableArray *records = [NSMutableArray array];
 	for (i = 0; i < [samples count]; i++)
-		[store putNote:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:[samples objectAtIndex:i] version:1]];
+		[records addObject:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:[samples objectAtIndex:i] version:1]];
+	[self put:records into:store];
 	[store close];
 	store = [self openStore];
 	for (i = 0; i < [samples count]; i++) {
@@ -77,7 +86,7 @@
 
 - (void)testLocalEditsArePendingAndBumpRevision {
 	NVNotesStore *store = [self openStore];
-	[store putNote:[self serverRecord:@"a" content:@"v1" version:1]];
+	[self put:@[[self serverRecord:@"a" content:@"v1" version:1]] into:store];
 
 	NVNoteRecord *edit = [store noteWithID:@"a"];
 	[edit setContent:@"edited"];
@@ -106,31 +115,24 @@
 	XCTAssertEqual([stored localRevision], (NSInteger)1);
 }
 
-- (void)testUpdateBlockIsAtomicReadModifyWrite {
+- (void)testTransactionIsAtomicReadModifyWrite {
 	NVNotesStore *store = [self openStore];
-	[store putNote:[self serverRecord:@"a" content:@"v1" version:1]];
+	[self put:@[[self serverRecord:@"a" content:@"v1" version:1]] into:store];
 
 	//hammer the same note from many threads; every increment must land
 	dispatch_apply(200, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t i) {
-		[store updateNoteWithID:@"a" usingBlock:^BOOL(NVNoteRecord *record) {
+		[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+			NVNoteRecord *record = [t noteWithID:@"a"];
 			[record setConfirmedVersion:[record confirmedVersion] + 1];
-			return YES;
+			[t putNote:record];
 		}];
 	});
 	XCTAssertEqual([[store noteWithID:@"a"] confirmedVersion], (NSInteger)201);
-
-	__block BOOL sawNil = NO;
-	[store updateNoteWithID:@"missing" usingBlock:^BOOL(NVNoteRecord *record) {
-		sawNil = (record == nil);
-		return YES;
-	}];
-	XCTAssertTrue(sawNil);
-	XCTAssertNil([store noteWithID:@"missing"]);
 }
 
 - (void)testTransactionCreatesUpdatesAndRemovesTogether {
 	NVNotesStore *store = [self openStore];
-	[store putNote:[self serverRecord:@"old" content:@"x" version:1]];
+	[self put:@[[self serverRecord:@"old" content:@"x" version:1]] into:store];
 	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
 		XCTAssertNil([t noteWithID:@"new"]);
 		NSUInteger i;
@@ -149,12 +151,15 @@
 - (void)testReadsSeeQueuedWrites {
 	NVNotesStore *store = [self openStore];
 	NSUInteger i;
-	for (i = 0; i < 500; i++)
-		[store putNote:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:@"x" version:1]];
+	//local edits are queued and return at once
+	for (i = 0; i < 500; i++) {
+		NVNoteRecord *note = [[NVNoteRecord alloc] init];
+		[note setNoteID:[NSString stringWithFormat:@"n%lu", (unsigned long)i]];
+		[note setContent:@"x"];
+		[store saveLocalEdit:note];
+	}
 	XCTAssertEqual([store noteCount], (NSUInteger)500);
-	[store removeNoteWithID:@"n0"];
-	XCTAssertNil([store noteWithID:@"n0"]);
-	XCTAssertEqual([[store allNotes] count], (NSUInteger)499);
+	XCTAssertEqual([[store allNotes] count], (NSUInteger)500);
 	[store removeAllNotes];
 	XCTAssertEqual([store noteCount], (NSUInteger)0);
 }
@@ -177,7 +182,7 @@
 	XCTAssertNotNil([store movedAsideCorruptFile]);
 	XCTAssertEqualObjects([NSData dataWithContentsOfFile:[store movedAsideCorruptFile]], garbage);
 	XCTAssertEqual([store noteCount], (NSUInteger)0);
-	[store putNote:[self serverRecord:@"a" content:@"works" version:1]];
+	[self put:@[[self serverRecord:@"a" content:@"works" version:1]] into:store];
 	XCTAssertEqualObjects([[store noteWithID:@"a"] content], @"works");
 }
 
@@ -185,8 +190,10 @@
 	NVNotesStore *store = [self openStore];
 	NSUInteger i;
 	NSString *body = [@"" stringByPaddingToLength:2000 withString:@"lorem ipsum " startingAtIndex:0];
+	NSMutableArray *records = [NSMutableArray array];
 	for (i = 0; i < 2500; i++)
-		[store putNote:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:body version:1]];
+		[records addObject:[self serverRecord:[NSString stringWithFormat:@"n%lu", (unsigned long)i] content:body version:1]];
+	[self put:records into:store];
 	[store close];
 
 	NSDate *start = [NSDate date];
