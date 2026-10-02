@@ -35,10 +35,14 @@ static NSString *const SyncPointKey = @"syncPoint";
 - (void)_deleteRecordWithID:(NSString *)noteID;
 - (NSArray *)_recordsWhere:(const char *)where;
 - (NSArray *)_recordsWithColumns:(const char *)columns where:(const char *)where;
+- (NVNoteRecord *)_syncStateWithID:(NSString *)noteID;
+- (NSArray *)_confirmedNoteIDs;
 @end
 
 @implementation NVNotesStoreTransactionImpl
 - (NVNoteRecord *)noteWithID:(NSString *)noteID { return [store _recordWithID:noteID]; }
+- (NVNoteRecord *)syncStateOfNoteWithID:(NSString *)noteID { return [store _syncStateWithID:noteID]; }
+- (NSArray *)confirmedNoteIDs { return [store _confirmedNoteIDs]; }
 - (void)putNote:(NVNoteRecord *)record { [store _writeRecord:record]; }
 - (void)removeNoteWithID:(NSString *)noteID { [store _deleteRecordWithID:noteID]; }
 - (NSArray *)allNotes { return [store _recordsWhere:NULL]; }
@@ -144,6 +148,36 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	NVNoteRecord *record = sqlite3_step(stmt) == SQLITE_ROW ? RecordFromRow(stmt) : nil;
 	sqlite3_finalize(stmt);
 	return record;
+}
+
+- (NVNoteRecord *)_syncStateWithID:(NSString *)noteID {
+	if (!db) return nil;
+	sqlite3_stmt *stmt = NULL;
+	if (sqlite3_prepare_v2(db, "SELECT confirmed_version, pending, revision FROM notes WHERE id = ?", -1, &stmt, NULL) != SQLITE_OK) return nil;
+	BindText(stmt, 1, noteID);
+	NVNoteRecord *state = nil;
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		state = [[NVNoteRecord alloc] init];
+		[state setNoteID:noteID];
+		[state setConfirmedVersion:(NSInteger)sqlite3_column_int64(stmt, 0)];
+		[state setPending:sqlite3_column_int(stmt, 1) != 0];
+		[state setLocalRevision:(NSInteger)sqlite3_column_int64(stmt, 2)];
+	}
+	sqlite3_finalize(stmt);
+	return state;
+}
+
+- (NSArray *)_confirmedNoteIDs {
+	NSMutableArray *noteIDs = [NSMutableArray array];
+	if (!db) return noteIDs;
+	sqlite3_stmt *stmt = NULL;
+	if (sqlite3_prepare_v2(db, "SELECT id FROM notes WHERE confirmed_version > 0", -1, &stmt, NULL) != SQLITE_OK) return noteIDs;
+	while (sqlite3_step(stmt) == SQLITE_ROW) {
+		NSString *noteID = ColumnText(stmt, 0);
+		if (noteID) [noteIDs addObject:noteID];
+	}
+	sqlite3_finalize(stmt);
+	return noteIDs;
 }
 
 - (BOOL)_writeRecord:(NVNoteRecord *)record {
@@ -321,6 +355,18 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	__block NSArray *records = nil;
 	dispatch_sync(queue, ^{ records = [self _recordsWhere:"pending != 0"]; });
 	return records;
+}
+
+- (NSDictionary *)syncStatesOfNotesWithIDs:(NSArray *)noteIDs {
+	NSArray *requested = [noteIDs copy];
+	NSMutableDictionary *states = [NSMutableDictionary dictionary];
+	dispatch_sync(queue, ^{
+		for (NSString *noteID in requested) {
+			NVNoteRecord *state = [self _syncStateWithID:noteID];
+			if (state) [states setObject:state forKey:noteID];
+		}
+	});
+	return states;
 }
 
 - (NVNoteRecord *)noteWithID:(NSString *)noteID {

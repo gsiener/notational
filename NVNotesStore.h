@@ -17,6 +17,10 @@
 //Operations available inside -performTransaction:. Valid only during the block.
 @protocol NVNotesStoreTransaction <NSObject>
 - (NVNoteRecord *)noteWithID:(NSString *)noteID;
+//the note's sync state alone (see -syncStatesOfNotesWithIDs:); nil if there's no such note
+- (NVNoteRecord *)syncStateOfNoteWithID:(NSString *)noteID;
+//ids of the notes the server has confirmed (confirmed version > 0)
+- (NSArray *)confirmedNoteIDs;
 - (void)putNote:(NVNoteRecord *)record;
 - (void)removeNoteWithID:(NSString *)noteID;
 - (NSArray *)allNotes;
@@ -41,6 +45,9 @@ extern NSString *const NVNotesStoreErrorDomain;
 - (NSArray *)allNotesWithoutServerData;
 - (NVNoteRecord *)noteWithID:(NSString *)noteID;
 - (NSArray *)pendingNotes;
+//Sync states of those of the notes that are in the store, by id: records holding only noteID,
+//confirmedVersion, pending and localRevision, without content, tags, dates or server data.
+- (NSDictionary *)syncStatesOfNotesWithIDs:(NSArray *)noteIDs;
 - (NSUInteger)noteCount;
 
 #pragma mark Local edits

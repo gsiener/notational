@@ -96,6 +96,93 @@
 
 @end
 
+//Passes requests through to the fake after a delay, outside its lock, so several can be in flight
+//at once; counts how many were, and whether the Notes store was held during any of them.
+@interface NVSlowSimplenoteService : NSObject <NVSimplenoteService> {
+@public
+	NVFakeSimplenoteService *server;
+	NVNotesStore *store;
+	BOOL indexWithoutData;
+	NSUInteger inFlight, maxInFlight, requestsWhileStoreHeld;
+}
+@end
+
+@implementation NVSlowSimplenoteService
+
+- (void)beginRequest {
+	@synchronized(self) {
+		inFlight++;
+		maxInFlight = MAX(maxInFlight, inFlight);
+	}
+	//can the store be used right now? a request made inside a transaction holds it
+	NVNotesStore *probed = store;
+	dispatch_semaphore_t answered = dispatch_semaphore_create(0);
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		[probed noteCount];
+		dispatch_semaphore_signal(answered);
+	});
+	if (probed && dispatch_semaphore_wait(answered, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)))) {
+		@synchronized(self) { requestsWhileStoreHeld++; }
+	}
+	[NSThread sleepForTimeInterval:0.02];
+}
+
+- (void)endRequest {
+	@synchronized(self) { inFlight--; }
+}
+
+- (NVIndexPage *)indexPageAfterMark:(NSString *)mark limit:(NSUInteger)limit includeData:(BOOL)includeData error:(NSError **)error {
+	return [server indexPageAfterMark:mark limit:limit includeData:includeData && !indexWithoutData error:error];
+}
+
+- (NSArray *)changesSince:(NSString *)changeVersion error:(NSError **)error {
+	return [server changesSince:changeVersion error:error];
+}
+
+- (NSDictionary *)noteWithID:(NSString *)noteID version:(NSInteger *)version error:(NSError **)error {
+	[self beginRequest];
+	NSDictionary *data = [server noteWithID:noteID version:version error:error];
+	[self endRequest];
+	return data;
+}
+
+- (NSDictionary *)postNoteWithID:(NSString *)noteID data:(NSDictionary *)data baseVersion:(NSInteger)baseVersion
+						 version:(NSInteger *)newVersion error:(NSError **)error {
+	[self beginRequest];
+	NSDictionary *result = [server postNoteWithID:noteID data:data baseVersion:baseVersion version:newVersion error:error];
+	[self endRequest];
+	return result;
+}
+
+@end
+
+//the fake, failing every fetch with a code, or every post of one note as too large
+@interface NVFailingSimplenoteService : NVFakeSimplenoteService
+@property (atomic, assign) NSInteger getFailureCode;
+@property (atomic, copy) NSString *tooLargeNoteID;
+@end
+
+@implementation NVFailingSimplenoteService
+@synthesize getFailureCode, tooLargeNoteID;
+
+- (NSDictionary *)noteWithID:(NSString *)noteID version:(NSInteger *)version error:(NSError **)error {
+	if ([self getFailureCode]) {
+		if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:[self getFailureCode] userInfo:nil];
+		return nil;
+	}
+	return [super noteWithID:noteID version:version error:error];
+}
+
+- (NSDictionary *)postNoteWithID:(NSString *)noteID data:(NSDictionary *)data baseVersion:(NSInteger)baseVersion
+						 version:(NSInteger *)newVersion error:(NSError **)error {
+	if ([noteID isEqualToString:[self tooLargeNoteID]]) {
+		if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:NVSimplenoteErrorTooLarge userInfo:nil];
+		return nil;
+	}
+	return [super postNoteWithID:noteID data:data baseVersion:baseVersion version:newVersion error:error];
+}
+@end
+
 @interface NVSyncEngineTests : XCTestCase {
 	NSString *directory;
 	NVFakeSimplenoteService *server;
@@ -374,6 +461,119 @@
 	XCTAssertTrue([mac sync]);
 	XCTAssertEqualObjects([self serverContentOf:noteID], @"keep me, I was editing this");
 	XCTAssertFalse([[mac note:noteID] pending]);
+}
+
+#pragma mark Several notes at once
+
+- (NVTestMachine *)machine:(NSString *)name throughSlowService:(NVSlowSimplenoteService **)outSlow {
+	NVTestMachine *mac = [self machine:name];
+	NVSlowSimplenoteService *slow = [[NVSlowSimplenoteService alloc] init];
+	slow->server = server;
+	slow->store = mac->store;
+	[mac->engine setDelegate:nil];
+	mac->engine = [[NVSyncEngine alloc] initWithStore:mac->store service:slow];
+	[mac->engine setDelegate:mac];
+	[mac->engine setDelegateQueue:mac->callbacks];
+	[mac->engine setIndexPageSize:3];
+	*outSlow = slow;
+	return mac;
+}
+
+- (void)testChangedNotesAreFetchedAFewAtATimeWithTheStoreFree {
+	[server setChangesOmitData:YES];
+	NSMutableArray *ids = [NSMutableArray array];
+	NSUInteger i;
+	for (i = 0; i < 12; i++) [ids addObject:[server remoteCreateNoteWithContent:[NSString stringWithFormat:@"note %lu", (unsigned long)i] tags:nil]];
+	NVSlowSimplenoteService *slow = nil;
+	NVTestMachine *mac = [self machine:@"mac" throughSlowService:&slow];
+	XCTAssertTrue([mac sync]);
+	[mac->updates removeAllObjects];
+	for (i = 0; i < 12; i++) [server remoteSetContent:[NSString stringWithFormat:@"note %lu, edited", (unsigned long)i] ofNote:[ids objectAtIndex:i]];
+	//edited here too: the pull leaves it for the push, which the server merges
+	[mac editNote:[ids objectAtIndex:5] content:@"note 5\nmine"];
+
+	XCTAssertTrue([mac sync]);
+	for (i = 0; i < 12; i++) {
+		NSString *expected = [NSString stringWithFormat:i == 5 ? @"note %lu, edited\nmine" : @"note %lu, edited", (unsigned long)i];
+		XCTAssertEqualObjects([[mac note:[ids objectAtIndex:i]] content], expected);
+		XCTAssertEqualObjects([self serverContentOf:[ids objectAtIndex:i]], expected);
+	}
+	//one fetch per changed note but ours
+	XCTAssertEqual([[server requestCounts] countForObject:@"get"], (NSUInteger)11);
+	XCTAssertGreaterThan(slow->maxInFlight, (NSUInteger)1);
+	XCTAssertLessThanOrEqual(slow->maxInFlight, (NSUInteger)4);
+	XCTAssertEqual(slow->requestsWhileStoreHeld, (NSUInteger)0);
+}
+
+- (void)testAFailedFetchStopsThePullAndLeavesTheSyncPoint {
+	server = [[NVFailingSimplenoteService alloc] init];
+	[server setChangesOmitData:YES];
+	NSString *a = [server remoteCreateNoteWithContent:@"a" tags:nil];
+	NSString *b = [server remoteCreateNoteWithContent:@"b" tags:nil];
+	NVTestMachine *mac = [self machine:@"mac"];
+	XCTAssertTrue([mac sync]);
+	NSString *syncPoint = [mac->store syncPoint];
+	[server remoteSetContent:@"a2" ofNote:a];
+	[server remoteSetContent:@"b2" ofNote:b];
+	[(NVFailingSimplenoteService *)server setGetFailureCode:NVSimplenoteErrorServer];
+	NSError *error = nil;
+	XCTAssertFalse([mac->engine syncOnceReturningError:&error]);
+	XCTAssertEqual([error code], (NSInteger)NVSimplenoteErrorServer);
+	XCTAssertEqualObjects([mac->store syncPoint], syncPoint);
+	XCTAssertEqualObjects([[mac note:a] content], @"a");
+	[(NVFailingSimplenoteService *)server setGetFailureCode:0];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqualObjects([[mac note:a] content], @"a2");
+	XCTAssertEqualObjects([[mac note:b] content], @"b2");
+}
+
+- (void)testAFullSyncFetchesNotesTheIndexListsWithoutData {
+	NSMutableArray *ids = [NSMutableArray array];
+	NSUInteger i;
+	for (i = 0; i < 7; i++) [ids addObject:[server remoteCreateNoteWithContent:[NSString stringWithFormat:@"note %lu", (unsigned long)i] tags:nil]];
+	NVSlowSimplenoteService *slow = nil;
+	NVTestMachine *mac = [self machine:@"mac" throughSlowService:&slow];
+	slow->indexWithoutData = YES;
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqual([mac->store noteCount], (NSUInteger)7);
+	for (i = 0; i < 7; i++)
+		XCTAssertEqualObjects([[mac note:[ids objectAtIndex:i]] content], ([NSString stringWithFormat:@"note %lu", (unsigned long)i]));
+	XCTAssertEqual([[server requestCounts] countForObject:@"get"], (NSUInteger)7);
+	XCTAssertGreaterThan(slow->maxInFlight, (NSUInteger)1);
+	XCTAssertEqual(slow->requestsWhileStoreHeld, (NSUInteger)0);
+}
+
+- (void)testPendingNotesArePushedAFewAtATime {
+	NVSlowSimplenoteService *slow = nil;
+	NVTestMachine *mac = [self machine:@"mac" throughSlowService:&slow];
+	XCTAssertTrue([mac sync]);
+	NSMutableArray *created = [NSMutableArray array];
+	NSUInteger i;
+	for (i = 0; i < 10; i++) [created addObject:[mac createNoteWithContent:[NSString stringWithFormat:@"local %lu", (unsigned long)i]]];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqual([[mac->store pendingNotes] count], (NSUInteger)0);
+	for (NVNoteRecord *record in created) {
+		XCTAssertEqualObjects([self serverContentOf:[record noteID]], [record content]);
+		XCTAssertEqual([[mac note:[record noteID]] confirmedVersion], (NSInteger)1);
+	}
+	XCTAssertGreaterThan(slow->maxInFlight, (NSUInteger)1);
+	XCTAssertLessThanOrEqual(slow->maxInFlight, (NSUInteger)4);
+	XCTAssertEqual(slow->requestsWhileStoreHeld, (NSUInteger)0);
+}
+
+- (void)testATooLargeNoteDoesNotStopTheOthers {
+	server = [[NVFailingSimplenoteService alloc] init];
+	NVTestMachine *mac = [self machine:@"mac"];
+	XCTAssertTrue([mac sync]);
+	NVNoteRecord *a = [mac createNoteWithContent:@"a"];
+	NVNoteRecord *big = [mac createNoteWithContent:@"too big"];
+	NVNoteRecord *c = [mac createNoteWithContent:@"c"];
+	[(NVFailingSimplenoteService *)server setTooLargeNoteID:[big noteID]];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqualObjects([[mac->store pendingNotes] valueForKey:@"noteID"], [NSArray arrayWithObject:[big noteID]]);
+	XCTAssertEqualObjects([self serverContentOf:[a noteID]], @"a");
+	XCTAssertEqualObjects([self serverContentOf:[c noteID]], @"c");
+	XCTAssertNil([server currentDataOfNote:[big noteID]]);
 }
 
 #pragma mark Re-index and failures

@@ -188,6 +188,37 @@
 	XCTAssertEqualObjects([[full serverData] objectForKey:@"futureField"], @"x");
 }
 
+- (void)testSyncStatesCarryOnlyTheBookkeeping {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"a" version:3], [self serverRecord:@"b" content:@"b" version:7]] into:store];
+	NVNoteRecord *edit = [store noteWithID:@"b"];
+	[edit setContent:@"b edited"];
+	[store saveLocalEdit:edit];
+	NVNoteRecord *local = [[NVNoteRecord alloc] init];
+	[local setNoteID:@"c"];
+	[store saveLocalEdit:local];
+
+	NSDictionary *states = [store syncStatesOfNotesWithIDs:@[@"a", @"b", @"c", @"missing"]];
+	XCTAssertEqual([states count], (NSUInteger)3);
+	NVNoteRecord *a = [states objectForKey:@"a"], *b = [states objectForKey:@"b"], *c = [states objectForKey:@"c"];
+	XCTAssertEqualObjects([a noteID], @"a");
+	XCTAssertEqual([a confirmedVersion], (NSInteger)3);
+	XCTAssertFalse([a pending]);
+	XCTAssertEqual([b confirmedVersion], (NSInteger)7);
+	XCTAssertTrue([b pending]);
+	XCTAssertEqual([b localRevision], (NSInteger)1);
+	XCTAssertEqual([c confirmedVersion], (NSInteger)0);
+	XCTAssertTrue([c pending]);
+	XCTAssertEqualObjects([a content], @"");
+	XCTAssertEqualObjects([a serverData], [NSDictionary dictionary]);
+
+	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		XCTAssertEqual([[t syncStateOfNoteWithID:@"b"] confirmedVersion], (NSInteger)7);
+		XCTAssertNil([t syncStateOfNoteWithID:@"missing"]);
+		XCTAssertEqualObjects([NSSet setWithArray:[t confirmedNoteIDs]], ([NSSet setWithObjects:@"a", @"b", nil]));
+	}];
+}
+
 - (void)testMetadata {
 	NVNotesStore *store = [self openStore];
 	XCTAssertNil([store syncPoint]);

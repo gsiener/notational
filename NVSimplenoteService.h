@@ -6,7 +6,8 @@
 //  Two adapters: NVSimplenoteHTTPService (production, Simperium HTTP API) and
 //  NVFakeSimplenoteService (tests, in memory).
 //
-//  Calls are synchronous; the Sync engine makes them from its own serial queue.
+//  Calls are synchronous. The Sync engine makes them from its own queue, and fetches or pushes
+//  several notes at once from other threads, so an adapter must allow concurrent calls.
 //  See docs/adr/0001-simplenote-backed-storage.md.
 //
 
