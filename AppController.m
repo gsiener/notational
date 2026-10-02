@@ -46,6 +46,7 @@
 #import "ETClipView.h"
 #import "ETScrollView.h"
 #import "ETNoteScrollView.h"
+#import "WordCountToken.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "nvaDevConfig.h"
 
@@ -149,7 +150,7 @@ BOOL splitViewAwoke;
         
         //	dividerShader = [[LinearDividerShader alloc] initWithStartColor:[NSColor colorWithCalibratedWhite:0.988 alpha:1.0]
         //														   endColor:[NSColor colorWithCalibratedWhite:0.875 alpha:1.0]];
-        dividerShader = [[[LinearDividerShader alloc] initWithBaseColors:self] retain];
+        dividerShader = [[LinearDividerShader alloc] initWithBaseColors:self];
         isCreatingANote = isFilteringFromTyping = typedStringIsCached = NO;
         typedString = @"";
         self.isEditing=NO;
@@ -159,7 +160,7 @@ BOOL splitViewAwoke;
 
 - (void)awakeFromNib {
     splitViewIsChangingLayout=NO;
-    theFieldEditor = [[[NSTextView alloc]initWithFrame:[window frame]] retain];
+    theFieldEditor = [[NSTextView alloc]initWithFrame:[window frame]];
 	[theFieldEditor setFieldEditor:YES];
     // [theFieldEditor setDelegate:self];
     [self updateFieldAttributes];
@@ -168,11 +169,11 @@ BOOL splitViewAwoke;
 	[window setDelegate:self];
     
     //ElasticThreads>> set up the rbsplitview programatically to remove dependency on IBPlugin
-    splitView = [[[RBSplitView alloc] initWithFrame:[mainView frame] andSubviews:2] retain];
+    splitView = [[RBSplitView alloc] initWithFrame:[mainView frame] andSubviews:2];
     [splitView setAutosaveName:@"centralSplitView" recursively:NO];
     [splitView setDelegate:self];
 //here
-    NSImage *image = [[[NSImage alloc] initWithSize:NSMakeSize(1.0,1.0)] autorelease];
+    NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(1.0,1.0)];
     [image lockFocus];
     [[NSColor clearColor] set];
     NSRectFill(NSMakeRect(0.0,0.0,1.0,1.0));
@@ -186,13 +187,13 @@ BOOL splitViewAwoke;
     [mainView addSubview:splitView];
     //[mainView setNextResponder:field];//<<--
     [splitView setNextKeyView:notesTableView];
-    notesSubview = [[splitView subviewAtPosition:0] retain];
+    notesSubview = [splitView subviewAtPosition:0];
 	[notesSubview setMinDimension: 80.0
                   andMaxDimension:600.0];
     [notesSubview setCanCollapse:YES];
     [notesSubview setAutoresizesSubviews:YES];
     [notesSubview addSubview:notesScrollView];
-    splitSubview = [[splitView subviewAtPosition:1] retain];
+    splitSubview = [splitView subviewAtPosition:1];
     [notesScrollView setFrame:[notesSubview frame]];
     [notesScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [splitSubview setMinDimension:1 andMaxDimension:0];
@@ -200,14 +201,11 @@ BOOL splitViewAwoke;
     [splitSubview setAutoresizesSubviews:YES];
     [splitSubview addSubview:textScrollView];
     
-    id docView = [[textScrollView documentView] retain];
     ETClipView *newClipView = [[ETClipView alloc] initWithFrame:[[textScrollView contentView] frame]];
     [newClipView setDrawsBackground:NO];
     //    [newClipView setBackgroundColor:[self backgrndColor]];
     [textScrollView setContentView:(ETClipView *)newClipView];
-    [newClipView release];
     [textScrollView setDocumentView:textView];
-    [docView release];
     
     [textScrollView setFrame:[splitSubview frame]];
     //    [textScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
@@ -364,7 +362,6 @@ void outletObjectAwoke(id sender) {
 
         NSMenuItem *theMenuItem = [fsMenuItem copy];
         [statBarMenu insertItem:theMenuItem atIndex:14];
-        [theMenuItem release];
     }
     [wordCounter setHidden:[prefsController showWordCount]];
 
@@ -400,7 +397,7 @@ void outletObjectAwoke(id sender) {
 	NSError *storeError = nil;
 	NotationController *newNotation = [self openSimplenoteBackedNotationReturningError:&storeError];
 	if (!newNotation) {
-		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:NSLocalizedString(@"Notational couldn't open its notes", nil)];
 		[alert setInformativeText:[storeError localizedDescription] ? [storeError localizedDescription] : @""];
 		[alert addButtonWithTitle:NSLocalizedString(@"Quit", nil)];
@@ -418,7 +415,7 @@ void outletObjectAwoke(id sender) {
 	
 //	[newNotation release];
 	if (pathsToOpenOnLaunch) {
-		[notationController openFiles:[pathsToOpenOnLaunch autorelease]];//autorelease
+		[notationController openFiles:pathsToOpenOnLaunch];//autorelease
 		pathsToOpenOnLaunch = nil;
 	}
 	
@@ -459,7 +456,7 @@ terminateApp:
 		if (![self interpretNVURL:fullURL])
 			NSBeep();
 	} else {
-		URLToInterpretOnLaunch = [[fullURL path]retain];
+		URLToInterpretOnLaunch = [fullURL path];
 	}
 }
 
@@ -471,7 +468,7 @@ terminateApp:
 		}
 		
 		NotationController *oldNotation = notationController;
-		notationController = [newNotation retain];
+		notationController = newNotation;
 		
 		if (oldNotation) {
 			[notesTableView abortEditing];
@@ -508,7 +505,6 @@ terminateApp:
 		
 		[field selectText:nil];
 		
-		[oldNotation autorelease];
     }
 }
 
@@ -652,7 +648,7 @@ terminateApp:
 		[notesSubview collapse];
 	}else {
         [splitView setVertical:horiz];
-//        if (!verticalDividerImg && [splitView divider]) verticalDividerImg = [[splitView divider] retain];
+//        if (!verticalDividerImg && [splitView divider]) verticalDividerImg = [splitView divider];
 //        [splitView setDivider: verticalDividerImg];
 		[splitView setDividerThickness:kSplitViewExpandedDividerThickness];
         if (![self dualFieldIsVisible]) {
@@ -720,8 +716,6 @@ terminateApp:
 //        NSIndexSet *indexes=(NSIndexSet *)contextInfo;
         [notationController removeNotesAtIndexes:contextInfo];
     }
-    [contextInfo release];
-    [alert release];
 }
 
 //
@@ -754,7 +748,7 @@ terminateApp:
 	if ([indexes count] > 0) {
 		
 		if ([prefsController confirmNoteDeletion]) {
-//			[deleteObj retain];
+//			deleteObj;
 			NSString *warningSingleFormatString = NSLocalizedString(@"Delete the note titled quotemark%@quotemark?", @"alert title when asked to delete a note");
 			NSString *warningMultipleFormatString = NSLocalizedString(@"Delete %d notes?", @"alert title when asked to delete multiple notes");
 			NSString *warnString = currentNote ? [NSString stringWithFormat:warningSingleFormatString, titleOfNote(currentNote)] :
@@ -771,7 +765,6 @@ terminateApp:
                     [notationController removeNotesAtIndexes:indexes];
                 }
             }];
-            [alert release];
             
 		} else {
             //just delete the notes outright
@@ -850,7 +843,7 @@ terminateApp:
         NSPoint cPoint=NSMakePoint(NSMidX(linkingFrame), NSMaxY(linkingFrame));
         
         //Multiple Notes selected, use ElasticThreads' multitagging implementation
-        tagEditor = [[[TagEditingManager alloc] initWithDelegate:self commonTags:[self commonLabelsForNotesAtIndexes:selIndexes] atPoint:cPoint] retain];
+        tagEditor = [[TagEditingManager alloc] initWithDelegate:self commonTags:[self commonLabelsForNotesAtIndexes:selIndexes] atPoint:cPoint];
         
 		//Multiple Notes selected, use ElasticThreads' multitagging implementation
 	} else if ([selIndexes count] == 1) {
@@ -866,7 +859,6 @@ terminateApp:
 - (IBAction)importNotes:(id)sender {
 	AlienNoteImporter *importer = [[AlienNoteImporter alloc] init];
 	[importer importNotesFromDialogAroundWindow:window receptionDelegate:self];
-	[importer autorelease];
 }
 
 - (void)settingChangedForSelectorString:(NSString*)selectorString {
@@ -1188,8 +1180,7 @@ terminateApp:
 	[currentNote updateContentCacheCStringIfNecessary];
 	
 	
-	[currentNote release];
-	currentNote = [aNote retain];
+	currentNote = aNote;
 }
 
 - (NoteObject*)selectedNoteObject {
@@ -1214,7 +1205,6 @@ terminateApp:
 
 - (void)cacheTypedStringIfNecessary:(NSString*)aString {
 	if (!typedStringIsCached) {
-		[typedString release];
 		typedString = [(aString ? aString : [field stringValue]) copy];
 		typedStringIsCached = YES;
 	}
@@ -1462,7 +1452,6 @@ terminateApp:
 				//savedSelectedNotes needs to be empty after de-selecting all notes,
 				//to ensure that any delayed list-resorting does not re-select savedSelectedNotes
                 
-				[savedSelectedNotes release];
 				savedSelectedNotes = nil;
 			}
 		}
@@ -1671,9 +1660,9 @@ terminateApp:
 		
 		isCreatingANote = YES;
 		NSString *title = [[field stringValue] length] ? [field stringValue] : NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
-		NSAttributedString *attributedContents = [textView textStorage] ? [textView textStorage] : [[[NSAttributedString alloc] initWithString:@"" attributes:
-																									 [prefsController noteBodyAttributes]] autorelease];
-		NoteObject *note = [[[NoteObject alloc] initWithNoteBody:attributedContents title:title delegate:notationController labels:nil] autorelease];
+		NSAttributedString *attributedContents = [textView textStorage] ? [textView textStorage] : [[NSAttributedString alloc] initWithString:@"" attributes:
+																									 [prefsController noteBodyAttributes]];
+		NoteObject *note = [[NoteObject alloc] initWithNoteBody:attributedContents title:title delegate:notationController labels:nil];
 		[notationController addNewNote:note];
 		
 		isCreatingANote = NO;
@@ -1860,8 +1849,7 @@ terminateApp:
 			if ([notesTableView numberOfSelectedRows] > 0) {
 				NSIndexSet *indexSet = [notesTableView selectedRowIndexes];
                 
-				[savedSelectedNotes release];
-				savedSelectedNotes = [[someNotation notesAtIndexes:indexSet] retain];
+				savedSelectedNotes = [someNotation notesAtIndexes:indexSet];
 			}
 			
 			listUpdateViewCtx = [notesTableView viewingLocation];
@@ -1880,7 +1868,6 @@ terminateApp:
 		if (!isFilteringFromTyping) {
 			if (savedSelectedNotes) {
 				NSIndexSet *indexes = [someNotation indexesOfNotes:savedSelectedNotes];
-				[savedSelectedNotes release];
 				savedSelectedNotes = nil;
 				
 				[notesTableView selectRowIndexes:indexes byExtendingSelection:NO];
@@ -1973,24 +1960,9 @@ terminateApp:
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter]removeObserver:self];
-    [fsMenuItem release];
-    [mainView release];
-    [dualFieldView release];
-    [wordCounter release];
-    [splitView release];
-    [splitSubview release];
-    [notesSubview release];
-    [notesScrollView release];
-    [textScrollView release];
-    [previewController release];
-	[windowUndoManager release];
-	[dividerShader release];
 	[[NSStatusBar systemStatusBar] removeStatusItem:statusItem];
-    [statusItem release];
-    [statBarMenu release];
 	[self postTextUpdate];
 	
-	[super dealloc];
 }
 
 - (IBAction)showPreferencesWindow:(id)sender {
@@ -2197,7 +2169,7 @@ terminateApp:
 - (NSArray *)commonLabelsForNotesAtIndexes:(NSIndexSet *)selDexes{
 	NSArray *retArray =[NSArray array];
     
-	NSEnumerator *noteEnum = [[[notationController notesAtIndexes:selDexes] objectEnumerator] retain];
+	NSEnumerator *noteEnum = [[notationController notesAtIndexes:selDexes] objectEnumerator];
 	NoteObject *aNote;
 	aNote = [noteEnum nextObject];
 	NSString *existTags = labelsOfNote(aNote);
@@ -2229,9 +2201,7 @@ terminateApp:
 		if (commonTags&&([commonTags count]>0)) {
 			retArray = [NSArray arrayWithArray:[commonTags allObjects]];
 		}
-        [commonTags release];
 	}
-	[noteEnum release];
 	return retArray;
 }
 
@@ -2300,15 +2270,12 @@ terminateApp:
         }
         
 		[notesTableView scrollRowToVisible:[[notesTableView selectedRowIndexes] firstIndex]];
-        [finalTags release];
     }
 	[tagEditor closeTP:self];
 }
 
 - (void)releaseTagEditor:(NSNotification *)note{
-    if (tagEditor) {
-        [tagEditor release];
-    }
+    // the tag editor stays referenced by tagEditor (as before, it was never cleared); ARC frees it when the next one replaces it
 }
 
 #pragma mark splitview/toolbar management
@@ -2317,7 +2284,6 @@ terminateApp:
 	NSView *dualSV = [field superview];
 	[dualFieldView removeFromSuperviewWithoutNeedingDisplay];
 	[dualSV removeFromSuperviewWithoutNeedingDisplay];
-	[dualFieldView release];
 	dualFieldItem = [[NSToolbarItem alloc] initWithItemIdentifier:@"DualField"];
 	[dualFieldItem setView:dualSV];
 	[dualFieldItem setMaxSize:NSMakeSize(FLT_MAX, [dualSV frame].size.height)];
@@ -2356,7 +2322,7 @@ terminateApp:
 	NSRect dfViewFrame = [splitView frame];
 	dfViewFrame.size.height = kDualFieldHeight;
 	dfViewFrame.origin.y = [splitView frame].size.height;
-	dualFieldView = [[[DFView alloc] initWithFrame:dfViewFrame] retain];
+	dualFieldView = [[DFView alloc] initWithFrame:dfViewFrame];
     [dualFieldView setAutoresizingMask:NSViewWidthSizable|NSViewMinYMargin];
     [dualFieldView setAutoresizesSubviews:YES];
     [mainView addSubview:dualFieldView positioned:NSWindowAbove relativeTo:splitView];
@@ -2372,8 +2338,6 @@ terminateApp:
     [field setNextKeyView:textView];
     [textView setNextKeyView:field];
     [self setDualFieldIsVisible:[self dualFieldIsVisible]];
-    [toolbar release];
-    [titleBarButton release];
 }
 
 - (void)setDualFieldIsVisible:(BOOL)isVis{
@@ -2679,9 +2643,8 @@ terminateApp:
         backgrndColor = [self backgrndColor];
     }
     if (fieldAttributes) {
-        [fieldAttributes release];
     }
-    fieldAttributes = [[NSDictionary dictionaryWithObject:[textView _selectionColorForForegroundColor:foregrndColor backgroundColor:backgrndColor] forKey:NSBackgroundColorAttributeName] retain];
+    fieldAttributes = [NSDictionary dictionaryWithObject:[textView _selectionColorForForegroundColor:foregrndColor backgroundColor:backgrndColor] forKey:NSBackgroundColorAttributeName];
     
     if (self.isEditing) {
         [theFieldEditor setDrawsBackground:NO];
@@ -2702,16 +2665,14 @@ terminateApp:
     
     - (void)setBackgrndColor:(NSColor *)inColor{
         if (backgrndColor) {
-            [backgrndColor release];
         }
-        backgrndColor = [inColor retain];
+        backgrndColor = inColor;
     }
     
     - (void)setForegrndColor:(NSColor *)inColor{
         if (foregrndColor) {
-            [foregrndColor release];
         }
-        foregrndColor = [inColor retain];
+        foregrndColor = inColor;
     }
     
     - (NSColor *)backgrndColor{
@@ -2782,19 +2743,19 @@ terminateApp:
             NSUInteger flags=[theEvent modifierFlags];
             if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagOption))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) { //only option key down
                 ModFlagger = 1;
-                modifierTimer = [[NSTimer scheduledTimerWithTimeInterval:1.2
+                modifierTimer = [NSTimer scheduledTimerWithTimeInterval:1.2
                                                                   target:self
                                                                 selector:@selector(updateModifier:)
                                                                 userInfo:@"option"
-                                                                 repeats:NO] retain];
+                                                                 repeats:NO];
                 return;
             }else if (((flags&NSEventModifierFlagDeviceIndependentFlagsMask)==(flags&NSEventModifierFlagControl))&&((flags&NSEventModifierFlagDeviceIndependentFlagsMask)>0)) { //only ctrl key is down
                 ModFlagger = 2;
-                modifierTimer = [[NSTimer scheduledTimerWithTimeInterval:1.2
+                modifierTimer = [NSTimer scheduledTimerWithTimeInterval:1.2
                                                                   target:self
                                                                 selector:@selector(updateModifier:)
                                                                 userInfo:@"control"
-                                                                 repeats:NO] retain];
+                                                                 repeats:NO];
                 return;
             }
         }
@@ -2826,7 +2787,6 @@ terminateApp:
                     [modifierTimer invalidate];
                 }
                 modifierTimer = nil;
-                [modifierTimer release];
             }
             if (popped==1) {
                 [self performSelector:@selector(popWordCount:) withObject:nil afterDelay:0.1];
@@ -3077,7 +3037,6 @@ terminateApp:
     statusItem.button.target=self;
     statusItem.button.action=@selector(statusItemAction:);
     [statusItem.button sendActionOn:NSEventMaskLeftMouseUp|NSEventMaskRightMouseUp];
-    [statusItem retain];
 
 }
 
@@ -3138,7 +3097,6 @@ terminateApp:
         {
             returnArray=[NSArray arrayWithArray:referenceLinks];
         }
-        [referenceLinks release];
         return returnArray;
     }
     

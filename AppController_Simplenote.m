@@ -51,15 +51,15 @@ static BOOL loadingToken = NO;
 - (void)migrateLegacyDatabaseIntoStore:(NVNotesStore *)store {
 	if ([store metadataValueForKey:LegacyImportKey]) return;
 
-	NVLegacyImporter *importer = [[[NVLegacyImporter alloc] initWithDatabasePath:[NVLegacyImporter defaultDatabasePath]
-																journalDirectory:[NVLegacyImporter defaultJournalDirectory]] autorelease];
+	NVLegacyImporter *importer = [[NVLegacyImporter alloc] initWithDatabasePath:[NVLegacyImporter defaultDatabasePath]
+																journalDirectory:[NVLegacyImporter defaultJournalDirectory]];
 	NVLegacyImportResult result = [importer read];
 	switch (result) {
 		case NVLegacyImportRead: {
 			for (NVNoteRecord *record in [importer recoveredNotes]) [store saveLocalEdit:record];
 			//carry over the settings that still apply
 			if (![store metadataValueForKey:NotationSettingsKey]) {
-				NotationPrefs *prefs = [[[NotationPrefs alloc] init] autorelease];
+				NotationPrefs *prefs = [[NotationPrefs alloc] init];
 				if ([importer bodyFont]) [prefs setBaseBodyFont:[importer bodyFont]];
 				if ([importer textColor]) [prefs setForegroundTextColor:[importer textColor]];
 				[prefs setConfirmsFileDeletion:[importer confirmsDeletion]];
@@ -69,7 +69,7 @@ static BOOL loadingToken = NO;
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",
 				  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes], (unsigned long)[[importer recoveredNotes] count]);
 			if ([[importer recoveredNotes] count]) {
-				NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+				NSAlert *alert = [[NSAlert alloc] init];
 				[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Recovered %lu notes that never reached Simplenote", nil),
 									   (unsigned long)[[importer recoveredNotes] count]]];
 				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"They're tagged “%@” so you can review them. Your old nvALT files were left untouched.", nil), NVRecoveredNoteTag]];
@@ -78,7 +78,7 @@ static BOOL loadingToken = NO;
 			break;
 		}
 		case NVLegacyImportEncrypted: {
-			NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+			NSAlert *alert = [[NSAlert alloc] init];
 			[alert setMessageText:NSLocalizedString(@"Your old nvALT notes database is encrypted", nil)];
 			[alert setInformativeText:NSLocalizedString(@"This version keeps notes in Simplenote and can't open encrypted databases. If some notes never synced, open them in the previous nvALT and export them. Your old files were left untouched.", nil)];
 			[alert runModal];
@@ -109,8 +109,8 @@ static BOOL loadingToken = NO;
 
 - (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store token:(NSString *)token {
 	if (![store metadataValueForKey:AccountKey] || !token) return nil;
-	NVSimplenoteHTTPService *service = [[[NVSimplenoteHTTPService alloc] initWithToken:token clientID:[self clientIDForStore:store]] autorelease];
-	return [[[NVSyncEngine alloc] initWithStore:store service:service] autorelease];
+	NVSimplenoteHTTPService *service = [[NVSimplenoteHTTPService alloc] initWithToken:token clientID:[self clientIDForStore:store]];
+	return [[NVSyncEngine alloc] initWithStore:store service:service];
 }
 
 - (NotationController *)openSimplenoteBackedNotationReturningError:(NSError **)error {
@@ -121,14 +121,14 @@ static BOOL loadingToken = NO;
 
 	[self migrateLegacyDatabaseIntoStore:store];
 
-	NotationController *notation = [[[NotationController alloc] initWithNotesStore:store] autorelease];
+	NotationController *notation = [[NotationController alloc] initWithNotesStore:store];
 	NSString *account = [store metadataValueForKey:AccountKey];
 	if (account) {
 		//off the main thread: the keychain may put up an access prompt (e.g. after a rebuild changes the
 		//signature), and the window should still appear while it waits (#27)
 		loadingToken = YES;
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-			NSString *token = [[[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account] retain];
+			NSString *token = [[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account];
 			dispatch_async(dispatch_get_main_queue(), ^{
 				loadingToken = NO;
 				//still the same store and account, and nobody signed in meanwhile
@@ -137,7 +137,6 @@ static BOOL loadingToken = NO;
 					[notation setSyncEngine:engine];
 					[engine start];
 				}
-				[token release];
 				[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:nil
 																  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:[self simplenoteSyncStatus]] forKey:@"status"]];
 			});
@@ -151,8 +150,8 @@ static BOOL loadingToken = NO;
 - (void)installSimplenoteMenuItem {
 	NSMenu *appMenu = [[[NSApp mainMenu] itemAtIndex:0] submenu];
 	if ([appMenu indexOfItemWithTarget:self andAction:@selector(showSimplenoteAccount:)] >= 0) return;
-	NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Simplenote Account…", nil)
-												   action:@selector(showSimplenoteAccount:) keyEquivalent:@""] autorelease];
+	NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Simplenote Account…", nil)
+												   action:@selector(showSimplenoteAccount:) keyEquivalent:@""];
 	[item setTarget:self];
 	//right after Preferences… (⌘,)
 	NSInteger prefsIndex = -1, i;
@@ -216,7 +215,7 @@ static BOOL loadingToken = NO;
 	NSString *previous = [store metadataValueForKey:AccountKey];
 	if (!previous || [previous caseInsensitiveCompare:email] == NSOrderedSame || ![store noteCount]) return YES;
 
-	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+	NSAlert *alert = [[NSAlert alloc] init];
 	[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Switch from %@ to %@?", nil), previous, email]];
 	[alert setInformativeText:NSLocalizedString(@"Notes from the other account will be removed from this Mac. They stay in Simplenote. Notes not yet synced will be lost.", nil)];
 	[alert addButtonWithTitle:NSLocalizedString(@"Switch Accounts", nil)];
@@ -236,7 +235,7 @@ static BOOL loadingToken = NO;
 		[store removeAllNotes];
 		[store setSyncPoint:nil];
 		[store setMetadataValue:email forKey:AccountKey];
-		[self setNotationController:[[[NotationController alloc] initWithNotesStore:store] autorelease]];
+		[self setNotationController:[[NotationController alloc] initWithNotesStore:store]];
 	} else {
 		[store setMetadataValue:email forKey:AccountKey];
 	}

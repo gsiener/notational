@@ -315,7 +315,7 @@
 		}
 		
 		
-		string = (NSMutableString*)CFStringCreateMutableWithExternalCharactersNoCopy(NULL, (UniChar *)u, (CFIndex)len/2, (CFIndex)len/2, kCFAllocatorDefault);
+		string = (__bridge_transfer NSMutableString*)CFStringCreateMutableWithExternalCharactersNoCopy(NULL, (UniChar *)u, (CFIndex)len/2, (CFIndex)len/2, kCFAllocatorDefault);
 		if (string)
 			*encoding = NSUnicodeStringEncoding;
 		return string;

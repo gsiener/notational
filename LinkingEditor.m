@@ -422,9 +422,10 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 	if ([type isEqualToString:NSPasteboardTypeRTF] || [type isEqualToString:NVPTFPboardType] || [type isEqualToString:NSPasteboardTypeHTML]) {
 		//strip formatting if RTF and stick it into a new pboard
 		
-		NSMutableAttributedString *newString = [[[NSMutableAttributedString alloc] performSelector:[type isEqualToString:NSPasteboardTypeHTML] ? 
-												 @selector(initWithHTML:documentAttributes:) : @selector(initWithRTF:documentAttributes:) 
-																						withObject:[pboard dataForType:type] withObject:nil] autorelease];
+		NSData *pboardData = [pboard dataForType:type];
+		NSMutableAttributedString *newString = [type isEqualToString:NSPasteboardTypeHTML] ? 
+												[[NSMutableAttributedString alloc] initWithHTML:pboardData documentAttributes:nil] :
+												[[NSMutableAttributedString alloc] initWithRTF:pboardData documentAttributes:nil];
 		if ([newString length]) {
 			if (![type isEqualToString:NVPTFPboardType]) {
 							//remove the link attribute, because it will be re-added after we paste, and restyleText would preserve it otherwise
@@ -480,7 +481,6 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 
 		NSData *rtfData = [newString RTFFromRange:NSMakeRange(0, [newString length]) documentAttributes:[NSDictionary dictionary]];;
 		if (rtfData) [pboard setData:rtfData forType:type];
-		[newString release];
 		return YES;
 	}
 	
@@ -601,7 +601,6 @@ copyRTFType:
 				
 				[attributes applyStyleInverted:hasTrait trait:trait forFont:font alternateAttributeName:attrName alternateAttributeValue:value];
 				[text setAttributes:attributes range:effectiveRange];
-				[attributes release];
 				
 				limitRange = NSMakeRange( NSMaxRange( effectiveRange ), NSMaxRange( limitRange ) - NSMaxRange( effectiveRange ) );
 			}
@@ -617,7 +616,6 @@ copyRTFType:
 		[attributes applyStyleInverted:hasTrait trait:trait forFont:font alternateAttributeName:attrName alternateAttributeValue:value];
 		[self setTypingAttributes:attributes];
 		
-		[attributes release];
 	}
 	
 }
@@ -650,12 +648,12 @@ copyRTFType:
 	
 	CFStringRef quoteStr = CFSTR("\"");
 	NSRange firstRange = NSMakeRange(NSNotFound,0);
-	CFRange quoteRange = CFStringFind((CFStringRef)typedString, quoteStr, 0);
-	CFArrayRef terms = CFStringCreateArrayBySeparatingStrings(NULL, (CFStringRef)typedString, 
+	CFRange quoteRange = CFStringFind((__bridge CFStringRef)typedString, quoteStr, 0);
+	CFArrayRef terms = CFStringCreateArrayBySeparatingStrings(NULL, (__bridge CFStringRef)typedString, 
 															  quoteRange.location == kCFNotFound ? CFSTR(" ") : quoteStr);
 	if (terms) {
 		CFIndex termIndex, rangeIndex;
-		CFStringRef bodyString = (CFStringRef)[self string];
+		CFStringRef bodyString = (__bridge CFStringRef)[self string];
 		NSDictionary *highlightDict = [prefsController searchTermHighlightAttributes];
 		
 		for (termIndex = 0; termIndex < CFArrayGetCount(terms); termIndex++) {
@@ -993,7 +991,6 @@ copyRTFType:
 		}
 		
 		[self insertText:spacesString replacementRange:NSMakeRange(NSNotFound, 0)];
-		[spacesString release];
 	} else {
 		[self insertText:@"\t" replacementRange:NSMakeRange(NSNotFound, 0)];
 	}
@@ -1057,15 +1054,14 @@ copyRTFType:
 						if ([self shouldChangeTextInRange:leadingSpaceRange replacementString:replaceString]) {
 							NSDictionary *newTypingAttributes;
 							if (charRange.location < [string length]) {
-								newTypingAttributes = [[text attributesAtIndex:charRange.location effectiveRange:NULL] retain];
+								newTypingAttributes = [text attributesAtIndex:charRange.location effectiveRange:NULL];
 							} else {
-								newTypingAttributes = [[text attributesAtIndex:(charRange.location - 1) effectiveRange:NULL] retain];
+								newTypingAttributes = [text attributesAtIndex:(charRange.location - 1) effectiveRange:NULL];
 							}
 							
 							[text replaceCharactersInRange:leadingSpaceRange withString:replaceString];
 							
 							[self setTypingAttributes:newTypingAttributes];
-							[newTypingAttributes release];
 							
 							[self didChangeText];
 						}
@@ -1133,15 +1129,8 @@ copyRTFType:
 		//set method implementation directly; whiteIBeamCursorIMP and defaultIBeamCursorIMP always point to the same respective blocks of code
 		Method defaultIBeamCursorMethod = class_getClassMethod(class, @selector(IBeamCursor));
 		method_setImplementation(defaultIBeamCursorMethod, shouldBeWhite ? whiteIBeamCursorIMP : defaultIBeamCursorIMP);
-		
-		NSCursor *currentCursor = [NSCursor currentCursor];
-		NSCursor *whiteCursor = (NSCursor *)whiteIBeamCursorIMP;
-		NSCursor *defaultCursor = (NSCursor *)defaultIBeamCursorIMP;
-      
-		//if the current cursor is set incorrectly, and and it's not a non-IBeam cursor, then update it (IBeamCursor points to our recently-set implementation)
-		if ((currentCursor == whiteCursor) != shouldBeWhite && (currentCursor == whiteCursor || currentCursor == defaultCursor)) {
-			[[NSCursor IBeamCursor] set];
-		}
+		//(this used to compare the current cursor with the two IMPs cast to cursors, which never matched;
+		//under ARC holding an IMP in an object variable retains it and crashes, so that check is gone)
 	}
 }
 
@@ -1451,7 +1440,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 	
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5
     TISInputSourceRef inputRef = TISCopyCurrentKeyboardInputSource();
-    NSArray* inputLangs = [[(NSArray*)TISGetInputSourceProperty(inputRef, kTISPropertyInputSourceLanguages) retain] autorelease];
+    NSArray* inputLangs = (__bridge NSArray*)TISGetInputSourceProperty(inputRef, kTISPropertyInputSourceLanguages);
     CFRelease(inputRef);
     NSString *preferredLang = [[NSLocale autoupdatingCurrentLocale] objectForKey:NSLocaleLanguageCode];
     currentKeyboardInputIsSystemLanguage = nil != preferredLang && [inputLangs containsObject:preferredLang];
@@ -1485,7 +1474,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 								alternateAttributeValue:[NSNumber numberWithFloat:OBLIQUENESS_FOR_ITALIC]];	
 			}
 			[self setTypingAttributes:newTypingAttributes];
-            [newTypingAttributes release];
 		}
 	}
 }
@@ -1571,7 +1559,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
                     
                     listNumber=[theNum integerValue];
                     if (listNumber==-1||((listNumber==0)&&(![theNum isEqualToString:@"0"]))) {
-                        [previousLineScanner release];
                         return;
                     }
                     listNumber++;
@@ -1614,61 +1601,60 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
             }
         }
         
-		[previousLineScanner release];
 	}
 }
 
 - (void)setupFontMenu {
-	NSMenu *theMenu = [[[NSMenu alloc] initWithTitle:@"NVFontMenu"] autorelease];
+	NSMenu *theMenu = [[NSMenu alloc] initWithTitle:@"NVFontMenu"];
 	NSMenuItem *theMenuItem;
 	if(IsLeopardOrLater){
         
-        theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Enter Full Screen",@"menu item title for entering fullscreen") action:@selector(switchFullScreen:) keyEquivalent:@""] autorelease];
+        theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Enter Full Screen",@"menu item title for entering fullscreen") action:@selector(switchFullScreen:) keyEquivalent:@""];
         [theMenuItem setTarget:[NSApp delegate]];
         [theMenu addItem:theMenuItem];         
 	}
-    theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert Link",@"insert link menu item title") action:@selector(insertLink:) keyEquivalent:@""] autorelease];
+    theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert Link",@"insert link menu item title") action:@selector(insertLink:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
-    theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Use Selection for Find",@"find using selection menu item title") action:@selector(performFindPanelAction:) keyEquivalent:@""] autorelease];
+    theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Use Selection for Find",@"find using selection menu item title") action:@selector(performFindPanelAction:) keyEquivalent:@""];
     [theMenuItem setTag:7];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
     [theMenu addItem:[NSMenuItem separatorItem]];
     
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Cut",@"cut menu item title") action:@selector(cut:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Cut",@"cut menu item title") action:@selector(cut:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Copy",@"copy menu item title") action:@selector(copy:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Copy",@"copy menu item title") action:@selector(copy:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Paste",@"paste menu item title") action:@selector(paste:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Paste",@"paste menu item title") action:@selector(paste:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
 	[theMenu addItem:[NSMenuItem separatorItem]];
 	
-	NSMenu *formatMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Format", nil)] autorelease];
+	NSMenu *formatMenu = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Format", nil)];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Plain Text Style",nil) 
-											  action:@selector(defaultStyle:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Plain Text Style",nil) 
+											  action:@selector(defaultStyle:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[formatMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bold",nil) action:@selector(bold:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Bold",nil) action:@selector(bold:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[formatMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Italic",nil) action:@selector(italic:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Italic",nil) action:@selector(italic:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[formatMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Strikethrough",nil) action:@selector(strikethroughNV:) keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Strikethrough",nil) action:@selector(strikethroughNV:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[formatMenu addItem:theMenuItem];
 	
-	theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Format",@"format submenu title") action:NULL keyEquivalent:@""] autorelease];
+	theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Format",@"format submenu title") action:NULL keyEquivalent:@""];
 	[theMenu addItem:theMenuItem];
 	[theMenu setSubmenu:formatMenu forItem:theMenuItem];
 	
@@ -1692,7 +1678,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
 //			[editMenu addItem:theMenuItem];
 //			[theMenuItem release];
 //		}
-		theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert Link",@"insert link menu item title") action:@selector(insertLink:) keyEquivalent:@"L"] autorelease];
+		theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert Link",@"insert link menu item title") action:@selector(insertLink:) keyEquivalent:@"L"];
         [theMenuItem setTarget:self];
         [editMenu addItem:theMenuItem];
         
@@ -1704,7 +1690,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         [theMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
         [theMenuItem setTarget:nil]; // First Responder being the current Link Editor
         [editMenu addItem:theMenuItem];
-        [theMenuItem release];
 #endif
         
 //        theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Insert New Password", "insert new password command in the edit menu")
@@ -1726,7 +1711,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     @try {
     NSPasteboard *pb = [NSPasteboard generalPasteboard];
     #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
-    NSPasteboardItem *pbitem = [[[NSPasteboardItem alloc] init] autorelease];
+    NSPasteboardItem *pbitem = [[NSPasteboardItem alloc] init];
     [pbitem setData:[password dataUsingEncoding:NSUTF8StringEncoding] forType:@"public.plain-text"];
     [pb writeObjects:[NSArray arrayWithObject:pbitem]];
     #else
@@ -1762,21 +1747,8 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
     [self unbind:@"smartInsertDeleteEnabled"];
 	[[NSNotificationCenter defaultCenter] removeObserver: self];
     if (IsLionOrLater) {
-        [textFinder release];
     }
-    [activeParagraphPastCursor release];
-    [activeParagraph release];
-    [activeParagraphBeforeCursor release];
-    [beforeString release];
-    [afterString release];
-    [controlField release];
-    [notesTableView release];
-    [prefsController release];
-    [lastImportedFindString release];
-    [stringDuringFind release];
-    [noteDuringFind release];
     
-	[super dealloc];
 }
 
 
@@ -2367,7 +2339,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         [self setUsesFindBar:YES];
         
         [self setIncrementalSearchingEnabled:YES];
-        textFinder=[[[NSTextFinder alloc]init]retain];
+        textFinder=[[NSTextFinder alloc]init];
         [textFinder setClient:self];
         
         [textFinder setIncrementalSearchingEnabled:YES];
@@ -2452,8 +2424,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
                  NSPasteboard *pasteboard = [NSPasteboard pasteboardWithName:NSPasteboardNameFind];
                  [pasteboard declareTypes:[NSArray arrayWithObject:pbType] owner:nil];
                  [pasteboard setString:typedString forType:pbType];
-                 [lastImportedFindString release];
-                 lastImportedFindString = [typedString retain];
+                 lastImportedFindString = typedString;
              }
          }       
     
@@ -2501,7 +2472,6 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         }else{
             NSLog(@"find action was invalid");
         }
-        [newSender release];
         return;
     }
 #endif
@@ -2597,7 +2567,7 @@ static long (*GetGetScriptManagerVariablePointer())(short) {
         }else{
             BOOL didIt=NO;
             NSArray *paragraphArray=[actPar componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-            NSMutableCharacterSet *trimSet=[[[NSCharacterSet characterSetWithCharactersInString:insertString] mutableCopy] autorelease];            
+            NSMutableCharacterSet *trimSet=[[NSCharacterSet characterSetWithCharactersInString:insertString] mutableCopy];            
             [trimSet formUnionWithCharacterSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
             NSString *replaceString;
             NSUInteger xtraLength=0;

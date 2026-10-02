@@ -46,7 +46,8 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 
 
 - (void)exportPanelDidEnd:(NSSavePanel *)sheet returnCode:(NSInteger)returnCode contextInfo:(void  *)contextInfo {
-	NSArray *notes = (NSArray *)contextInfo;
+	// contextInfo is not retained: the notes are kept alive by the completion handler that calls this method
+	NSArray *notes = (__bridge NSArray *)contextInfo;
 	if (returnCode == NSModalResponseOK && notes) {
 		//write notes in chosen format
 		unsigned int i;
@@ -70,9 +71,8 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		}
 		
 		FSRef directoryRef;
-		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)directory, kCFURLPOSIXPathStyle, true);
-		[(id)url autorelease];
-		if (!url || !CFURLGetFSRef(url, &directoryRef)) {
+		NSURL *url = (__bridge_transfer NSURL *)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (__bridge CFStringRef)directory, kCFURLPOSIXPathStyle, true);
+		if (!url || !CFURLGetFSRef((__bridge CFURLRef)url, &directoryRef)) {
 			NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The notes couldn't be exported because the directory quotemark%@quotemark couldn't be accessed.",nil),
 				[directory stringByAbbreviatingWithTildeInPath]], @"", NSLocalizedString(@"OK",nil), nil, nil);
 			return;
@@ -113,7 +113,6 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		
 		FNNotify(&directoryRef, kFNDirectoryModifiedMessage, kFNNoImplicitAllSubscription);
 		
-		[notes release];
 	}
 }
 
@@ -140,10 +139,10 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		
         savePanel.nameFieldStringValue=filename;
         [savePanel beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
-            [self exportPanelDidEnd:savePanel returnCode:result contextInfo:[notes retain]];
+            [self exportPanelDidEnd:savePanel returnCode:result contextInfo:(__bridge void *)notes];
         }];
         
-//		[savePanel beginSheetForDirectory:nil file:filename modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:[notes retain]];
+//		[savePanel beginSheetForDirectory:nil file:filename modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:notes];
 		
 	} else if ([notes count] > 1) {
 		NSOpenPanel *openPanel = [NSOpenPanel openPanel];
@@ -155,9 +154,9 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 		[openPanel setTitle:NSLocalizedString(@"Export Notes", @"title of export notes dialog")];
 		[openPanel setMessage:[NSString stringWithFormat:NSLocalizedString(@"Choose a folder into which %lu notes will be exported",nil), (unsigned long)[notes count]]];
         
-//		[openPanel beginSheetForDirectory:nil file:nil types:nil modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:[notes retain]];
+//		[openPanel beginSheetForDirectory:nil file:nil types:nil modalForWindow:window modalDelegate:self didEndSelector:@selector(exportPanelDidEnd:returnCode:contextInfo:) contextInfo:notes];
         [openPanel beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
-            [self exportPanelDidEnd:openPanel returnCode:result contextInfo:[notes retain]];
+            [self exportPanelDidEnd:openPanel returnCode:result contextInfo:(__bridge void *)notes];
         }];
         
 	} else {

@@ -28,7 +28,7 @@
 	
 	id userData;
 	
-	id delegate;
+	id delegate; // strong on purpose: keeps the requester alive while the download runs
 	
 	BOOL isIndicating, isImporting;
 	

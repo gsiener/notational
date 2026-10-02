@@ -140,11 +140,10 @@
 	// always set data as binary plist.
 	NSData* dataToSendNS = nil;
 	if (plistObject) {
-		NSString *errorString = nil;
-		dataToSendNS = [NSPropertyListSerialization dataFromPropertyList:plistObject format:NSPropertyListBinaryFormat_v1_0 errorDescription:&errorString];
-		if (errorString) {
-			NSLog(@"%@: error serializing labels: %@", NSStringFromSelector(_cmd), errorString);
-			[errorString autorelease];
+		NSError *serializeError = nil;
+		dataToSendNS = [NSPropertyListSerialization dataWithPropertyList:plistObject format:NSPropertyListBinaryFormat_v1_0 options:0 error:&serializeError];
+		if (!dataToSendNS) {
+			NSLog(@"%@: error serializing labels: %@", NSStringFromSelector(_cmd), serializeError);
 			return NO;
 		}
 	}
@@ -176,7 +175,7 @@
 		NSLog(@"%@: encoding %lu is invalid!", NSStringFromSelector(_cmd), encoding);
 		return NO;
 	}
-	NSString *textEncStr = [(NSString *)CFStringConvertEncodingToIANACharSetName(cfStringEncoding) stringByAppendingFormat:@";%@", 
+	NSString *textEncStr = [(__bridge NSString *)CFStringConvertEncodingToIANACharSetName(cfStringEncoding) stringByAppendingFormat:@";%@", 
 							[[NSNumber numberWithInt:cfStringEncoding] stringValue]];
 	const char *textEncUTF8Str = [textEncStr UTF8String];
 	
@@ -188,7 +187,7 @@
 }
 
 - (NSStringEncoding)textEncodingAttributeOfFSPath:(const char*)path {
-	if (!path) goto errorReturn;
+	if (!path) return 0;
 	
 	//We could query the size of the attribute, but that would require a second system call
 	//and the value for this key shouldn't need to be anywhere near this large, anyway.
@@ -196,27 +195,26 @@
 	char xattrValueBytes[128] = { 0 };
 	if (getxattr(path, "com.apple.TextEncoding", xattrValueBytes, sizeof(xattrValueBytes), 0, 0) < 0) {
 		if (ENOATTR != errno) NSLog(@"couldn't get text encoding attribute of %s: %d", path, errno);
-		goto errorReturn;
+		return 0;
 	}
 	NSString *encodingStr = [NSString stringWithUTF8String:xattrValueBytes];
 	if (!encodingStr) {
 		NSLog(@"couldn't make attribute data from %s into a string", path);
-		goto errorReturn;
+		return 0;
 	}
 	NSArray *segs = [encodingStr componentsSeparatedByString:@";"];
 	
 	if ([segs count] >= 2 && [(NSString*)[segs objectAtIndex:1] length] > 1) {
 		return CFStringConvertEncodingToNSStringEncoding([[segs objectAtIndex:1] intValue]);
 	} else if ([(NSString*)[segs objectAtIndex:0] length] > 1) {
-		CFStringEncoding theCFEncoding = CFStringConvertIANACharSetNameToEncoding((CFStringRef)[segs objectAtIndex:0]);
+		CFStringEncoding theCFEncoding = CFStringConvertIANACharSetNameToEncoding((__bridge CFStringRef)[segs objectAtIndex:0]);
 		if (theCFEncoding == kCFStringEncodingInvalidId) {
 			NSLog(@"couldn't convert IANA charset");
-			goto errorReturn;
+			return 0;
 		}
 		return CFStringConvertEncodingToNSStringEncoding(theCFEncoding);
 	}
 	
-errorReturn:
 	return 0;
 }
 
@@ -228,7 +226,7 @@ errorReturn:
     if (aliasData && PtrToHand([aliasData bytes], (Handle*)&inAlias, [aliasData length]) == noErr && 
 		FSCopyAliasInfo(inAlias, NULL, NULL, &path, &whichInfo, &info) == noErr) {
 		//this method doesn't always seem to work	
-		return [(NSString*)path autorelease];
+		return (__bridge_transfer NSString*)path;
     }
     
     return nil;

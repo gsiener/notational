@@ -47,6 +47,7 @@
 			NSLog(@"Failed to load Preferences.nib");
 			return;
 		}
+		[window setReleasedWhenClosed:NO]; // the controller owns the window
 	}
 	[checkSpellingButton setState:[prefsController checkSpellingAsYouType]];
 	if (![window isVisible])
@@ -83,7 +84,7 @@
 }
 
 - (void)keyComboPanelEnded:(PTKeyComboPanel*)panel {
-	PTKeyCombo *oldKeyCombo = [[prefsController appActivationKeyCombo] retain];
+	PTKeyCombo *oldKeyCombo = [prefsController appActivationKeyCombo];
 	[prefsController setAppActivationKeyCombo:[panel keyCombo] sender:self];
 	
 	[appShortcutField setStringValue:[[prefsController appActivationKeyCombo] description]];
@@ -93,7 +94,6 @@
 		NSLog(@"reverting to old (hopefully working key combo");
 	}
 	
-	[oldKeyCombo release];
 }
 
 - (IBAction)changeBodyFont:(id)sender {
@@ -147,7 +147,6 @@
 	[[bodyTextFontField cell] setAttributedStringValue:attributedString];
     [bodyTextFontField updateCell:[bodyTextFontField cell]];
 	
-	[attributedString autorelease];
 	
 }
 
@@ -279,11 +278,10 @@
     [item setPaletteLabel:localizedTitle];
     [item setLabel:localizedTitle];
     //[item setToolTip:@"General settings: appearance and behavior"];
-    [item setImage:[[[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"tiff"]] autorelease]];
+    [item setImage:[[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"tiff"]]];
     [item setTarget:self];
     [item setAction:@selector(switchViews:)];
     [items setObject:item forKey:name];
-    [item release];
 }
 
 - (void)awakeFromNib {
@@ -364,7 +362,6 @@
     [window setToolbar:toolbar];
 	//the Settings style: compact, so all four panes fit in the narrow window instead of overflowing behind »
 	[window setToolbarStyle:NSWindowToolbarStylePreference];
-    [toolbar release];  //setToolbar retains the toolbar we pass, so release the one we used.
 	
 	[window setShowsToolbarButton:NO];
     [useETScrollbarsOnLionButton setState:[prefsController useETScrollbarsOnLion]];
@@ -431,7 +428,6 @@
 	NSRect windowContentFrame = ScaleRectWithFactor([[window contentView] frame], userSpaceScaleFactor);
     NSView *tempView = [[NSView alloc] initWithFrame:[[window contentView] frame]];
     [window setContentView:tempView];
-    [tempView release];
     
     NSRect newFrame = [window frame];
 	NSRect viewFrameForWindow = ScaleRectWithFactor([prefsView frame], userSpaceScaleFactor);

@@ -26,7 +26,7 @@
     IBOutlet NSButton *nextButton;
     IBOutlet NSButton *previousButton;
     IBOutlet NSPanel *window;
-	id delegate;
+	__weak id delegate;
 	BOOL lastFindWasSuccessful, findStringChangedSinceLastPasteboardUpdate;
 	NSString *findString;
 }

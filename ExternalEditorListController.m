@@ -37,20 +37,18 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 
 - (id)initWithBundleID:(NSString*)aBundleIdentifier resolvedURL:(NSURL*)aURL {
 	if (self=[self init]) {
-		bundleIdentifier = [aBundleIdentifier retain];
-		resolvedURL = [aURL retain];
+		bundleIdentifier = aBundleIdentifier;
+		resolvedURL = aURL;
 		
 		NSAssert(resolvedURL || bundleIdentifier, @"the bundle identifier and URL cannot both be nil");
 		if (!bundleIdentifier) {
 			if (!(bundleIdentifier = [[[NSBundle bundleWithPath:[aURL path]] bundleIdentifier] copy])) {
 				NSLog(@"initWithBundleID:resolvedURL: URL does not seem to point to a valid bundle");
-                [self dealloc];
 				return nil;
 			}
 		}
         return self;
 	}
-    [self dealloc];
 	return nil;
 }
 
@@ -61,7 +59,7 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 
 - (NSImage*)iconImage {
 	if (!iconImg) {
-		iconImg = [[NSImage smallIconForFileURL:[self resolvedURL]] retain];
+		iconImg = [NSImage smallIconForFileURL:[self resolvedURL]];
 	}
 	return iconImg;
 }
@@ -69,7 +67,7 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 - (NSString*)displayName {
 	if (!displayName) {
 		NSString *path = [[self resolvedURL] path];
-		if (path) displayName = [[[NSFileManager defaultManager] displayNameAtPath:path] retain];
+		if (path) displayName = [[NSFileManager defaultManager] displayNameAtPath:path];
 	}
 	return displayName;
 }
@@ -77,7 +75,7 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 - (NSURL*)resolvedURL {
 	if (!resolvedURL && !installCheckFailed) {
 		
-		resolvedURL = [bundleIdentifier ? [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier] : nil retain];
+		resolvedURL = bundleIdentifier ? [[NSWorkspace sharedWorkspace] URLForApplicationWithBundleIdentifier:bundleIdentifier] : nil;
 		
 		if (!resolvedURL) {
 			installCheckFailed = YES;
@@ -113,15 +111,6 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 }
 
 
-- (void)dealloc {
-	[bundleIdentifier release];
-	[displayName release];
-	[resolvedURL release];
-	[iconImg release];
-	[super dealloc];
-}
-
-
 @end
 
 @interface NSMenu (ExternalEditorListMenu)
@@ -130,20 +119,13 @@ NSString *ExternalEditorsChangedNotification = @"ExternalEditorsChanged";
 
 @implementation ExternalEditorListController
 
-static ExternalEditorListController* sharedInstance = nil;
-
-+ (ExternalEditorListController*)sharedInstance {	
-	if (sharedInstance == nil)
++ (ExternalEditorListController*)sharedInstance {
+	static ExternalEditorListController *sharedInstance = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
 		sharedInstance = [[ExternalEditorListController alloc] initWithUserDefaults];
+	});
     return sharedInstance;
-}
-
-+ (id)allocWithZone:(NSZone *)zone {
-	if (sharedInstance == nil) {
-		sharedInstance = [super allocWithZone:zone];
-		return sharedInstance;  // assignment and return on first allocation
-	}
-    return nil; // on subsequent allocation attempts return nil
 }
 
 - (id)initWithUserDefaults {
@@ -174,7 +156,6 @@ static ExternalEditorListController* sharedInstance = nil;
 	for (i=0; i<[userIdentifiers count]; i++) {
 		ExternalEditor *ed = [[ExternalEditor alloc] initWithBundleID:[userIdentifiers objectAtIndex:i] resolvedURL:nil];
 		[userEditorList addObject:ed];
-		[ed release];
 	}
 	
 	//initialize the default editor if one has not already been set or if the identifier was somehow lost from the list
@@ -196,7 +177,6 @@ static ExternalEditorListController* sharedInstance = nil;
 			if ([ed isInstalled]) {
 				[_installedODBEditors addObject:ed];
 			}
-			[ed release];
 		}
 		[_installedODBEditors sortUsingSelector:@selector(compareDisplayName:)];
 	}
@@ -228,13 +208,13 @@ static ExternalEditorListController* sharedInstance = nil;
     [openPanel setAllowedContentTypes:@[UTTypeApplicationBundle]];
     
     if ([openPanel runModal] == NSModalResponseOK) {
-		if (![[openPanel URL]path]) goto errorReturn;
 		NSURL *appURL = [openPanel URL];
-       
-		if (!appURL) goto errorReturn;
-		
-		ExternalEditor *ed = [[ExternalEditor alloc] initWithBundleID:nil resolvedURL:appURL];
-		if (!ed) goto errorReturn;
+		ExternalEditor *ed = [appURL path] ? [[ExternalEditor alloc] initWithBundleID:nil resolvedURL:appURL] : nil;
+		if (!ed) {
+			NSBeep();
+			NSLog(@"Unable to add external editor");
+			return;
+		}
 
 		//check against lists of all known editors, installed or not
 		if (![self editorIsMember:ed]) {
@@ -243,12 +223,7 @@ static ExternalEditorListController* sharedInstance = nil;
 		}
 		
 		[self setDefaultEditor:ed];
-        [ed release];
     }
-	return;
-errorReturn:
-	NSBeep();
-	NSLog(@"Unable to add external editor");
 }
 
 - (void)resetUserEditors:(id)sender {
@@ -285,7 +260,7 @@ errorReturn:
 	NSMenu *aMenu = [[NSMenu alloc] initWithTitle:@"External Editors Menu"];
 	[aMenu setAutoenablesItems:NO];
 	[aMenu setDelegate:self];
-	[editorPrefsMenus addObject:[aMenu autorelease]];
+	[editorPrefsMenus addObject:aMenu];
 	[self _updateMenu:aMenu];
 	return aMenu;
 }
@@ -295,7 +270,7 @@ errorReturn:
 	NSMenu *aMenu = [[NSMenu alloc] initWithTitle:@"Edit Note Menu"];
 	[aMenu setAutoenablesItems:YES];
 	[aMenu setDelegate:self];
-	[editNotesMenus addObject:[aMenu autorelease]];
+	[editNotesMenus addObject:aMenu];
 	[self _updateMenu:aMenu];
 	return aMenu;
 }
@@ -329,8 +304,8 @@ errorReturn:
 		
 		//change action SEL based on whether this is coming from Notes menu or preferences window
 		NSMenuItem *theMenuItem = isPrefsMenu ? 
-			[[[NSMenuItem alloc] initWithTitle:[ed displayName] action:@selector(setDefaultEditor:) keyEquivalent:@""] autorelease] : 
-			[[[NSMenuItem alloc] initWithTitle:[ed displayName] action:@selector(editNoteExternally:) keyEquivalent:@""] autorelease];
+			[[NSMenuItem alloc] initWithTitle:[ed displayName] action:@selector(setDefaultEditor:) keyEquivalent:@""] : 
+			[[NSMenuItem alloc] initWithTitle:[ed displayName] action:@selector(editNoteExternally:) keyEquivalent:@""];
 			
 		if (!isPrefsMenu && [[self defaultExternalEditor] isEqual:ed]) {
 			[theMenuItem setKeyEquivalent:@"E"];
@@ -351,7 +326,7 @@ errorReturn:
 
 	if (!didAddItem) {
 		//disabled placeholder menu item; will probably not be displayed, but would be necessary for preferences list
-		NSMenuItem *theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"(None)", @"description for no key combination") action:NULL keyEquivalent:@""] autorelease];
+		NSMenuItem *theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"(None)", @"description for no key combination") action:NULL keyEquivalent:@""];
 		[theMenuItem setEnabled:NO];
 		[theMenu addItem:theMenuItem];
 	}
@@ -359,15 +334,15 @@ errorReturn:
 		//if the user added at least one editor (in addition to the default TextEdit item), then allow items to be reset to their default
 		[theMenu addItem:[NSMenuItem separatorItem]];
 		
-		NSMenuItem *theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Reset", @"menu command to clear out custom external editors")
-															  action:@selector(resetUserEditors:) keyEquivalent:@""] autorelease];
+		NSMenuItem *theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Reset", @"menu command to clear out custom external editors")
+															  action:@selector(resetUserEditors:) keyEquivalent:@""];
 		[theMenuItem setTarget:self];
 		[theMenu addItem:theMenuItem];
 	}
 	[theMenu addItem:[NSMenuItem separatorItem]];
 
-	NSMenuItem *theMenuItem = [[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Other...", @"title of menu item for selecting a different notes folder")
-														  action:@selector(addUserEditorFromDialog:) keyEquivalent:@""] autorelease];
+	NSMenuItem *theMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Other...", @"title of menu item for selecting a different notes folder")
+														  action:@selector(addUserEditorFromDialog:) keyEquivalent:@""];
 	[theMenuItem setTarget:self];
 	[theMenu addItem:theMenuItem];
 }
@@ -383,8 +358,7 @@ errorReturn:
 
 - (void)setDefaultEditor:(id)anEditor {
 	if ((anEditor = ([anEditor isKindOfClass:[NSMenuItem class]] ? [anEditor representedObject] : anEditor))) {
-		[defaultEditor release];
-		defaultEditor = [anEditor retain];
+		defaultEditor = anEditor;
 
 		[[NSUserDefaults standardUserDefaults] setObject:[defaultEditor bundleIdentifier] forKey:DefaultEEIdentifierKey];
 		

@@ -34,8 +34,8 @@ static size_t EstimatedCharCountForWidth(float upToWidth);
 	
 	//try to get the underlying C-string buffer and copy only part of it
 	//this won't be exact because chars != bytes, but that's alright because it is expected to be further truncated by an NSTextFieldCell
-	CFStringEncoding bodyPreviewEncoding = CFStringGetFastestEncoding((CFStringRef)self);
-	const char * cStrPtr = CFStringGetCStringPtr((CFStringRef)self, bodyPreviewEncoding);
+	CFStringEncoding bodyPreviewEncoding = CFStringGetFastestEncoding((__bridge CFStringRef)self);
+	const char * cStrPtr = CFStringGetCStringPtr((__bridge CFStringRef)self, bodyPreviewEncoding);
 	char *bodyPreviewBuffer = calloc(bodyCharCount + 1, sizeof(char));
 	CFIndex usedBufLen = bodyCharCount;
 	
@@ -55,7 +55,7 @@ static size_t EstimatedCharCountForWidth(float upToWidth);
 					goto replace;
 				}
 			}
-			if (!CFStringGetBytes((CFStringRef)self, CFRangeMake(0, bodyCharCount), bodyPreviewEncoding, ' ', FALSE, 
+			if (!CFStringGetBytes((__bridge CFStringRef)self, CFRangeMake(0, bodyCharCount), bodyPreviewEncoding, ' ', FALSE, 
 								  (UInt8 *)bodyPreviewBuffer, bodyCharCount + 1, &usedBufLen)) {
 				NSLog(@"can't get utf8 string from '%@' (charcount: %lu)", self, (unsigned long)bodyCharCount);
 				free(bodyPreviewBuffer);
@@ -75,16 +75,15 @@ replace:
 																 encoding:CFStringConvertEncodingToNSStringEncoding(bodyPreviewEncoding) freeWhenDone:YES];
 	if (!truncatedBodyString) {
 		free(bodyPreviewBuffer);
-		NSLog(@"can't create cfstring from '%@' (cstr lens: %lu/%ld) with encoding %u (fastest = %u)", self, (unsigned long)bodyCharCount, usedBufLen, bodyPreviewEncoding, CFStringGetFastestEncoding((CFStringRef)self));
+		NSLog(@"can't create cfstring from '%@' (cstr lens: %lu/%ld) with encoding %u (fastest = %u)", self, (unsigned long)bodyCharCount, usedBufLen, bodyPreviewEncoding, CFStringGetFastestEncoding((__bridge CFStringRef)self));
 		return nil;
 	}
-	return [truncatedBodyString autorelease];
+	return truncatedBodyString;
 }
 
 static NSMutableDictionary *titleTruncAttrs = nil;
 
 void ResetFontRelatedTableAttributes(void) {
-	[titleTruncAttrs release];
 	titleTruncAttrs = nil;
 }
 
@@ -100,13 +99,13 @@ static NSMutableParagraphStyle *LineBreakingStyle() {
 
 static NSDictionary *GrayTextAttributes() {
 	static NSDictionary *grayTextAttributes = nil;
-	if (!grayTextAttributes) grayTextAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:[NSColor grayColor], NSForegroundColorAttributeName, nil] retain];
+	if (!grayTextAttributes) grayTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:[NSColor grayColor], NSForegroundColorAttributeName, nil];
 	return grayTextAttributes;
 }
 
 static NSDictionary *LineTruncAttributes() {
 	static NSDictionary *lineTruncAttributes = nil;
-	if (!lineTruncAttributes) lineTruncAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:LineBreakingStyle(), NSParagraphStyleAttributeName, nil] retain];
+	if (!lineTruncAttributes) lineTruncAttributes = [NSDictionary dictionaryWithObjectsAndKeys:LineBreakingStyle(), NSParagraphStyleAttributeName, nil];
 	return lineTruncAttributes;
 }
 
@@ -119,17 +118,17 @@ NSDictionary *LineTruncAttributesForTitle(void) {
 		BOOL usesBold = ColumnIsSet(NoteLabelsColumn, bitmap) || ColumnIsSet(NoteDateCreatedColumn, bitmap) ||
 		ColumnIsSet(NoteDateModifiedColumn, bitmap) || [prefs tableColumnsShowPreview];
 		
-		titleTruncAttrs = [[NSMutableDictionary dictionaryWithObjectsAndKeys:[[LineBreakingStyle() mutableCopy] autorelease], NSParagraphStyleAttributeName,
-							(usesBold ? [NSFont boldSystemFontOfSize:fontSize] : [NSFont systemFontOfSize:fontSize]), NSFontAttributeName, nil] retain];
+		titleTruncAttrs = [NSMutableDictionary dictionaryWithObjectsAndKeys:[LineBreakingStyle() mutableCopy], NSParagraphStyleAttributeName,
+							(usesBold ? [NSFont boldSystemFontOfSize:fontSize] : [NSFont systemFontOfSize:fontSize]), NSFontAttributeName, nil];
 		
 		if (ColumnIsSet(NoteDateCreatedColumn, bitmap) || ColumnIsSet(NoteDateModifiedColumn, bitmap)) {
 			//account for right-"aligned" date string, which will be relatively constant, so this can be cached
             
-            NSDateComponents *aprilFirstComponents = [[[NSDateComponents alloc] init] autorelease];
+            NSDateComponents *aprilFirstComponents = [[NSDateComponents alloc] init];
             [aprilFirstComponents setYear:2013];
             [aprilFirstComponents setMonth:4];
             [aprilFirstComponents setDay:1];
-            NSString *dateTest=[NSString relativeDateStringWithAbsoluteTime:CFDateGetAbsoluteTime((CFDateRef)[[NSCalendar currentCalendar] dateFromComponents:aprilFirstComponents])];
+            NSString *dateTest=[NSString relativeDateStringWithAbsoluteTime:CFDateGetAbsoluteTime((__bridge CFDateRef)[[NSCalendar currentCalendar] dateFromComponents:aprilFirstComponents])];
             CGFloat multiplier=-4.7;
             if (dateTest&&(dateTest.length>8)) {
                 multiplier=-6.1;
@@ -160,7 +159,6 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	
 	NSString *truncatedBodyString = [[bodyText string] truncatedPreviewStringOfLength:bodyCharCount];
 	if (!truncatedBodyString){
-        [unattributedPreview release];
         return nil;
     }
 	
@@ -173,7 +171,7 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	//title is black (no added colors) and truncated with LineTruncAttributesForTitle()
 	//body is gray and truncated with a variable tail indent, depending on intruding tags
 	
-	NSDictionary *bodyTruncDict = [NSDictionary dictionaryWithObjectsAndKeys:[[LineBreakingStyle() mutableCopy] autorelease], 
+	NSDictionary *bodyTruncDict = [NSDictionary dictionaryWithObjectsAndKeys:[LineBreakingStyle() mutableCopy], 
 								   NSParagraphStyleAttributeName, [NSColor grayColor], NSForegroundColorAttributeName, nil];
 	//set word-wrapping to let -[NSCell setTruncatesLastVisibleLine:] work
 	[[bodyTruncDict objectForKey:NSParagraphStyleAttributeName] setLineBreakMode:NSLineBreakByWordWrapping];
@@ -186,9 +184,7 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	[attributedStringPreview addAttributes:LineTruncAttributesForTitle() range:NSMakeRange(0, [self length])];
 	[attributedStringPreview addAttributes:bodyTruncDict range:NSMakeRange([self length] + 1, [unattributedPreview length] - ([self length] + 1))];
 	
-	[unattributedPreview release];
-	
-	return [attributedStringPreview autorelease];
+	return attributedStringPreview;
 }
 
 - (NSAttributedString*)attributedSingleLineTitle {
@@ -198,7 +194,7 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	
 	NSMutableAttributedString *titleStr = [[NSMutableAttributedString alloc] initWithString:self attributes:LineTruncAttributesForTitle()];
 
-	return [titleStr autorelease];
+	return titleStr;
 }
 
 
@@ -219,9 +215,7 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	NSMutableAttributedString *attributedStringPreview = [[NSMutableAttributedString alloc] initWithString:unattributedPreview attributes:LineTruncAttributes()];
 	[attributedStringPreview addAttributes:GrayTextAttributes() range:NSMakeRange([self length], [unattributedPreview length] - [self length])];
 	
-	[unattributedPreview release];
-	
-	return [attributedStringPreview autorelease];
+	return attributedStringPreview;
 }
 
 

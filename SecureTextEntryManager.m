@@ -21,25 +21,18 @@
 
 NSString *ShouldHideSecureTextEntryWarningKey = @"ShouldHideSecureTextEntryWarning";
 
-static SecureTextEntryManager *sharedInstance = nil;
-
 @implementation SecureTextEntryManager
 
 + (SecureTextEntryManager*)sharedInstance {
 	//not synchronized because there should be no need for non-main threads to access this class
 	//also, NSThread access potentially enables a locking 
 	
-	if (sharedInstance == nil)
+	static SecureTextEntryManager *sharedInstance = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
 		sharedInstance = [[SecureTextEntryManager alloc] init];
+	});
     return sharedInstance;
-}
-
-+ (id)allocWithZone:(NSZone *)zone {
-	if (sharedInstance == nil) {
-		sharedInstance = [super allocWithZone:zone];
-		return sharedInstance;  // assignment and return on first allocation
-	}
-    return nil; // on subsequent allocation attempts return nil
 }
 
 - (id)init {
@@ -135,9 +128,9 @@ static SecureTextEntryManager *sharedInstance = nil;
 		NSString *identifier = [runningApp bundleIdentifier];
 		if (identifier && [identifiers containsObject:identifier]) {
 			
-			NSString *offendingAppName = [[NSBundle bundleWithURL:[runningApp bundleURL]] objectForInfoDictionaryKey:(NSString *)kCFBundleNameKey];
+			NSString *offendingAppName = [[NSBundle bundleWithURL:[runningApp bundleURL]] objectForInfoDictionaryKey:(__bridge NSString *)kCFBundleNameKey];
 			if (!offendingAppName) offendingAppName = [runningApp localizedName];
-			NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+			NSAlert *alert = [[NSAlert alloc] init];
 			[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Secure Text Entry will prevent %@, which is currently installed on this computer, from working in Notational Velocity.", 
 																		   @"for warning about incompatibility with TextExpander, Typinator, etc."), offendingAppName]];
 			[alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
@@ -149,26 +142,6 @@ static SecureTextEntryManager *sharedInstance = nil;
 			break;
 		}
 	}
-}
-
-- (id)copyWithZone:(NSZone *)zone {
-    return self;
-}
-
-- (id)retain {
-    return self;
-}
-
-- (NSUInteger)retainCount {
-    return UINT_MAX;  // denotes an object that cannot be released
-}
-
-- (oneway void)release {
-    //do nothing
-}
-
-- (id)autorelease {
-    return self;
 }
 
 @end

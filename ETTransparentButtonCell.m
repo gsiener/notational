@@ -32,8 +32,8 @@ static NSColor *disabledColor, *enabledColor;
 	buttonFillP = [[NSImage alloc] initWithContentsOfFile:[bundle pathForImageResource:@"TransparentButtonFillP.tiff"]];
 	buttonRightP = [[NSImage alloc] initWithContentsOfFile:[bundle pathForImageResource:@"TransparentButtonRightP.tiff"]];
 
-	enabledColor = [[NSColor whiteColor] retain];
-	disabledColor = [[NSColor colorWithCalibratedWhite:0.6 alpha:1] retain];
+	enabledColor = [NSColor whiteColor];
+	disabledColor = [NSColor colorWithCalibratedWhite:0.6 alpha:1];
 }
 
 - (void)drawBezelWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
@@ -71,7 +71,7 @@ static NSColor *disabledColor, *enabledColor;
 
 - (NSDictionary *)_textAttributes
 {
-	NSMutableDictionary *attributes = [[[NSMutableDictionary alloc] init] autorelease];
+	NSMutableDictionary *attributes = [[NSMutableDictionary alloc] init];
 	[attributes addEntriesFromDictionary:[super _textAttributes]];
 	[attributes setObject:[NSFont systemFontOfSize:11] forKey:NSFontAttributeName];
 	[attributes setObject:[self interiorColor] forKey:NSForegroundColorAttributeName];
@@ -116,7 +116,7 @@ static NSColor *disabledColor, *enabledColor;
 	
 	[copiedImage unlockFocus];  
 	
-	return [copiedImage autorelease];
+	return copiedImage;
 }
 
 @end

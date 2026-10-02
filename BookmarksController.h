@@ -26,7 +26,7 @@
 	CFUUIDBytes uuidBytes;
 	NoteObject *noteObject;
 
-	id delegate;
+	__weak id delegate;
 }
 
 - (id)initWithDictionary:(NSDictionary*)aDict;
@@ -71,10 +71,10 @@
 	NSMutableArray *bookmarks;
 		
 	//for NoteObject <-> UUID lookups
-	id dataSource;
+	__weak id dataSource;
 	
 	//for notifications
-	AppController *appController;
+	__weak AppController *appController;
 	BOOL isRestoringSearch, isSelectingProgrammatically;
 	
 	GlobalPrefs *prefsController;

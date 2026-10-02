@@ -6,6 +6,7 @@
 //  Copyright 2010
 
 #import "AppController_Preview.h"
+#import "LinkingEditor.h"
 
 @implementation AppController (Preview)
 

@@ -42,7 +42,7 @@ typedef struct _ViewLocationContext {
 	BOOL shouldUseSecondaryHighlightColor, isActiveStyle;
 	BOOL lastEventActivatedTagEdit, wasDeleting, isAutocompleting;
 	
-	id labelsListSource;
+	__weak id labelsListSource;
 	
 	GlobalPrefs *globalPrefs;
 	NSMenuItem *dummyItem;

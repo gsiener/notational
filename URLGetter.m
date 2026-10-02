@@ -14,6 +14,15 @@
 #import "GlobalPrefs.h"
 #import "NSFileManager_NV.h"
 
+// A getter owns itself while its download is in flight (it used to be leaked on purpose by MRC callers);
+// endDownloadWithPath: lets it go.
+static NSMutableSet *ActiveURLGetters(void) {
+	static NSMutableSet *active = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{ active = [[NSMutableSet alloc] init]; });
+	return active;
+}
+
 @implementation URLGetter
 
 - (id)initWithURL:(NSURL*)aUrl delegate:(id)aDelegate userData:(id)someObj {
@@ -24,9 +33,10 @@
 		maxExpectedByteCount = 0;
 		isImporting = isIndicating = NO;
 		delegate = aDelegate;
-		url = [aUrl retain];
-		userData = [someObj retain];
+		url = aUrl;
+		userData = someObj;
 		
+		[ActiveURLGetters() addObject:self];
 		downloader = [[NSURLDownload alloc] initWithRequest:[NSURLRequest requestWithURL:url] delegate:self];
 		
 		[self startProgressIndication:self];
@@ -34,15 +44,6 @@
 	}
 	
 	return nil;
-}
-
-- (void)dealloc {
-	[downloader release];
-	[downloadPath release];
-	[url release];
-	[userData release];
-	
-	[super dealloc];
 }
 
 - (NSURL*)url {
@@ -73,6 +74,7 @@
 			NSBeep();
 			return;
 		}
+		[window setReleasedWhenClosed:NO];
 		[progress setUsesThreadedAnimation:YES];
 	}
 	
@@ -121,8 +123,7 @@
 
 - (void)download:(NSURLDownload *)download decideDestinationWithSuggestedFilename:(NSString *)name {
 	
-	[tempDirectory autorelease];
-	tempDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
+	tempDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
    //if (![[NSFileManager defaultManager] createDirectoryAtPath:tempDirectory attributes:nil]) {
 	if (![[NSFileManager defaultManager]createFolderAtPath:tempDirectory]) {
 		NSLog(@"URLGetter: Couldn't create temporary directory!");
@@ -130,8 +131,7 @@
 		NSBeep();
 	}
 	
-	[downloadPath autorelease];
-	downloadPath = [[tempDirectory stringByAppendingPathComponent:name] retain];
+	downloadPath = [tempDirectory stringByAppendingPathComponent:name];
 	[download setDestination:downloadPath allowOverwrite:YES];
 	
 	//need to delete this stuff eventually
@@ -157,7 +157,8 @@
 	isImporting = YES;
 	[self updateProgress];
 	
-	[self retain];
+	// stay alive until the end of this method, even if the delegate drops its reference
+	URLGetter *keepAlive = self;
 	[delegate URLGetter:self returnedDownloadedFile:path];
 	
 	//clean up after ourselves
@@ -165,7 +166,6 @@
 	if (downloadPath) {
         [fileMan deleteFileAtPath:downloadPath];
 //		[fileMan removeFileAtPath:downloadPath handler:NULL];
-		[downloadPath release];
 		downloadPath = nil;
 	}
 	
@@ -178,15 +178,13 @@
 //            [fileMan removeFileAtPath:tempDirectory handler:NULL];
 		else
 			NSLog(@"note removing %@ because it still contains files!", tempDirectory);
-		[tempDirectory release];
 		tempDirectory = nil;
 	}
 	
    
     [self stopProgressIndication];
 
-	
-	[self release];
+	[ActiveURLGetters() removeObject:keepAlive];
 }
 
 - (NSString*)downloadPath {

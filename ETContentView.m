@@ -21,18 +21,11 @@
 //    return self;
 //}
 //
-- (void)dealloc
-{
-    [backColor release];
-    [super dealloc];
-}
-
-
 - (void)drawRect:(NSRect)dirtyRect
 {
 //    [super drawRect:dirtyRect];
     if (!backColor) {
-        backColor = [[[NVTheme currentTheme] backgroundColor] retain];
+        backColor = [[NVTheme currentTheme] backgroundColor];
     }
     [backColor set];
     NSRectFill([self bounds]);
@@ -41,15 +34,13 @@
 
 - (void)setBackgroundColor:(NSColor *)inCol{
     if (backColor) {
-        [backColor release];
     }
     backColor = inCol;
-    [backColor retain];
 }
 
 - (NSColor *)backgroundColor{    
     if (!backColor) {
-        backColor = [[[NVTheme currentTheme] backgroundColor] retain];
+        backColor = [[NVTheme currentTheme] backgroundColor];
     }
     return backColor;
 }

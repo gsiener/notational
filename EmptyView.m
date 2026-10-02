@@ -30,7 +30,7 @@
 	outletObjectAwoke(self);
 	/*
 	if (!bgCol) {
-		bgCol = [[[NVTheme currentTheme] backgroundColor] retain];
+		bgCol = [[NVTheme currentTheme] backgroundColor];
 	}*/
 
 }
@@ -65,16 +65,14 @@
 /*
 - (void)setBackgroundColor:(NSColor *)inColor{
 	if (bgCol) {
-		[bgCol release];
 	}
 	bgCol = inColor;
-	[bgCol retain];
 }
 
 - (void)drawRect:(NSRect)rect {
 	//NSRect bounds = [self bounds];
 	if (!bgCol) {
-		bgCol = [[[NVTheme currentTheme] backgroundColor] retain];
+		bgCol = [[NVTheme currentTheme] backgroundColor];
 	}
 	//[bgCol set];
     //NSRectFill(bounds);

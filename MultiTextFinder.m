@@ -61,9 +61,10 @@
 static id sharedFindObject = nil;
 
 + (id)sharedInstance {
-    if (!sharedFindObject) {
-        sharedFindObject = [[self allocWithZone:[[NSApplication sharedApplication] zone]] init];
-    }
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedFindObject = [[self alloc] init];
+    });
     return sharedFindObject;
 }
 
@@ -78,21 +79,13 @@ static id sharedFindObject = nil;
     [findStringField setStringValue:[self findString]];
 }
 
-- (void)dealloc {
-    if (self != sharedFindObject) {
-        [findString release];
-        [super dealloc];
-    }
-}
-
 - (NSString *)findString {
     return findString;
 }
 
 - (void)setFindString:(NSString *)string {
     if ([string isEqualToString:findString]) return;
-    [findString autorelease];
-    findString = [string copyWithZone:[self zone]];
+    findString = [string copy];
     if (findStringField) {
         [findStringField setStringValue:string];
         [findStringField selectText:nil];

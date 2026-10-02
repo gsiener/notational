@@ -64,7 +64,6 @@
         [theScroller setScrollerStyle:style];
         [self setScrollerStyle:style];
     }
-    [theScroller release];
     [self tile];
     [self reflectScrolledClipView:[self contentView]];
     //    if (IsLionOrLater) {
@@ -79,7 +78,7 @@
         if (![[self verticalScroller] isHidden]) {
             //            NSRect vsRect=[[self verticalScroller] frame];
             NSRect conRect = [[self contentView] frame];
-            //            NSView *wdContent = [[self contentView] retain];
+            //            NSView *wdContent = [self contentView];
             conRect.size.width = conRect.size.width + [[self verticalScroller] frame].size.width;
             [[self contentView] setFrameSize:conRect.size];
             //            [wdContent setFrame:conRect];

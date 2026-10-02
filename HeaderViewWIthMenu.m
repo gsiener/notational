@@ -47,7 +47,10 @@
         if (theColumn > -1)
             theTableColumn = [[[self tableView] tableColumns] objectAtIndex:theColumn];
         
-        NSMenu *theMenu = [[self tableView] performSelector:NSSelectorFromString(@"menuForColumnConfiguration:") withObject:theTableColumn];
+        id theTableView = [self tableView];
+        SEL menuSelector = NSSelectorFromString(@"menuForColumnConfiguration:");
+        NSMenu *(*menuForColumn)(id, SEL, NSTableColumn *) = (NSMenu *(*)(id, SEL, NSTableColumn *))[theTableView methodForSelector:menuSelector];
+        NSMenu *theMenu = menuForColumn(theTableView, menuSelector, theTableColumn);
         return theMenu;
     }
     

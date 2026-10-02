@@ -62,7 +62,7 @@ static NSData *Utf8(NSString *s) {
 							 @"76a82f9689ba2e6c2cae97d63b539d05808b2333935e52c75905fb5fa2a799eb", @"exactly16bytes!!",
 							 nil];
 	for (NSString *plaintext in vectors) {
-		NSMutableData *data = [[Utf8(plaintext) mutableCopy] autorelease];
+		NSMutableData *data = [Utf8(plaintext) mutableCopy];
 		XCTAssertTrue([data encryptAESDataWithKey:[self aesKey] iv:[self aesIV]]);
 		XCTAssertEqualObjects(HexFromData(data), [vectors objectForKey:plaintext], @"plaintext '%@'", plaintext);
 	}
@@ -71,7 +71,7 @@ static NSData *Utf8(NSString *s) {
 - (void)testAESRoundTrip {
 	NSMutableString *long_ = [NSMutableString string];
 	while ([long_ length] < 5000) [long_ appendString:@"Notational Velocity ✓ "];
-	NSMutableData *data = [[Utf8(long_) mutableCopy] autorelease];
+	NSMutableData *data = [Utf8(long_) mutableCopy];
 	XCTAssertTrue([data encryptAESDataWithKey:[self aesKey] iv:[self aesIV]]);
 	XCTAssertTrue([data decryptAESDataWithKey:[self aesKey] iv:[self aesIV]]);
 	XCTAssertEqualObjects(data, Utf8(long_));
@@ -89,14 +89,14 @@ static NSData *Utf8(NSString *s) {
 }
 
 - (void)testAESDecryptRejectsTruncatedCiphertext {
-	NSMutableData *data = [[Utf8(@"hello world") mutableCopy] autorelease];
+	NSMutableData *data = [Utf8(@"hello world") mutableCopy];
 	XCTAssertTrue([data encryptAESDataWithKey:[self aesKey] iv:[self aesIV]]);
 	[data setLength:[data length] - 1];
 	XCTAssertFalse([data decryptAESDataWithKey:[self aesKey] iv:[self aesIV]]);
 }
 
 - (void)testAESRejectsWrongKeyAndIVLengths {
-	NSMutableData *data = [[Utf8(@"hello") mutableCopy] autorelease];
+	NSMutableData *data = [Utf8(@"hello") mutableCopy];
 	XCTAssertFalse([data encryptAESDataWithKey:[NSMutableData dataWithLength:16] iv:[self aesIV]]);
 	XCTAssertFalse([data encryptAESDataWithKey:[self aesKey] iv:[NSMutableData dataWithLength:8]]);
 	XCTAssertEqualObjects(data, Utf8(@"hello"));

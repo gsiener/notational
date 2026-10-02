@@ -20,15 +20,6 @@
 
 @implementation StickiesDocument
 
-- (void)dealloc {
-	
-	[mRTFDData release];
-	[mCreationDate release];
-	[mModificationDate release];
-	
-	[super dealloc];
-}
-
 /*
  int mWindowColor;
  int mWindowFlags;
@@ -41,7 +32,7 @@
 - (id)initWithCoder:(id)decoder {
 	if(self=[super init]){
         
-        mRTFDData = [[decoder decodeObject] retain];
+        mRTFDData = [decoder decodeObject];
         [decoder decodeValueOfObjCType:@encode(int) at:&mWindowFlags];
     #if __LP64__
         [decoder decodeValueOfObjCType:"{_NSRect={_NSPoint=ff}{_NSSize=ff}}" at:&mWindowFrame];
@@ -49,8 +40,8 @@
         [decoder decodeValueOfObjCType:@encode(NSRect) at:&mWindowFrame];
     #endif
         [decoder decodeValueOfObjCType:@encode(int) at:&mWindowColor];
-        mCreationDate = [[decoder decodeObject] retain];
-        mModificationDate = [[decoder decodeObject] retain];
+        mCreationDate = [decoder decodeObject];
+        mModificationDate = [decoder decodeObject];
         
         return self;
     }

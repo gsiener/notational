@@ -105,13 +105,12 @@
 	iconType = anIconType;
 	if (!synchronizingTimer && SynchronizingIcon == iconType) {
 		rotationStep = 0;
-		synchronizingTimer = [[NSTimer timerWithTimeInterval:0.065 target:self selector:@selector(handleRotationTimer:) 
-													userInfo:nil repeats:YES] retain];
-		[[NSRunLoop currentRunLoop] addTimer:synchronizingTimer forMode:(NSString*)kCFRunLoopCommonModes];
+		synchronizingTimer = [NSTimer timerWithTimeInterval:0.065 target:self selector:@selector(handleRotationTimer:) 
+													userInfo:nil repeats:YES];
+		[[NSRunLoop currentRunLoop] addTimer:synchronizingTimer forMode:NSRunLoopCommonModes];
 
 	} else if (SynchronizingIcon != iconType) {
 		[synchronizingTimer invalidate];
-		[synchronizingTimer release];
 		synchronizingTimer = nil;
 	}
 	//instead of using setHidden: when type is set to NoIcon, use setEnabled:
@@ -136,7 +135,7 @@
 - (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag {
 	if (self=[super initWithFrame:NSMakeRect(frameRect.origin.x, frameRect.origin.y, 17.0, 17.0) pullsDown:flag]) {
 		
-		TitlebarButtonCell *buttonCell = [[[TitlebarButtonCell alloc] initTextCell:@"" pullsDown:flag] autorelease];
+		TitlebarButtonCell *buttonCell = [[TitlebarButtonCell alloc] initTextCell:@"" pullsDown:flag];
 		[buttonCell setAction:[[self cell] action]];
 		[buttonCell setTarget:[[self cell] target]];
 		[self setCell:buttonCell];

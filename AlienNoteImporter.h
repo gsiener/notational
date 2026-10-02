@@ -31,7 +31,7 @@ extern NSString *RetrievedPasswordKey;
 	SEL importerSelector;
 	
 	//for URL downloading
-	id receptionDelegate;
+	__weak id receptionDelegate;
 	
 	id source;
 	NSMutableDictionary *documentSettings;

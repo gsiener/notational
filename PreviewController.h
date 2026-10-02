@@ -31,7 +31,7 @@
   IBOutlet NSTextField *templateNote;
 	IBOutlet NSView *accessoryView;
 	
-	NoteObject *lastNote;
+	__weak NoteObject *lastNote;
 }
 
 @property (assign) BOOL isPreviewOutdated;

@@ -29,7 +29,6 @@
 
 - (void)tearDown {
 	if (directory) [[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[directory release];
 	[super tearDown];
 }
 
@@ -40,10 +39,10 @@
 		XCTSkip(@"set TEST_RUNNER_NV_SIMPLENOTE_TOKEN and TEST_RUNNER_NV_SIMPLENOTE_TEST_NOTE");
 	}
 
-	directory = [[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]] retain];
+	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
 	NVNotesStore *store = [NVNotesStore storeAtPath:[directory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
-	NVSimplenoteHTTPService *service = [[[NVSimplenoteHTTPService alloc] initWithToken:token clientID:@"nvalt-e2e-test"] autorelease];
-	NVSyncEngine *engine = [[[NVSyncEngine alloc] initWithStore:store service:service] autorelease];
+	NVSimplenoteHTTPService *service = [[NVSimplenoteHTTPService alloc] initWithToken:token clientID:@"nvalt-e2e-test"];
+	NVSyncEngine *engine = [[NVSyncEngine alloc] initWithStore:store service:service];
 	[engine setDelegateQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];
 
 	//1. first sync: the whole account, read-only

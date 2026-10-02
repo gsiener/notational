@@ -19,7 +19,6 @@
         [newCell setBezeled:YES];
         [newCell setBezelStyle:NSBezelStyleRecessed];
         [self setCell:newCell];
-        [newCell release];
     }
 	return self;
 }

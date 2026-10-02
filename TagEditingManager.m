@@ -23,6 +23,7 @@
             NSRect zRect=[tagPanel frame];
             centerpoint.x-=(zRect.size.width/2.0);
             centerpoint.y-=(zRect.size.height+70.0);
+            [tagPanel setReleasedWhenClosed:NO]; // the manager owns the panel
             [tagPanel setDelegate:self];
             [tagField setDelegate:del];
             self.commonTags=cTags;
@@ -34,21 +35,12 @@
 	return self;
 }
 
-- (void)dealloc{
-    [tagFieldString release];
-    [commonTags release];
-	[tagPanel release];
-	[tagField release];
-	[super dealloc];
-}
-
 - (void)setCommonTags:(NSArray *)newTags{
     if (commonTags) {
-        [commonTags release];
         commonTags=nil;
     }
     
-    commonTags=[newTags retain];
+    commonTags=newTags;
     if (isHappening) {
         NSString *newTagString=@"";
         if (commonTags&&([commonTags count]>0)) {

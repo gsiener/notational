@@ -23,11 +23,6 @@
     return self;
 }
 
-- (void)dealloc{
-	[vColor release];
-	[super dealloc];
-}
-
 - (void)drawRect:(NSRect)rect {
     [super drawRect:rect];
     if (!IsLionOrLater&&([(AppController *)[NSApp delegate] isInFullScreen])){        
@@ -45,9 +40,6 @@
 }
 
 - (void)setBackgroundColor:(NSColor *)inColor{
-    if (vColor) {
-        [vColor release];
-    }
     CGFloat fWhite;
 	
 	fWhite = [[inColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent];
@@ -61,7 +53,6 @@
 		fWhite -= 0.20f;
 	}	
 	vColor = [NSColor colorWithCalibratedWhite:fWhite alpha:1.0f];
-	[vColor retain];
 }
 
 

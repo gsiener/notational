@@ -38,7 +38,7 @@ typedef union {
 	int logFD;
 	char *journalFile;
 	NSData *logSessionKey;
-	id delegate;
+	__weak id delegate;
 	
 	z_stream compressionStream;
 }

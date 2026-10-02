@@ -41,7 +41,7 @@
 + (NSImage*)smallIconForFileURL:(NSURL*)url {
 	if (![url isFileURL]) return nil;
 	
-	NSImage *image = [[[[NSWorkspace sharedWorkspace] iconForFile:[url path]] copy] autorelease];
+	NSImage *image = [[[NSWorkspace sharedWorkspace] iconForFile:[url path]] copy];
 	[image setSize:NSMakeSize(16.0f, 16.0f)];
 	return image;
 }

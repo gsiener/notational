@@ -68,16 +68,11 @@ static void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out);
 	CGFunctionRelease(axialShadingFunction);
 	CGColorSpaceRelease(colorSpaceRef);
 //	[dimpleImage release];
-	[borderCol release];
-	[backCol release];
-	[super dealloc];
 }
 
 
 - (void)updateColorsWithBackgroundColor:(NSColor*)backgrndColor andForegroundColor:(NSColor *)fColor{
-	[backCol release];
-	[borderCol release];
-	backCol = [backgrndColor retain];
+	backCol = backgrndColor;
 	borderCol = [backgrndColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]];
 	CGFloat fWhite;
 	fWhite = [borderCol whiteComponent];
@@ -117,8 +112,8 @@ static void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out);
     backgrndColor=[[backCol blendedColorWithFraction:fract ofColor:backgrndColor] highlightWithLevel:0.04f];
 //    endColor=[backCol shadowWithLevel:fract*1.9f];
     endColor=[[backCol blendedColorWithFraction:fract ofColor:endColor] shadowWithLevel:0.13f];
-	borderCol = [fColor retain];// [[backCol blendedColorWithFraction:0.35f ofColor:fColor] retain];
-//    borderCol = [[NSColor colorWithCalibratedWhite:fWhite alpha:1.0f] retain];
+	borderCol = fColor;// [backCol blendedColorWithFraction:0.35f ofColor:fColor];
+//    borderCol = [NSColor colorWithCalibratedWhite:fWhite alpha:1.0f];
     
     
 	colorSpaceRef = CGColorSpaceCreateDeviceRGB();
@@ -138,11 +133,11 @@ static void ColorBlendFunction(void *info, const CGFloat *in, CGFloat *out);
 
 - (void)drawDividerInRect:(NSRect)aRect withDimpleRect:(NSRect)dimpleRect blendVertically:(BOOL)v {
 	if (!borderCol) {
-		borderCol =[[NSColor grayColor] retain];
+		borderCol =[NSColor grayColor];
 	}
 	if (!v||((aRect.origin.x==0.0f)&&(aRect.origin.y==0.0f))) {
 		if (!backCol) {
-			backCol = [[NSColor lightGrayColor] retain];
+			backCol = [NSColor lightGrayColor];
 		}        
 //		[backCol setFill];
 //		NSRectFill(aRect);

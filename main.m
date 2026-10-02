@@ -30,9 +30,9 @@
 int main(int argc, char *argv[])
 {
 	//before anything reads preferences: carry over the old nvALT app's settings once
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	[NVLegacyPreferences importIfNeeded];
-	[pool release];
+	@autoreleasepool {
+		[NVLegacyPreferences importIfNeeded];
+	}
 	
     return NSApplicationMain(argc,  (const char **) argv);
 }

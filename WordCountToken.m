@@ -20,7 +20,7 @@
 
 - (void)awakeFromNib{
 	[self refusesFirstResponder];
-	//theGrad =  [[[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:0.2f alpha:0.28f] endingColor:[NSColor colorWithCalibratedWhite:0.74f alpha:0.18f]] retain];
+	//theGrad =  [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:0.2f alpha:0.28f] endingColor:[NSColor colorWithCalibratedWhite:0.74f alpha:0.18f]];
 	
 	//[self setTxtColor:[[NSApp delegate] foregrndColor]];
 	//[self setFldColor:[[NSApp delegate] backgrndColor]];
@@ -85,7 +85,6 @@
 /*
 - (void)setTxtColor:(NSColor *)inColor{
 	if (txtColor) {
-		[txtColor release];
 	}
 	
 	inColor = [NSColor whiteColor];
@@ -102,13 +101,11 @@
 	}
 	txtColor = [NSColor colorWithCalibratedWhite:0.28f alpha:1.0f];
 	//txtColor = inColor;
-	[txtColor retain];
 	[self setTextColor:txtColor];
 }
 
 - (void)setFldColor:(NSColor *)inColor{
 	if (fldColor) {
-		[fldColor release];
 	}
 	inColor = [NSColor lightGrayColor];
 	CGFloat fWhite;		
@@ -125,7 +122,6 @@
 	fldColor = [NSColor colorWithCalibratedWhite:0.66f alpha:0.65f];
 	
 	//fldColor = [NSColor lightGrayColor];
-	[fldColor retain];
 }
 
 

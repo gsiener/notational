@@ -28,13 +28,13 @@
 
 - (id)initWithBlor:(NSString*)blorPath {
 	if (self=[super init]) {
-		path = [blorPath retain];
+		path = blorPath;
 		
 		couldRetrieveFromKeychain = NO;
 		
 		//read hash (first 20 bytes) of file
 		NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:path];
-		hashData = [[handle readDataOfLength:20] retain];
+		hashData = [handle readDataOfLength:20];
 		
 		[handle closeFile];
 		
@@ -93,7 +93,6 @@
 
 - (NSData*)validPasswordHashData {
 	
-	[originalPasswordString release];
 	originalPasswordString = nil;
 	
 	//try to get PW from keychain. if that fails, request from user
@@ -156,11 +155,7 @@
 
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[hashData release];
-	[path release];
-	[originalPasswordString release];
 	
-	[super dealloc];
 }
 
 @end
@@ -170,12 +165,12 @@
 
 - (id)initWithBlor:(NSString*)blorPath passwordHashData:(NSData*)passwordHashData {
 	if (self=[super init]) {
-		path = [blorPath retain];
+		path = blorPath;
 		
-		if (!(keyData = [passwordHashData retain]))
+		if (!(keyData = passwordHashData))
 			return nil;
 		
-		if (!(blorData = [[NSMutableData dataWithContentsOfFile:path] retain]))
+		if (!(blorData = [NSMutableData dataWithContentsOfFile:path]))
 			return nil;
 			
 		if ([blorData length] < 28) {
@@ -193,13 +188,6 @@
 	}
     return nil;
 	
-}
-
-- (void)dealloc {
-	[blorData release];
-	[keyData release];
-	
-	[super dealloc];
 }
 
 - (void)decryptNextBytesOfLength:(long)length {
@@ -242,7 +230,7 @@
 	ASSERT_CAN_READ_BYTE_COUNT(titleBytesLength);
 	[self decryptNextBytesOfLength:titleBytesLength];
 	NSData *titleData = [NSData dataWithBytesNoCopy:[blorData mutableBytes] + currentByteOffset length:titleBytesLength freeWhenDone:NO];
-	NSString *titleString = [[[NSString alloc] initWithData:titleData encoding:NSUnicodeStringEncoding] autorelease];
+	NSString *titleString = [[NSString alloc] initWithData:titleData encoding:NSUnicodeStringEncoding];
 	currentByteOffset += titleBytesLength;
 	
 	int bodyBufferBytesLength, bodyBytesLength;
@@ -273,13 +261,11 @@
 	[attributedBody addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [attributedBody length])];
 	NoteObject *note = [[NoteObject alloc] initWithNoteBody:attributedBody title:titleString delegate:nil labels:nil];
 
-	[bodyString release];
-	[attributedBody release];
 //	[titleString release];
 	
 	successfullyReadNoteCount++;
 	
-	return [note autorelease];
+	return note;
 }
 
 @end

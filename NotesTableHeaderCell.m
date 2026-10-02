@@ -23,10 +23,10 @@ NSColor *tColor;
 
 + (void)initialize{
     if (!bColor) {
-        bColor = [[[NSColor whiteColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
+        bColor = [[NSColor whiteColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
     }
     if (!tColor) {
-        tColor = [[[NSColor blackColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
+        tColor = [[NSColor blackColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
     }
 }
 
@@ -97,14 +97,12 @@ NSColor *tColor;
 
 + (void)setBColor:(NSColor *)inColor{
     if (bColor) {
-        [bColor release];
     }
-	bColor = [[inColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]] retain];
+	bColor = [inColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 }
 
 + (void)setTxtColor:(NSColor *)inColor{
     if (tColor) {
-        [tColor release];
     }
     if ([[inColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]>0.5f) {
         inColor=[inColor highlightWithLevel:kSelectedCellEmphasisLevel];
@@ -112,7 +110,7 @@ NSColor *tColor;
         inColor=[inColor shadowWithLevel:kSelectedCellEmphasisLevel];
     }
     inColor=[inColor colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
-	tColor = [inColor retain];
+	tColor = inColor;
 }
 
 @end
@@ -144,7 +142,6 @@ NSColor *tColor;
 //         NSLog(@"isHigh :>%d<  title :>%@<",[self isHighlighted],[self title]);
 //    }
 //    [thePath ]
-    [thePath release];
 }
 
 - (void)_drawGradientFromColor:(NSColor *)baseColor inRect:(NSRect)cellFrame{
@@ -158,7 +155,6 @@ NSColor *tColor;
     NSGradient *theGrad = [[NSGradient alloc] initWithColorsAndLocations: startColor, 0.14f,
                                 endColor, 0.94f, nil];
     [theGrad drawInRect:cellFrame angle:90.0f];
-    [theGrad release];
 }
 
 

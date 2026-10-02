@@ -67,16 +67,6 @@
 
 #endif
 
-- (void)dealloc{
-    [knobTop release];
-    [knobVerticalFill release];
-    [knobBottom release];
-    [slotTop release];
-    [slotBottom release];
-    [slotVerticalFill release];
-    [super dealloc];
-}
-
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 + (CGFloat)scrollerWidthForControlSize:(NSControlSize)controlSize scrollerStyle:(NSScrollerStyle)scrollerStyle{
     return 15.0;

@@ -45,14 +45,14 @@
             [[self window] orderFront:self];
         }
 
-        //        tabSwitcher = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
+        //        tabSwitcher = [[ETTransparentButton alloc]initWithFrame:shCon];
         //        shCon.origin.x = [[[self window] contentView]visibleRect].origin.x + [[[self window] contentView]visibleRect].size.width - 80;
         //        shCon.size.width = 56;
-        //        saveButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
+        //        saveButton = [[ETTransparentButton alloc]initWithFrame:shCon];
         //        shCon.origin.x -= 65;
-        //        stickyPreviewButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
+        //        stickyPreviewButton = [[ETTransparentButton alloc]initWithFrame:shCon];
         //        shCon.origin.x -= 65;
-        //        printPreviewButton = [[[ETTransparentButton alloc]initWithFrame:shCon] retain];
+        //        printPreviewButton = [[ETTransparentButton alloc]initWithFrame:shCon];
         //        [tabSwitcher setTitle:@"View Source"];
         //        [tabSwitcher setTarget:self];
         //        [tabSwitcher setAction:@selector(switchTabs:)];
@@ -89,8 +89,8 @@
 -(void)awakeFromNib
 {
     [self installWebView];
-    cssString = [[[self class] css] retain];
-    htmlString = [[[self class] html] retain];
+    cssString = [[self class] css];
+    htmlString = [[self class] html];
     lastNote = [(AppController *)[NSApp delegate] selectedNoteObject];
     [sourceView setTextContainerInset:NSMakeSize(10.0,12.0)];
     NSScrollView *scrlView=[sourceView enclosingScrollView];
@@ -98,7 +98,6 @@
         NSRect vsRect=[[scrlView verticalScroller]frame];
         BTTransparentScroller *theScroller=[[BTTransparentScroller alloc]initWithFrame:vsRect];
         [scrlView setVerticalScroller:theScroller];
-        [theScroller release];
     }
     [scrlView setScrollsDynamically:YES];
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
@@ -124,11 +123,11 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 
 - (void)installWebView {
 	if (preview || !previewContainer) return;
-	WKWebViewConfiguration *configuration = [[[WKWebViewConfiguration alloc] init] autorelease];
+	WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
 	[[configuration preferences] setValue:[NSNumber numberWithBool:YES] forKey:@"developerExtrasEnabled"];
 	WKUserContentController *content = [configuration userContentController];
-	[content addUserScript:[[[WKUserScript alloc] initWithSource:LogBridgeScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart
-												 forMainFrameOnly:YES] autorelease]];
+	[content addUserScript:[[WKUserScript alloc] initWithSource:LogBridgeScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart
+												 forMainFrameOnly:YES]];
 	[content addScriptMessageHandler:self name:@"log"];
 	
 	preview = [[WKWebView alloc] initWithFrame:[previewContainer bounds] configuration:configuration];
@@ -273,10 +272,8 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     NSString *noteTitle = note ? [NSString stringWithFormat:@"%@",titleOfNote(note)] : @"";
     BOOL sameNote = (lastNote == note);
     if (!sameNote) {
-        [cssString release];
-        [htmlString release];
-        cssString = [[[self class] css] retain];
-        htmlString = [[[self class] html] retain];
+        cssString = [[self class] css];
+        htmlString = [[self class] html];
         lastNote = note;
     }
     [[self window] setTitle:noteTitle];
@@ -367,7 +364,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     //print the rendered preview, so show that tab while printing
     NSTabViewItem *selectedTab=[tabView selectedTabViewItem];
     [tabView selectTabViewItem:[tabView tabViewItemAtIndex:0]];
-    NSPrintInfo* printInfo = [[[NSPrintInfo sharedPrintInfo] copy] autorelease];
+    NSPrintInfo* printInfo = [[NSPrintInfo sharedPrintInfo] copy];
 
     [printInfo setHorizontallyCentered:YES];
     [printInfo setVerticallyCentered:NO];
@@ -375,11 +372,11 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     NSPrintOperation *printOp=[preview printOperationWithPrintInfo:printInfo];
     //WKWebView's print view needs a frame, or it prints blank pages
     [[printOp view] setFrame:[preview bounds]];
-    [printOp runOperationModalForWindow:tabView.window delegate:self didRunSelector:@selector(printOperationDidRun:success:contextInfo:) contextInfo:selectedTab];
+    [printOp runOperationModalForWindow:tabView.window delegate:self didRunSelector:@selector(printOperationDidRun:success:contextInfo:) contextInfo:(__bridge void *)selectedTab]; // the tab view keeps selectedTab alive
 }
 
 - (void)printOperationDidRun:(NSPrintOperation *)printOperation  success:(BOOL)success  contextInfo:(void *)contextInfo{
-    NSTabViewItem *selTab=(NSTabViewItem *)contextInfo;
+    NSTabViewItem *selTab=(__bridge NSTabViewItem *)contextInfo;
     if (selTab&&(tabView.selectedTabViewItem!=selTab)) {
         [tabView selectTabViewItem:selTab];
     }
@@ -453,7 +450,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
             [processedString writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error];
         }
     }];
-    [fileTypes release];
 
 }
 
@@ -470,14 +466,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 }
 
 - (void)dealloc {
-    [htmlString release];
-    [cssString release];
-    [lastNote release];
-    [saveButton release];
-    [tabSwitcher release];
     [[[preview configuration] userContentController] removeScriptMessageHandlerForName:@"log"];
-    [preview release];
-    [super dealloc];
 }
 
 @end
