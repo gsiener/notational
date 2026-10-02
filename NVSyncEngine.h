@@ -24,6 +24,11 @@ typedef enum {
 	NVSyncStatusOffline,        //network or server trouble; retrying with backoff
 } NVSyncStatus;
 
+//posted (object: the notes controller or nil) whenever the sync status changes; userInfo carries
+//the NVSyncStatus as an NSNumber under NVSyncStatusKey
+extern NSString *const NVSyncStatusDidChangeNotification;
+extern NSString *const NVSyncStatusKey;
+
 @protocol NVSyncEngineDelegate <NSObject>
 //Notes whose stored content changed because of the server: added, changed remotely,
 //merged by the server, or rebased after a push. Delivered once per cycle on the delegate queue.

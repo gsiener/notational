@@ -32,8 +32,7 @@
 //incremented on every local edit, so a push can tell whether the note changed while in flight
 @property (nonatomic, assign) NSInteger localRevision;
 
-//Returns an autoreleased (+0) string despite the "new" prefix, as it always has; callers must not release it.
-+ (NSString *)newNoteID NS_RETURNS_NOT_RETAINED;
++ (NSString *)newNoteID;
 
 //record for a note as the server sent it
 + (NVNoteRecord *)recordWithNoteID:(NSString *)noteID serverData:(NSDictionary *)data version:(NSInteger)version;

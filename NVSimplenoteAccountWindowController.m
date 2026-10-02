@@ -24,12 +24,10 @@ typedef enum { StepEmail, StepCode, StepSignedIn } AccountStep;
 @synthesize accountDelegate;
 
 static NSTextField *Label(NSRect frame) {
-	NSTextField *label = [[NSTextField alloc] initWithFrame:frame];
-	[label setEditable:NO];
+	NSTextField *label = [NSTextField wrappingLabelWithString:@""];
+	[label setFrame:frame];
 	[label setSelectable:NO];
-	[label setBordered:NO];
-	[label setDrawsBackground:NO];
-	[[label cell] setWraps:YES];
+	[label setTextColor:[NSColor controlTextColor]];
 	return label;
 }
 

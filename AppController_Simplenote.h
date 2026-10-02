@@ -8,10 +8,9 @@
 //
 
 #import "AppController.h"
+#import "NVSyncEngine.h"
 
 @class NotationController;
-
-extern NSString *const NVSyncStatusDidChangeNotification;
 
 @interface AppController (Simplenote)
 

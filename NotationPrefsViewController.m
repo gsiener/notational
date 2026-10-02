@@ -21,14 +21,12 @@ static const CGFloat PaneWidth = 368, Margin = 20;
 @implementation NotationPrefsViewController
 
 static NSTextField *Label(NSRect frame, NSString *text, NSFont *font) {
-	NSTextField *label = [[NSTextField alloc] initWithFrame:frame];
-	[label setEditable:NO];
-	[label setSelectable:NO];
-	[label setBordered:NO];
-	[label setDrawsBackground:NO];
-	[[label cell] setWraps:YES];
+	NSTextField *label = [NSTextField wrappingLabelWithString:text];
+	[label setFrame:frame];
 	[label setFont:font];
-	[label setStringValue:text];
+	//a wrapping label is selectable and uses the (slightly lighter) label colour by default
+	[label setSelectable:NO];
+	[label setTextColor:[NSColor controlTextColor]];
 	return label;
 }
 

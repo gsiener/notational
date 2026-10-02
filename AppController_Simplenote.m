@@ -7,6 +7,7 @@
 #import "NotationController.h"
 #import "NotationPrefs.h"
 #import "NVArchiving.h"
+#import "NSFileManager+DirectoryLocations.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
 #import "NVSyncEngine.h"
@@ -14,8 +15,6 @@
 #import "NVLegacyImporter.h"
 #import "NVSimplenoteAccountWindowController.h"
 #import "TitlebarButton.h"
-
-NSString *const NVSyncStatusDidChangeNotification = @"NVSyncStatusDidChangeNotification";
 
 static NSString *const AccountKey = @"simplenoteAccount";
 static NSString *const ClientIDKey = @"clientID";
@@ -31,15 +30,15 @@ static BOOL loadingToken = NO;
 #pragma mark Opening the store
 
 + (NSString *)notesStorePath {
-	NSString *support = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-	NSString *directory = [support stringByAppendingPathComponent:@"Notational"];
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSString *directory = [fm findOrCreateDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appendPathComponent:@"Notational" error:NULL];
+	if (!directory) return nil;
+	NSString *support = [directory stringByDeletingLastPathComponent];
 	NSString *path = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
 	
 	//builds from before the rename kept the store in .../nvALT; move it (with its WAL files) once
-	NSFileManager *fm = [NSFileManager defaultManager];
 	NSString *earlier = [[support stringByAppendingPathComponent:@"nvALT"] stringByAppendingPathComponent:@"Notes.sqlite"];
 	if (![fm fileExistsAtPath:path] && [fm fileExistsAtPath:earlier]) {
-		[fm createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
 		for (NSString *suffix in [NSArray arrayWithObjects:@"", @"-wal", @"-shm", nil]) {
 			NSString *from = [earlier stringByAppendingString:suffix];
 			if ([fm fileExistsAtPath:from]) [fm moveItemAtPath:from toPath:[path stringByAppendingString:suffix] error:NULL];
@@ -70,19 +69,17 @@ static BOOL loadingToken = NO;
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",
 				  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes], (unsigned long)[[importer recoveredNotes] count]);
 			if ([[importer recoveredNotes] count]) {
-				NSAlert *alert = [[NSAlert alloc] init];
-				[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Recovered %lu notes that never reached Simplenote", nil),
-									   (unsigned long)[[importer recoveredNotes] count]]];
-				[alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"They're tagged “%@” so you can review them. Your old nvALT files were left untouched.", nil), NVRecoveredNoteTag]];
-				[alert runModal];
+				NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"Recovered %lu notes that never reached Simplenote", nil),
+									   (unsigned long)[[importer recoveredNotes] count]],
+						   [NSString stringWithFormat:NSLocalizedString(@"They're tagged “%@” so you can review them. Your old nvALT files were left untouched.", nil), NVRecoveredNoteTag],
+						   nil, nil, nil);
 			}
 			break;
 		}
 		case NVLegacyImportEncrypted: {
-			NSAlert *alert = [[NSAlert alloc] init];
-			[alert setMessageText:NSLocalizedString(@"Your old nvALT notes database is encrypted", nil)];
-			[alert setInformativeText:NSLocalizedString(@"This version keeps notes in Simplenote and can't open encrypted databases. If some notes never synced, open them in the previous nvALT and export them. Your old files were left untouched.", nil)];
-			[alert runModal];
+			NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"Your old nvALT notes database is encrypted", nil),
+					   NSLocalizedString(@"This version keeps notes in Simplenote and can't open encrypted databases. If some notes never synced, open them in the previous nvALT and export them. Your old files were left untouched.", nil),
+					   nil, nil, nil);
 			break;
 		}
 		case NVLegacyImportUnreadable:
@@ -115,7 +112,13 @@ static BOOL loadingToken = NO;
 }
 
 - (NotationController *)openSimplenoteBackedNotationReturningError:(NSError **)error {
-	NVNotesStore *store = [NVNotesStore storeAtPath:[AppController notesStorePath] error:error];
+	NSString *storePath = [AppController notesStorePath];
+	if (!storePath) {
+		if (error) *error = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileWriteUnknownError
+											userInfo:[NSDictionary dictionaryWithObject:NSLocalizedString(@"The folder for the notes couldn't be created.", nil) forKey:NSLocalizedDescriptionKey]];
+		return nil;
+	}
+	NVNotesStore *store = [NVNotesStore storeAtPath:storePath error:error];
 	if (!store) return nil;
 	if ([store movedAsideCorruptFile])
 		NSLog(@"Notes store was unreadable and was moved aside to %@; re-syncing from Simplenote", [store movedAsideCorruptFile]);
@@ -139,7 +142,7 @@ static BOOL loadingToken = NO;
 					[engine start];
 				}
 				[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:nil
-																  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:[self simplenoteSyncStatus]] forKey:@"status"]];
+																  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:[self simplenoteSyncStatus]] forKey:NVSyncStatusKey]];
 			});
 		});
 	}
@@ -183,7 +186,7 @@ static BOOL loadingToken = NO;
 }
 
 - (void)simplenoteSyncStatusChanged:(NSNotification *)notification {
-	NVSyncStatus status = (NVSyncStatus)[[[notification userInfo] objectForKey:@"status"] intValue];
+	NVSyncStatus status = (NVSyncStatus)[[[notification userInfo] objectForKey:NVSyncStatusKey] intValue];
 	[accountWindow refresh];
 	switch (status) {
 		case NVSyncStatusSyncing: [titleBarButton setStatusIconType:SynchronizingIcon]; break;
@@ -218,12 +221,9 @@ static BOOL loadingToken = NO;
 	NSString *previous = [store metadataValueForKey:AccountKey];
 	if (!previous || [previous caseInsensitiveCompare:email] == NSOrderedSame || ![store noteCount]) return YES;
 
-	NSAlert *alert = [[NSAlert alloc] init];
-	[alert setMessageText:[NSString stringWithFormat:NSLocalizedString(@"Switch from %@ to %@?", nil), previous, email]];
-	[alert setInformativeText:NSLocalizedString(@"Notes from the other account will be removed from this Mac. They stay in Simplenote. Notes not yet synced will be lost.", nil)];
-	[alert addButtonWithTitle:NSLocalizedString(@"Switch Accounts", nil)];
-	[alert addButtonWithTitle:NSLocalizedString(@"Cancel", nil)];
-	return [alert runModal] == NSAlertFirstButtonReturn;
+	return NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"Switch from %@ to %@?", nil), previous, email],
+					  NSLocalizedString(@"Notes from the other account will be removed from this Mac. They stay in Simplenote. Notes not yet synced will be lost.", nil),
+					  NSLocalizedString(@"Switch Accounts", nil), NSLocalizedString(@"Cancel", nil), nil) == NSAlertFirstButtonReturn;
 }
 
 - (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token {

@@ -24,13 +24,13 @@ static NSString *const LegacySeparatorKey = @"SepStr";
 	NSUInteger totalNotes, syncedNotes, journalRecords;
 	NSFont *bodyFont;
 	NSColor *textColor;
-	BOOL confirmsDeletion, securesTextEntry;
+	BOOL confirmsDeletion;
 }
 @end
 
 @implementation NVLegacyImporter
 
-@synthesize recoveredNotes, totalNotes, syncedNotes, journalRecords, bodyFont, textColor, confirmsDeletion, securesTextEntry;
+@synthesize recoveredNotes, totalNotes, syncedNotes, journalRecords, bodyFont, textColor, confirmsDeletion;
 
 + (NSString *)defaultDatabasePath {
 	return [[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/Notational Data"]
@@ -87,15 +87,13 @@ static BOOL NeedsRecovery(NoteObject *note) {
 	NSData *bytes = [NSData dataWithContentsOfFile:databasePath options:NSDataReadingUncached error:NULL];
 	if (!bytes) return [[NSFileManager defaultManager] fileExistsAtPath:databasePath] ? NVLegacyImportUnreadable : NVLegacyImportNothingFound;
 
-	FrozenNotation *frozen = nil;
-	frozen = NVUnarchiveKeyedObject(bytes);
+	FrozenNotation *frozen = NVUnarchiveKeyedObject(bytes);
 	if (![frozen isKindOfClass:[FrozenNotation class]]) return NVLegacyImportUnreadable;
 
 	NotationPrefs *prefs = [frozen notationPrefs];
 	bodyFont = [prefs baseBodyFont];
 	textColor = [prefs foregroundColor];
 	confirmsDeletion = [prefs confirmFileDeletion];
-	securesTextEntry = [prefs secureTextEntry];
 	if ([prefs doesEncryption]) return NVLegacyImportEncrypted;
 
 	OSStatus err = noErr;

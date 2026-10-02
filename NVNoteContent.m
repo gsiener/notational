@@ -49,7 +49,6 @@ static NSCharacterSet *LineBreaks(void) {
 			titleEnd = space.location == NSNotFound ? i + MAX_TITLE_LENGTH : space.location;
 			titleEnd = [content rangeOfComposedCharacterSequenceAtIndex:titleEnd].location;
 		}
-		NSString *rawTitle = [content substringWithRange:NSMakeRange(i, titleEnd - i)];
 
 		//the separator is the blank space between title and body, line breaks included
 		NSUInteger bodyStart = titleEnd;
@@ -58,7 +57,7 @@ static NSCharacterSet *LineBreaks(void) {
 		NSUInteger trimmedTitleEnd = titleEnd;
 		while (trimmedTitleEnd > i && [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[content characterAtIndex:trimmedTitleEnd - 1]])
 			trimmedTitleEnd--;
-		rawTitle = [content substringWithRange:NSMakeRange(i, trimmedTitleEnd - i)];
+		NSString *rawTitle = [content substringWithRange:NSMakeRange(i, trimmedTitleEnd - i)];
 		separator = [[content substringWithRange:NSMakeRange(trimmedTitleEnd, bodyStart - trimmedTitleEnd)] copy];
 		body = [[content substringFromIndex:bodyStart] copy];
 

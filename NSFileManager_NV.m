@@ -274,4 +274,9 @@
     return NO;
 }
 
+- (NSString *)temporaryNotesDirectory {
+	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Notational"];
+	return [self createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL] ? directory : nil;
+}
+
 @end

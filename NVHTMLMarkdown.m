@@ -207,7 +207,11 @@ static NSString *Attribute(NSXMLNode *node, NSString *name) {
 	[trim addCharactersInString:BREAK_MARK];
 	text = [text stringByTrimmingCharactersInSet:trim];
 	if (hardBreaks) {
-		NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:BREAK_MARK @"{2,}" options:0 error:NULL];
+		static NSRegularExpression *regex = nil;
+		static dispatch_once_t once;
+		dispatch_once(&once, ^{
+			regex = [NSRegularExpression regularExpressionWithPattern:BREAK_MARK @"{2,}" options:0 error:NULL];
+		});
 		text = [regex stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, [text length]) withTemplate:@"\n\n"];
 		text = [text stringByReplacingOccurrencesOfString:BREAK_MARK withString:@"  \n"];
 	} else {

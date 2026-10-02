@@ -31,6 +31,13 @@
 }
 @end
 
+NSString *const NVSyncStatusDidChangeNotification = @"NVSyncStatusDidChangeNotification";
+NSString *const NVSyncStatusKey = @"status";
+
+static BOOL IsSimplenoteError(NSError *e, NSInteger code) {
+	return [[e domain] isEqualToString:NVSimplenoteErrorDomain] && [e code] == code;
+}
+
 @implementation NVSyncEngine
 
 @synthesize delegate, delegateQueue, pollInterval, indexPageSize;
@@ -77,9 +84,10 @@
 		running = YES;
 		if (timer) return;
 		timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+		__weak NVSyncEngine *weakSelf = self;
 		uint64_t interval = (uint64_t)(pollInterval * NSEC_PER_SEC);
 		dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval, interval / 10);
-		dispatch_source_set_event_handler(timer, ^{ [self _runScheduledCycle]; });
+		dispatch_source_set_event_handler(timer, ^{ [weakSelf _runScheduledCycle]; });
 		dispatch_resume(timer);
 	});
 }
@@ -170,7 +178,7 @@
 		consecutiveFailures = 0;
 		nextAllowedAttempt = nil;
 		[self _setStatus:NVSyncStatusIdle];
-	} else if ([[failure domain] isEqualToString:NVSimplenoteErrorDomain] && [failure code] == NVSimplenoteErrorUnauthorized) {
+	} else if (IsSimplenoteError(failure, NVSimplenoteErrorUnauthorized)) {
 		[self _setStatus:NVSyncStatusSignedOut];
 	} else {
 		consecutiveFailures++;
@@ -223,7 +231,7 @@
 	NSError *failure = nil;
 	NSArray *changes = [service changesSince:syncPoint error:&failure];
 	if (!changes) {
-		if ([[failure domain] isEqualToString:NVSimplenoteErrorDomain] && [failure code] == NVSimplenoteErrorUnknownChangeVersion) {
+		if (IsSimplenoteError(failure, NVSimplenoteErrorUnknownChangeVersion)) {
 			NSLog(@"NVSyncEngine: sync point no longer known to the server; re-indexing");
 			[store setSyncPoint:nil];
 			return [self _fullSyncReturningError:error];
@@ -253,7 +261,7 @@
 		NSDictionary *data = [service noteWithID:noteID version:&version error:&fetchError];
 		if (data) {
 			[fetched setObject:[NVRemoteNote noteWithID:noteID version:version data:data] forKey:noteID];
-		} else if ([[fetchError domain] isEqualToString:NVSimplenoteErrorDomain] && [fetchError code] == NVSimplenoteErrorNotFound) {
+		} else if (IsSimplenoteError(fetchError, NVSimplenoteErrorNotFound)) {
 			//gone again since the change was logged; a later change in the feed will say so
 		} else {
 			if (error) *error = fetchError;
@@ -332,7 +340,7 @@
 				pushedAny = YES;
 				continue;
 			}
-			if ([[failure domain] isEqualToString:NVSimplenoteErrorDomain] && [failure code] == NVSimplenoteErrorTooLarge) {
+			if (IsSimplenoteError(failure, NVSimplenoteErrorTooLarge)) {
 				//leave it pending; nothing else we can do until the user shortens it
 				NSLog(@"NVSyncEngine: note %@ is too large for Simplenote", [record noteID]);
 				continue;
@@ -351,7 +359,7 @@
 	NSError *failure = nil;
 	NSDictionary *result = [service postNoteWithID:[pushed noteID] data:data baseVersion:baseVersion version:&newVersion error:&failure];
 
-	if (!result && [[failure domain] isEqualToString:NVSimplenoteErrorDomain] && [failure code] == NVSimplenoteErrorNotFound && baseVersion > 0) {
+	if (!result && IsSimplenoteError(failure, NVSimplenoteErrorNotFound) && baseVersion > 0) {
 		//the server no longer has our base version (or the note): merge against its current copy ourselves
 		NSInteger currentVersion = 0;
 		NSError *getError = nil;

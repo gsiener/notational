@@ -22,6 +22,7 @@
 #import "ODBEditorSuite.h"
 #import "ExternalEditorListController.h"
 #import "NoteObject.h"
+#import "NSFileManager_NV.h"
 #import <Carbon/Carbon.h>
 
 NSString * const ODBEditorCustomPathKey		= @"ODBEditorCustomPath";
@@ -205,8 +206,8 @@ beepReturn:
 	NSString *basename = [filename stringByDeletingPathExtension];
 	NSFileManager *fileManager = [NSFileManager defaultManager];
 	
-	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Notational"];
-	if (![fileManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL]) return nil;
+	NSString *directory = [fileManager temporaryNotesDirectory];
+	if (!directory) return nil;
 	
 	do {
 		path = sTempFileSequence++ ? [NSString stringWithFormat: @"%@ %03d.txt", basename, sTempFileSequence] : [basename stringByAppendingPathExtension:@"txt"];

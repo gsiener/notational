@@ -64,15 +64,12 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 
 - (BOOL)applyNoteRecord:(NVNoteRecord *)record {
 	NVNoteContent *split = [NVNoteContent contentWithString:[record content]];
-	NVNoteContent *previous = objc_getAssociatedObject(self, &ContentSplitKey);
 	objc_setAssociatedObject(self, &ContentSplitKey, split, OBJC_ASSOCIATION_RETAIN);
 
 	BOOL changed = NO;
 	if (![[split title] isEqualToString:titleOfNote(self)] || ![[split body] isEqualToString:[[self contentString] string]]) {
 		[self updateWithSyncBody:[split body] andTitle:[split title]];
 		changed = YES;
-	} else if (previous && ![[previous string] isEqualToString:[split string]]) {
-		//same title and body, different layout (e.g. separator): nothing visible changed
 	}
 	NSString *labels = LabelStringFromTags([record tags]);
 	if (![labels isEqualToString:labelsOfNote(self)]) {

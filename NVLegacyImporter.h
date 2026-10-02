@@ -42,6 +42,5 @@ typedef enum {
 @property (nonatomic, readonly) NSFont *bodyFont;
 @property (nonatomic, readonly) NSColor *textColor;
 @property (nonatomic, readonly) BOOL confirmsDeletion;
-@property (nonatomic, readonly) BOOL securesTextEntry;
 
 @end

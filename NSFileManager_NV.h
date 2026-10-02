@@ -35,5 +35,7 @@
 - (NSDictionary *)attributesAtPath:(NSString *)path followLink:(BOOL)follow;
 - (NSArray *)folderContentsAtPath:(NSString *)path;
 - (BOOL)deleteFileAtPath:(NSString *)path;
+//the "Notational" folder in the temporary directory, for files handed to other apps; created if need be, nil if it couldn't be
+- (NSString *)temporaryNotesDirectory;
 
 @end

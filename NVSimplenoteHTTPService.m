@@ -16,14 +16,41 @@ static NSError *SimplenoteError(NSInteger code, NSString *description) {
 }
 
 static NSString *UserAgent(void) {
-	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	return [NSString stringWithFormat:@"Notational/%@", version ? version : @"dev"];
+	static NSString *userAgent = nil;
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+		userAgent = [NSString stringWithFormat:@"Notational/%@", version ? version : @"dev"];
+	});
+	return userAgent;
 }
 
+//the query-allowed characters, less those that would end or split a value; not -stringWithPercentEscapes,
+//which escapes more (e.g. ":" and "@") and so would change the URLs
 static NSString *QueryEscape(NSString *value) {
-	NSMutableCharacterSet *allowed = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
-	[allowed removeCharactersInString:@"&=+?/"];
+	static NSCharacterSet *allowed = nil;
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		NSMutableCharacterSet *set = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
+		[set removeCharactersInString:@"&=+?/"];
+		allowed = set;
+	});
 	return [value stringByAddingPercentEncodingWithAllowedCharacters:allowed];
+}
+
+//a session with the timeout every request here uses
+static NSURLSession *MakeSession(NSURLSessionConfiguration *configuration) {
+	NSURLSessionConfiguration *config = configuration ? configuration : [NSURLSessionConfiguration ephemeralSessionConfiguration];
+	[config setTimeoutIntervalForRequest:RequestTimeout];
+	return [NSURLSession sessionWithConfiguration:config];
+}
+
+//makes `request` a POST of `payload` as JSON
+static NSMutableURLRequest *JSONPostRequest(NSMutableURLRequest *request, NSData *payload) {
+	[request setHTTPMethod:@"POST"];
+	[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+	[request setHTTPBody:payload];
+	return request;
 }
 
 static NSString *PathEscape(NSString *value) {
@@ -79,9 +106,7 @@ static id JSONFromData(NSData *data) {
 	if ((self = [super init])) {
 		token = [aToken copy];
 		clientID = [aClientID copy];
-		NSURLSessionConfiguration *config = configuration ? configuration : [NSURLSessionConfiguration ephemeralSessionConfiguration];
-		[config setTimeoutIntervalForRequest:RequestTimeout];
-		session = [NSURLSession sessionWithConfiguration:config];
+		session = MakeSession(configuration);
 		baseURL = aBaseURL ? aBaseURL : [NSURL URLWithString:[NSString stringWithFormat:@"https://api.simperium.com/1/%@/%@/",
 																	SimperiumAppID, NoteBucket]];
 	}
@@ -206,15 +231,12 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 									 : [NSString stringWithFormat:@"i/%@", PathEscape(noteID)];
 	NSString *ccid = [[[NSUUID UUID] UUIDString] lowercaseString];
 	NSDictionary *query = [NSDictionary dictionaryWithObjectsAndKeys:clientID, @"clientid", ccid, @"ccid", @"1", @"response", nil];
-	NSMutableURLRequest *request = [self requestForPath:path query:query];
-	[request setHTTPMethod:@"POST"];
-	[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 	NSData *payload = [NSJSONSerialization dataWithJSONObject:data options:0 error:NULL];
 	if (!payload) {
 		if (error) *error = SimplenoteError(NVSimplenoteErrorServer, @"Note could not be encoded");
 		return nil;
 	}
-	[request setHTTPBody:payload];
+	NSMutableURLRequest *request = JSONPostRequest([self requestForPath:path query:query], payload);
 
 	NSHTTPURLResponse *response = nil;
 	NSData *body = PerformRequest(session, request, &response, error);
@@ -258,9 +280,7 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 
 - (id)initWithConfiguration:(NSURLSessionConfiguration *)configuration baseURL:(NSURL *)aBaseURL {
 	if ((self = [super init])) {
-		NSURLSessionConfiguration *config = configuration ? configuration : [NSURLSessionConfiguration ephemeralSessionConfiguration];
-		[config setTimeoutIntervalForRequest:RequestTimeout];
-		session = [NSURLSession sessionWithConfiguration:config];
+		session = MakeSession(configuration);
 		baseURL = aBaseURL ? aBaseURL : [NSURL URLWithString:@"https://app.simplenote.com/account/"];
 	}
 	return self;
@@ -271,11 +291,9 @@ static BOOL CheckStatus(NSHTTPURLResponse *response, NSError **error) {
 }
 
 - (NSDictionary *)postJSON:(NSDictionary *)payload toPath:(NSString *)path status:(NSInteger *)status error:(NSError **)error {
-	NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:path relativeToURL:baseURL]];
-	[request setHTTPMethod:@"POST"];
-	[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+	NSMutableURLRequest *request = JSONPostRequest([NSMutableURLRequest requestWithURL:[NSURL URLWithString:path relativeToURL:baseURL]],
+												   [NSJSONSerialization dataWithJSONObject:payload options:0 error:NULL]);
 	[request setValue:UserAgent() forHTTPHeaderField:@"User-Agent"];
-	[request setHTTPBody:[NSJSONSerialization dataWithJSONObject:payload options:0 error:NULL]];
 	NSHTTPURLResponse *response = nil;
 	NSData *body = PerformRequest(session, request, &response, error);
 	if (!body) return nil;
