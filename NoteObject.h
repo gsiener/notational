@@ -23,6 +23,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "NotationController.h"
+#import "NVNoteDelegate.h"
 #import "BufferUtils.h"
 #import "SynchronizedNoteProtocol.h"
 
@@ -48,7 +49,7 @@ typedef struct _NoteFilterContext {
 //	NSString *wordCountString;
 	NSString *dateModifiedString, *dateCreatedString;
 	
-	__weak id delegate; //the notes controller
+	__weak id<NVNoteDelegate> delegate; //the notes controller
 	
 	BOOL didUnarchive;
 	
@@ -119,10 +120,10 @@ NSInteger compareTitleStringReverse(__unsafe_unretained id *a, __unsafe_unretain
 	BOOL noteTitleHasPrefixOfUTF8String(NoteObject *note, const char* fullString, size_t stringLen);
 	BOOL noteTitleIsAPrefixOfOtherNoteTitle(NoteObject *longerNote, NoteObject *shorterNote);
 
-- (id)delegate;
-- (void)setDelegate:(id)theDelegate;
+- (id<NVNoteDelegate>)delegate;
+- (void)setDelegate:(id<NVNoteDelegate>)theDelegate;
 - (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle 
-			  delegate:(id)aDelegate labels:(NSString*)aLabelString;
+			  delegate:(id<NVNoteDelegate>)aDelegate labels:(NSString*)aLabelString;
 
 - (NSSet*)labelSet;
 - (void)replaceMatchingLabelSet:(NSSet*)aLabelSet;

@@ -17,6 +17,7 @@
 
 
 #import <Cocoa/Cocoa.h>
+#import "NVNoteDelegate.h"
 #import "FastListDataSource.h"
 #import "LabelsListController.h"
 #import "WALController.h"
@@ -34,7 +35,7 @@
 
 @class NVNotesStore, NVSyncEngine;
 
-@interface NotationController : NSObject {
+@interface NotationController : NSObject <NVNoteDelegate> {
     NSMutableArray *allNotes;
     FastListDataSource *notesListDataSource;
     LabelsListController *labelsListController;

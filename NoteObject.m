@@ -72,11 +72,11 @@ typedef NSRange NSRange32;
 	    free(cLabels);
 }
 
-- (id)delegate {
+- (id<NVNoteDelegate>)delegate {
 	return delegate;
 }
 
-- (void)setDelegate:(id)theDelegate {
+- (void)setDelegate:(id<NVNoteDelegate>)theDelegate {
 	
 	if (theDelegate) {
 		delegate = theDelegate;
@@ -345,7 +345,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	}
 }
 
-- (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle delegate:(id)aDelegate labels:(NSString*)aLabelString {
+- (id)initWithNoteBody:(NSAttributedString*)bodyText title:(NSString*)aNoteTitle delegate:(id<NVNoteDelegate>)aDelegate labels:(NSString*)aLabelString {
 	//delegate optional here
     if (self=[self init]) {
 		
@@ -760,7 +760,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	for (i=0; i<(NSInteger)[words count]; i++) {
 		NSString *word = [words objectAtIndex:i];
 		if ([word length]) {
-			NSImage *img = [[delegate labelsListDataSource] cachedLabelImageForWord:word highlighted:isHighlighted];
+			NSImage *img = [delegate labelImageForWord:word highlighted:isHighlighted];
 			
             dRect.origin=nextBoxPoint;
             dRect.size=[img size];
@@ -1018,7 +1018,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		[self makeNoteDirtyUpdateTime:YES updateFile:YES];
 		
 		[delegate note:self attributeChanged:NotePreviewString];
-		[[delegate delegate] contentsUpdatedForNote:self];
+		[delegate noteContentsDidChange:self];
 	} else {
 		NSBeep();
 		NSLog(@"odbEditor:didModifyFile: unable to get data from %@", path);

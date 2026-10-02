@@ -982,6 +982,15 @@
 	return notationPrefs;
 }
 
+//NVNoteDelegate: notes ask their controller, not the views or the app behind it
+- (void)noteContentsDidChange:(NoteObject *)note {
+	if ([delegate respondsToSelector:@selector(contentsUpdatedForNote:)]) [delegate contentsUpdatedForNote:note];
+}
+
+- (NSImage *)labelImageForWord:(NSString *)word highlighted:(BOOL)highlighted {
+	return [labelsListController cachedLabelImageForWord:word highlighted:highlighted];
+}
+
 - (id)labelsListDataSource {
     return labelsListController;
 }

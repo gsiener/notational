@@ -346,6 +346,7 @@
 		8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 048B1473D0F4023FAC6A1F24 /* NVSplitView.m */; };
 		364D5222ACE98AA942BA847B /* NVSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 048B1473D0F4023FAC6A1F24 /* NVSplitView.m */; };
 		2BEAFF072117A52D88C5C202 /* NVSplitViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F384225420AF77379D8DF89B /* NVSplitViewTests.m */; };
+		23048A18C2188EA2C43CF924 /* NoteObjectTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -807,6 +808,8 @@
 		6A37956C7FD5533FED208FB6 /* NVSplitView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSplitView.h; sourceTree = "<group>"; };
 		048B1473D0F4023FAC6A1F24 /* NVSplitView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSplitView.m; sourceTree = "<group>"; };
 		F384225420AF77379D8DF89B /* NVSplitViewTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSplitViewTests.m; sourceTree = "<group>"; };
+		D22B77BC1DBEEE80D2AECD55 /* NVNoteDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVNoteDelegate.h; sourceTree = "<group>"; };
+		A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NoteObjectTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -852,6 +855,7 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				D22B77BC1DBEEE80D2AECD55 /* NVNoteDelegate.h */,
 				048B1473D0F4023FAC6A1F24 /* NVSplitView.m */,
 				6A37956C7FD5533FED208FB6 /* NVSplitView.h */,
 				E0A0788F1432C8560CA302BD /* NVTheme.m */,
@@ -1351,6 +1355,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */,
 				F384225420AF77379D8DF89B /* NVSplitViewTests.m */,
 				8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */,
 				9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */,
@@ -1712,6 +1717,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23048A18C2188EA2C43CF924 /* NoteObjectTests.m in Sources */,
 				2BEAFF072117A52D88C5C202 /* NVSplitViewTests.m in Sources */,
 				364D5222ACE98AA942BA847B /* NVSplitView.m in Sources */,
 				D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */,
