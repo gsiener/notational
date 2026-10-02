@@ -9,6 +9,7 @@
 #import "NotationPrefs.h"
 #import "NVArchiving.h"
 #import "NoteObject.h"
+#import "NoteObject_NVRecord.h"
 #import "DeletedNoteObject.h"
 #import "WALController.h"
 
@@ -63,20 +64,13 @@ static BOOL NeedsRecovery(NoteObject *note) {
 
 - (NVNoteRecord *)recordForNote:(NoteObject *)note {
 	NSDictionary *sn = [[note syncServicesMD] objectForKey:LegacySimplenoteService];
-	NVNoteRecord *record = [[NVNoteRecord alloc] init];
+	//tags and dates as for any note; the old database has no content split, so join title and body
+	//as the old sync code did
+	NVNoteRecord *record = [note noteRecordRepresentation];
 	//a new id: the recovered copy sits beside whatever Simplenote has, never on top of it
 	[record setNoteID:[NVNoteRecord newNoteID]];
 	[record setContent:[note combinedContentWithContextSeparator:[sn objectForKey:LegacySeparatorKey]]];
-
-	NSMutableArray *tags = [NSMutableArray array];
-	for (NSString *label in [labelsOfNote(note) componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@" ,"]])
-		if ([label length] && ![tags containsObject:label]) [tags addObject:label];
-	[tags addObject:NVRecoveredNoteTag];
-	[record setTags:tags];
-
-	//old dates are CFAbsoluteTime (since 2001); Simplenote uses seconds since 1970
-	[record setCreationDate:createdDateOfNote(note) + kCFAbsoluteTimeIntervalSince1970];
-	[record setModificationDate:modifiedDateOfNote(note) + kCFAbsoluteTimeIntervalSince1970];
+	[record setTags:[[record tags] arrayByAddingObject:NVRecoveredNoteTag]];
 	return record;
 }
 

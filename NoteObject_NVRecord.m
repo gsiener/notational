@@ -14,11 +14,13 @@ static NSString *LabelStringFromTags(NSArray *tags) {
 	return [tags count] ? [tags componentsJoinedByString:@" "] : @"";
 }
 
-static NSArray *TagsFromLabelString(NSString *labels) {
-	NSMutableArray *tags = [NSMutableArray array];
-	for (NSString *label in [labels componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@" ,"]])
-		if ([label length] && ![tags containsObject:label]) [tags addObject:label];
-	return tags;
+//notes keep CFAbsoluteTime (seconds since 2001); records use Simplenote's seconds since 1970
+static CFAbsoluteTime AbsoluteTimeFromRecordDate(NSTimeInterval date) {
+	return date - kCFAbsoluteTimeIntervalSince1970;
+}
+
+static NSTimeInterval RecordDateFromAbsoluteTime(CFAbsoluteTime time) {
+	return time + kCFAbsoluteTimeIntervalSince1970;
 }
 
 @implementation NoteObject (NVRecord)
@@ -32,8 +34,8 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 	if ((self = [self initWithNoteBody:body title:[split title] delegate:aDelegate labels:LabelStringFromTags([record tags])])) {
 		recordID = [[record noteID] copy];
 		recordContent = split;
-		if ([record creationDate] > 0) [self setDateAdded:[record creationDate] - kCFAbsoluteTimeIntervalSince1970];
-		if ([record modificationDate] > 0) [self setDateModified:[record modificationDate] - kCFAbsoluteTimeIntervalSince1970];
+		if ([record creationDate] > 0) [self setDateAdded:AbsoluteTimeFromRecordDate([record creationDate])];
+		if ([record modificationDate] > 0) [self setDateModified:AbsoluteTimeFromRecordDate([record modificationDate])];
 	}
 	return self;
 }
@@ -48,9 +50,11 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:[self noteRecordID]];
 	[record setContent:[split stringWithTitle:titleOfNote(self) body:[[self contentString] string]]];
-	[record setTags:TagsFromLabelString(labelsOfNote(self))];
-	[record setCreationDate:createdDateOfNote(self) + kCFAbsoluteTimeIntervalSince1970];
-	[record setModificationDate:modifiedDateOfNote(self) + kCFAbsoluteTimeIntervalSince1970];
+	//split the labels as the tag UI does
+	NSArray *tags = [self orderedLabelTitles];
+	[record setTags:tags ? tags : [NSArray array]];
+	[record setCreationDate:RecordDateFromAbsoluteTime(createdDateOfNote(self))];
+	[record setModificationDate:RecordDateFromAbsoluteTime(modifiedDateOfNote(self))];
 	return record;
 }
 
@@ -68,7 +72,7 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 		[self updateWithSyncLabels:labels];
 		changed = YES;
 	}
-	if ([record modificationDate] > 0) [self setDateModified:[record modificationDate] - kCFAbsoluteTimeIntervalSince1970];
+	if ([record modificationDate] > 0) [self setDateModified:AbsoluteTimeFromRecordDate([record modificationDate])];
 	return changed;
 }
 

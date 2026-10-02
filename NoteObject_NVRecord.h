@@ -17,7 +17,8 @@
 //Simplenote id of this note; assigned on first use for notes created in nvALT
 - (NSString *)noteRecordID;
 
-//the note as a store record (content recombined exactly; tags from labels; dates in 1970 seconds)
+//the note as a store record (content recombined exactly; tags from labels, split as the tag UI
+//splits them; dates in 1970 seconds)
 - (NVNoteRecord *)noteRecordRepresentation;
 
 //Replace title, body, labels and dates with the record's. Returns YES if anything visible changed.

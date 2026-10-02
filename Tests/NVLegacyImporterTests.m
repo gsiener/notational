@@ -91,6 +91,17 @@
 	for (NVNoteRecord *record in recovered) XCTAssertTrue([[record tags] containsObject:NVRecoveredNoteTag]);
 }
 
+- (void)testRecoveredTagsAreSplitAsTheTagUISplitsThem {
+	NoteObject *note = [self note:@"Tagged" body:@"with semicolons" labels:@"ideas;travel\tlater"];
+	[self writeDatabase:[NSArray arrayWithObject:note] prefs:[[NotationPrefs alloc] init]];
+
+	NVLegacyImporter *importer = [self importer];
+	XCTAssertEqual([importer read], NVLegacyImportRead);
+	NVNoteRecord *recovered = [[importer recoveredNotes] lastObject];
+	XCTAssertEqualObjects([recovered tags], (@[@"ideas", @"travel", @"later", NVRecoveredNoteTag]));
+	XCTAssertEqualWithAccuracy([recovered modificationDate], modifiedDateOfNote(note) + kCFAbsoluteTimeIntervalSince1970, 0.001);
+}
+
 - (void)testJournalChangesNewerThanTheDatabaseCount {
 	NoteObject *note = [self note:@"Journal" body:@"v1" labels:@""];
 	[self markSynced:note dirty:NO];

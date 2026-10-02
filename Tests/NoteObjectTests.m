@@ -124,4 +124,16 @@ static NVNoteRecord *Record(NSString *content, NSArray *tags) {
 	XCTAssertEqual([delegate.events count], (NSUInteger)0, @"%@", delegate.events);
 }
 
+- (void)testRecordTagsAreSplitAsTheTagUISplitsThem {
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:nil labels:@"work;home\tideas, later work"];
+	NSArray *expected = @[@"work", @"home", @"ideas", @"later"];
+	XCTAssertEqualObjects([note orderedLabelTitles], expected);
+	XCTAssertEqualObjects([[note noteRecordRepresentation] tags], expected);
+}
+
+- (void)testARecordWithoutLabelsHasNoTags {
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:nil labels:nil];
+	XCTAssertEqualObjects([[note noteRecordRepresentation] tags], [NSArray array]);
+}
+
 @end
