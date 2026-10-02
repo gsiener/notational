@@ -1683,13 +1683,7 @@ terminateApp:
 	
 	NSString *searchString = [prefsController lastSearchString];
 	if ([searchString length]) {
-		//set the field's text directly and filter from that same string: going through the
-		//field editor only works while the field is focused, which it often isn't at launch
-		//(hidden menu-bar window, account sheet), and then the list was filtered by text the
-		//field didn't show (#24)
-		[self setDualFieldIsVisible:YES];
-		[field setStringValue:searchString];
-		[notationController filterNotesFromString:searchString];
+		[self searchForString:searchString];
 	} else {
 		[field setStringValue:@""];
 		[notationController refilterNotes];
@@ -1761,20 +1755,20 @@ terminateApp:
 	
 	if (string) {
 		
-		//problem: this won't work when the toolbar (and consequently the searchfield) is hidden;
-		//and neither will the controlTextDidChange implementation
-		//[self _expandToolbar];
-		
         [self setDualFieldIsVisible:YES];
         [mainView setNeedsDisplay:YES];
 		[window makeFirstResponder:field];
 		NSTextView* fieldEditor = (NSTextView*)[field currentEditor];
 		NSRange fullRange = NSMakeRange(0, [[fieldEditor string] length]);
-		if ([fieldEditor shouldChangeTextInRange:fullRange replacementString:string]) {
+		if (fieldEditor && [fieldEditor shouldChangeTextInRange:fullRange replacementString:string]) {
+			//as if typed: controlTextDidChange: filters the list and auto-completes in the field
 			[fieldEditor replaceCharactersInRange:fullRange withString:string];
 			[fieldEditor didChangeText];
 		} else {
-			NSLog(@"I shouldn't change text?");
+			//no field editor, because the field can't be focused (e.g. its window is hidden at launch):
+			//set the field's text and filter from that same string, so the two agree (#24)
+			[field setStringValue:string];
+			[notationController filterNotesFromString:string];
 		}
 	}
 }
