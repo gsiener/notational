@@ -1,0 +1,29 @@
+# UI smoke tests for Notational (#31). Generate the project with:
+#   xcodegen generate --spec UITests/project.yml --project UITests
+# They launch a built Notational.app (TEST_RUNNER_NOTATIONAL_APP) in a throwaway home folder.
+# They drive the real UI and take keyboard focus, so run them in CI or a VM, not on your desktop.
+name: NotationalUITests
+options:
+  deploymentTarget:
+    macOS: "12.0"
+targets:
+  NotationalUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - NotationalUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gsiener.notational.uitests
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: YES
+        CLANG_ENABLE_OBJC_ARC: YES
+schemes:
+  NotationalUITests:
+    build:
+      targets:
+        NotationalUITests: [test]
+    test:
+      targets:
+        - NotationalUITests

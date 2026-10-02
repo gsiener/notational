@@ -78,6 +78,16 @@ jobs:
           codesign --verify --deep --strict "$app"
           ditto -c -k --keepParent "$app" build/Notational.zip
 
+      # drive the built app's UI in a throwaway home folder (#31); runs here, never on a desktop
+      - name: UI smoke tests
+        run: |
+          export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/Notational.xcarchive/Products/Applications/Notational.app"
+          xcodebuild test \
+            -project UITests/NotationalUITests.xcodeproj \
+            -scheme NotationalUITests \
+            -derivedDataPath build/DerivedDataUI \
+            -resultBundlePath build/UITestResults.xcresult
+
       - uses: actions/upload-artifact@v7
         with:
           name: Notational
@@ -87,4 +97,6 @@ jobs:
         if: failure()
         with:
           name: test-results
-          path: build/TestResults.xcresult
+          path: |
+            build/TestResults.xcresult
+            build/UITestResults.xcresult
