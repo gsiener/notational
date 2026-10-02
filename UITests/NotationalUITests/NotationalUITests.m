@@ -30,7 +30,9 @@
 	//store, caches and the old-database lookup all resolve inside the throwaway home
 	app.launchEnvironment = @{@"CFFIXED_USER_HOME": home};
 	//a normal app with a menu bar, whatever the machine's saved preferences say
-	app.launchArguments = @[@"-ShowDockIcon", @"YES", @"-StatusBarItem", @"NO", @"-ConfirmNoteDeletion", @"NO"];
+	//closing the main window would otherwise quit the app (the default)
+	app.launchArguments = @[@"-ShowDockIcon", @"YES", @"-StatusBarItem", @"NO", @"-ConfirmNoteDeletion", @"NO",
+							 @"-QuitWhenClosingMainWindow", @"NO"];
 	[app launch];
 	XCTAssertTrue([app.windows[@"Notational"] waitForExistenceWithTimeout:20], @"main window never appeared");
 	[self dismissAccountWindow];
@@ -46,7 +48,8 @@
 - (void)dismissAccountWindow {
 	XCUIElement *account = app.windows[@"Simplenote Account"];
 	if ([account waitForExistenceWithTimeout:5]) {
-		[account typeKey:@"w" modifierFlags:XCUIKeyModifierCommand];
+		//its own close button: ⌘W would go to whichever window is key
+		[account.buttons[XCUIIdentifierCloseWindow] click];
 		XCTAssertTrue([self waitForGone:account], @"account window didn't close");
 	}
 }
@@ -88,10 +91,13 @@
 
 - (void)testSettingsOpenAndClose {
 	for (int i = 0; i < 3; i++) {
-		[[self mainWindow] typeKey:@"," modifierFlags:XCUIKeyModifierCommand];
-		XCUIElement *settings = [app.windows elementBoundByIndex:0];
-		XCTAssertTrue([settings waitForExistenceWithTimeout:5]);
-		[app typeKey:@"w" modifierFlags:XCUIKeyModifierCommand];
+		[self choose:@"Settings…" inMenu:@"Notational"];
+		//the Settings window is titled after its current pane
+		NSPredicate *notMain = [NSPredicate predicateWithFormat:@"title != 'Notational' AND title != ''"];
+		XCUIElement *settings = [app.windows matchingPredicate:notMain].firstMatch;
+		XCTAssertTrue([settings waitForExistenceWithTimeout:5], @"Settings didn't open");
+		[settings.buttons[XCUIIdentifierCloseWindow] click];
+		XCTAssertTrue([self waitForGone:settings], @"Settings didn't close");
 	}
 	[self assertStillRunning];
 }
