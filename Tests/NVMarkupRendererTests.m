@@ -39,6 +39,8 @@
 }
 @end
 
+static NSString *RepoPath(void);
+
 @implementation NVMarkupRendererTests
 
 - (void)setUp {
@@ -156,6 +158,59 @@
 	XCTAssertEqualObjects([NSString stringWithContentsOfFile:mine encoding:NSUTF8StringEncoding error:NULL], @"my css");
 	NSString *installed = [[renderer customTemplateFolder] stringByAppendingPathComponent:@"template.html"];
 	XCTAssertEqualObjects([NSString stringWithContentsOfFile:installed encoding:NSUTF8StringEncoding error:NULL], @"starter html");
+}
+
+#pragma mark Updating a page in place
+
+- (void)testTheAppTemplateHasAContentElement {
+	[renderer setCustomTemplateFolder:[folder stringByAppendingPathComponent:@"custom"]];
+	[renderer setBundledTemplateFolder:RepoPath()];
+	NSString *elementID = nil;
+	NSString *inner = [renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID];
+	XCTAssertEqualObjects(elementID, @"contentdiv");
+	//exactly what the page puts inside the element
+	NSString *page = [renderer pageForHTML:@"<p>x</p>" title:@"T"];
+	NSString *element = [NSString stringWithFormat:@"<div id=\"contentdiv\">%@</div>", inner];
+	XCTAssertTrue([page rangeOfString:element].location != NSNotFound, @"%@", inner);
+	XCTAssertTrue([inner rangeOfString:@"<p>x</p>"].location != NSNotFound);
+}
+
+- (void)testOnlyAnElementHoldingTheContentAloneCanBeUpdated {
+	[self useTemplateFolders];
+	NSString *elementID = nil;
+	[self write:@"<main class='a' id='body'>{%content%}</main>" to:@"template.html" inFolder:@"custom" modified:90];
+	XCTAssertEqualObjects([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID], @"<p>x</p>");
+	XCTAssertEqualObjects(elementID, @"body");
+	[self write:@"<div id=\"c\"><h1>{%title%}</h1>{%content%}</div>" to:@"template.html" inFolder:@"custom" modified:80];
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID]);
+	[self write:@"<div id=\"c\">{%content%}</div><p>{%content%}</p>" to:@"template.html" inFolder:@"custom" modified:70];
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID]);
+	[self write:@"<div data-id=\"c\">{%content%}</div>" to:@"template.html" inFolder:@"custom" modified:60];
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID]);
+	[self write:@"<div id=\"c\">{%content%}</div><div id=\"c\"></div>" to:@"template.html" inFolder:@"custom" modified:50];
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID]);
+}
+
+- (void)testHTMLThatWouldParseDifferentlyOnItsOwnIsNotUpdatedInPlace {
+	[self useTemplateFolders];
+	[self write:@"<div id=\"c\">\n{%content%}\n</div>" to:@"template.html" inFolder:@"custom" modified:50];
+	XCTAssertEqualObjects([renderer contentElementHTMLForHTML:@"<div class=\"footnotes\"><p>x</p></div>" title:@"T" elementID:NULL],
+						  @"\n<div class=\"footnotes\"><p>x</p></div>\n");
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p></div><p>y</p>" title:@"T" elementID:NULL]);
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p><SCRIPT>alert(1)</SCRIPT>" title:@"T" elementID:NULL]);
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<!DOCTYPE html><html><body>x</body></html>" title:@"T" elementID:NULL]);
+	XCTAssertNil([renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"{%content%}" elementID:NULL]);
+}
+
+- (void)testTheTemplateKeyFollowsTheTemplate {
+	[self useTemplateFolders];
+	id before = [renderer templateKey];
+	XCTAssertEqualObjects([renderer templateKey], before);
+	[self write:@"mine {%content%}" to:@"template.html" inFolder:@"custom" modified:50];
+	XCTAssertNotEqualObjects([renderer templateKey], before);
+	before = [renderer templateKey];
+	[self write:@"mine{}" to:@"custom.css" inFolder:@"custom" modified:40];
+	XCTAssertNotEqualObjects([renderer templateKey], before);
 }
 
 #pragma mark Process tools

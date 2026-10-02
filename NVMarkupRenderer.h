@@ -52,6 +52,15 @@ enum {
 //are read once, and again only when the one in use changes.
 - (NSString *)pageForHTML:(NSString *)html title:(NSString *)title;
 
+//What lets a page from -pageForHTML:title: be brought up to date without loading it again: the
+//template's element that holds {%content%} and nothing else. Sets *elementID to that element's id
+//and returns the inner HTML -pageForHTML:title: would give it for this HTML. nil when the HTML is a
+//whole document, there's no template, or the template has no such element.
+- (NSString *)contentElementHTMLForHTML:(NSString *)html title:(NSString *)title elementID:(NSString **)elementID;
+
+//the template and style -pageForHTML:title: uses now; a different value means the template changed
+- (id)templateKey;
+
 //copies starter template.html and custom.css into customTemplateFolder for the user to edit,
 //leaving any already there alone
 - (void)installCustomTemplate;

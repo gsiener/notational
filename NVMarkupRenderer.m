@@ -188,6 +188,52 @@ static BOOL LooksLikeTaskPaper(NSString *text) {
 									  css:[self templateFile:@"custom.css"] supportPath:customTemplateFolder];
 }
 
+- (NSString *)contentElementHTMLForHTML:(NSString *)html title:(NSString *)title elementID:(NSString **)elementID {
+	html = html ? html : @"";
+	if ([[self class] isCompleteDocument:html]) return nil;
+	NSString *template = [self templateFile:@"template.html"];
+	if (![template length]) return nil;
+	//the content must land in that element alone: once in the template, and not brought in by the other placeholders
+	NSString *placeholder = @"{%content%}";
+	if ([[template componentsSeparatedByString:placeholder] count] != 2) return nil;
+	NSString *css = [self templateFile:@"custom.css"];
+	if ([title rangeOfString:placeholder].location != NSNotFound || [css rangeOfString:placeholder].location != NSNotFound ||
+		[customTemplateFolder rangeOfString:placeholder].location != NSNotFound) return nil;
+
+	static NSRegularExpression *container = nil;
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		container = [NSRegularExpression regularExpressionWithPattern:@"<([A-Za-z][A-Za-z0-9]*)\\s(?:[^>]*?\\s)?id\\s*=\\s*([\"'])([^\"'<>]+)\\2[^>]*>(\\s*)\\{%content%\\}(\\s*)</\\1\\s*>"
+																	  options:NSRegularExpressionCaseInsensitive error:NULL];
+	});
+	NSTextCheckingResult *match = [container firstMatchInString:template options:0 range:NSMakeRange(0, [template length])];
+	if (!match) return nil;
+	//and no other element in the template may share its id
+	NSString *identifier = [template substringWithRange:[match rangeAtIndex:3]];
+	NSString *sameID = [NSString stringWithFormat:@"\\sid\\s*=\\s*[\"']%@[\"']", [NSRegularExpression escapedPatternForString:identifier]];
+	if ([[NSRegularExpression regularExpressionWithPattern:sameID options:NSRegularExpressionCaseInsensitive error:NULL]
+		 numberOfMatchesInString:template options:0 range:NSMakeRange(0, [template length])] != 1) return nil;
+	//parsed on its own, the HTML must come out as it would inside the page: no scripts (they'd not run),
+	//no document-level tags, and the element's own tag balanced so the HTML can't close it early
+	NSString *tag = [[template substringWithRange:[match rangeAtIndex:1]] lowercaseString];
+	NSString *lowered = [html lowercaseString];
+	for (NSString *marker in [NSArray arrayWithObjects:@"<script", @"<html", @"<head", @"<body", @"<frameset", nil])
+		if ([lowered rangeOfString:marker].location != NSNotFound) return nil;
+	NSString *opening = [NSString stringWithFormat:@"<%@[\\s>]", tag], *closing = [NSString stringWithFormat:@"</%@[\\s>]", tag];
+	NSRange all = NSMakeRange(0, [lowered length]);
+	if ([[NSRegularExpression regularExpressionWithPattern:opening options:0 error:NULL] numberOfMatchesInString:lowered options:0 range:all] !=
+		[[NSRegularExpression regularExpressionWithPattern:closing options:0 error:NULL] numberOfMatchesInString:lowered options:0 range:all])
+		return nil;
+	if (elementID) *elementID = identifier;
+	return [NSString stringWithFormat:@"%@%@%@", [template substringWithRange:[match rangeAtIndex:4]], html,
+			[template substringWithRange:[match rangeAtIndex:5]]];
+}
+
+- (id)templateKey {
+	NSString *template = [self templateFile:@"template.html"], *css = [self templateFile:@"custom.css"];
+	return [NSArray arrayWithObjects:template ? (id)template : [NSNull null], css ? (id)css : [NSNull null], nil];
+}
+
 - (void)installCustomTemplate {
 	if (!customTemplateFolder) return;
 	NSFileManager *fileManager = [NSFileManager defaultManager];

@@ -348,6 +348,7 @@
 		23048A18C2188EA2C43CF924 /* NoteObjectTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */; };
 		712B11171FEB69B014899FBD /* AppControllerSearchTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F0A8A6E2C82510FFE178424D /* AppControllerSearchTests.m */; };
 		EBBEF42CB8C9686FA1BA06B4 /* AppControllerThemeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 15FC4EDCEBEC3BF8F9821806 /* AppControllerThemeTests.m */; };
+		6D281D4D1B4E7EDB4F6EDA6E /* PreviewPageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FB71A1B2D18F29AEDE8B102C /* PreviewPageTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -812,6 +813,7 @@
 		A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NoteObjectTests.m; sourceTree = "<group>"; };
 		F0A8A6E2C82510FFE178424D /* AppControllerSearchTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppControllerSearchTests.m; sourceTree = "<group>"; };
 		15FC4EDCEBEC3BF8F9821806 /* AppControllerThemeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppControllerThemeTests.m; sourceTree = "<group>"; };
+		FB71A1B2D18F29AEDE8B102C /* PreviewPageTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PreviewPageTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1355,6 +1357,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				FB71A1B2D18F29AEDE8B102C /* PreviewPageTests.m */,
 				15FC4EDCEBEC3BF8F9821806 /* AppControllerThemeTests.m */,
 				F0A8A6E2C82510FFE178424D /* AppControllerSearchTests.m */,
 				A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */,
@@ -1719,6 +1722,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D281D4D1B4E7EDB4F6EDA6E /* PreviewPageTests.m in Sources */,
 				EBBEF42CB8C9686FA1BA06B4 /* AppControllerThemeTests.m in Sources */,
 				712B11171FEB69B014899FBD /* AppControllerSearchTests.m in Sources */,
 				23048A18C2188EA2C43CF924 /* NoteObjectTests.m in Sources */,

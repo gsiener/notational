@@ -28,6 +28,25 @@
 }
 @end
 
+//the scroll position a reloaded page restores; not one of the template's own scripts
+static NSString *const RestoreScrollScriptID = @"nv-restore-scroll";
+
+@interface PreviewController () {
+	//notes render off the main thread, one at a time; only the latest request's result is shown
+	dispatch_queue_t renderQueue;
+	NSUInteger renderGeneration;
+	//the last text rendered and its HTML, so text that hasn't changed isn't rendered again
+	NSString *renderedText, *renderedHTML;
+
+	//the page in the web view: what it was made from, and whether it has finished loading
+	WKNavigation *pageNavigation;
+	BOOL pageLoaded;
+	__weak NoteObject *pageNote;
+	NSString *pageTitle, *pageContentElementID;
+	id pageTemplateKey;
+}
+@end
+
 @implementation PreviewController
 
 @synthesize preview;
@@ -48,6 +67,7 @@
     if ((self = [super initWithWindowNibName:@"MarkupPreview" owner:self])) {
         self.isPreviewOutdated = YES;
         self.isPreviewSticky = NO;
+        renderQueue = dispatch_queue_create("net.elasticthreads.nv.preview-render", DISPATCH_QUEUE_SERIAL);
         BOOL showPreviewWindow = [[NSUserDefaults standardUserDefaults] boolForKey:kDefaultMarkupPreviewVisible];
         if (showPreviewWindow) {
             [[self window] orderFront:self];
@@ -78,6 +98,32 @@
 //the "Cocoa" object custom templates can call, e.g. Cocoa.log("…"), as they could with the old WebView
 static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { window.webkit.messageHandlers.log.postMessage(String(s)); }};";
 
+//notes, as the page loads, whether any of its own scripts ran: one fetched from a file, or an inline one
+//that didn't throw. An update in place needs to know (see ContentUpdateScript).
+static NSString *const ScriptWatchingScript = @"(function() {"
+	"var loaded = 0, errors = 0;"
+	"function watch(e) { if (e.type === 'error' ? e instanceof ErrorEvent : (e.target && e.target.tagName === 'SCRIPT')) e.type === 'error' ? errors++ : loaded++; }"
+	//a script element's load event doesn't reach the window, only the document
+	"document.addEventListener('load', watch, true);"
+	"window.addEventListener('error', watch, true);"
+	"window.addEventListener('load', function() {"
+		"document.removeEventListener('load', watch, true);"
+		"window.removeEventListener('error', watch, true);"
+		"var inline = document.querySelectorAll('script:not([src]):not(#%@)').length;"
+		"window.NVPreviewScriptsRan = loaded > 0 || errors < inline;"
+	"});"
+	"})();";
+
+//replaces the content element's HTML and answers true, or answers false when the page must be loaded
+//again: it isn't loaded yet, lacks the element, or has scripts that ran at load and so would not see the
+//new content (the app's own template asks for a jquery.js that isn't there, and its script then throws)
+static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
+	"var element = document.getElementById(elementID);"
+	"if (!element || document.readyState !== 'complete' || window.NVPreviewScriptsRan !== false) return false;"
+	"element.innerHTML = html;"
+	"return true;"
+	"}).apply(null, %@);";
+
 //the page is written to a file and loaded from there, so the template can use files from the support
 //folder ({%support%}) and notes can show local images, as the old WebView allowed
 + (NSURL *)previewPageURL {
@@ -91,6 +137,16 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 	return url;
 }
 
++ (WKUserScript *)scriptWatchingScript {
+	return [[WKUserScript alloc] initWithSource:[NSString stringWithFormat:ScriptWatchingScript, RestoreScrollScriptID]
+								  injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
+}
+
++ (NSString *)scriptReplacingContentOfElement:(NSString *)elementID withHTML:(NSString *)html {
+	NSData *arguments = [NSJSONSerialization dataWithJSONObject:[NSArray arrayWithObjects:elementID, html, nil] options:0 error:NULL];
+	return [NSString stringWithFormat:ContentUpdateScript, [[NSString alloc] initWithData:arguments encoding:NSUTF8StringEncoding]];
+}
+
 - (void)installWebView {
 	if (preview || !previewContainer) return;
 	WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
@@ -98,6 +154,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 	WKUserContentController *content = [configuration userContentController];
 	[content addUserScript:[[WKUserScript alloc] initWithSource:LogBridgeScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart
 												 forMainFrameOnly:YES]];
+	[content addUserScript:[[self class] scriptWatchingScript]];
 	NVWeakScriptMessageHandler *logHandler = [[NVWeakScriptMessageHandler alloc] init];
 	[logHandler setTarget:self];
 	[content addScriptMessageHandler:logHandler name:@"log"];
@@ -125,6 +182,10 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 	}
 }
 
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+	if (navigation && navigation == pageNavigation) pageLoaded = YES;
+}
+
 //target="_blank" and window.open
 - (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
    forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
@@ -142,6 +203,8 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 
     if (![[self window] isVisible]) {
         self.isPreviewOutdated = YES;
+        //a render still in flight is for older text; it mustn't mark the preview up to date
+        renderGeneration++;
         return;
     }
 
@@ -199,31 +262,77 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     }
     AppController *app = object;
     NSString *rawString = [app noteContent];
+    NSString *text = rawString ? [rawString copy] : @"";
     NoteObject *note = [app selectedNoteObject];
-    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
-    NSString *processedString = [renderer htmlForText:rawString];
     NSString *noteTitle = note ? [NSString stringWithFormat:@"%@",titleOfNote(note)] : @"";
     BOOL sameNote = (lastNote == note);
     lastNote = note;
+    NSUInteger generation = ++renderGeneration;
+
+    if (renderedText && [text isEqualToString:renderedText]) {
+        [self showHTML:renderedHTML ofNote:note title:noteTitle sameNote:sameNote generation:generation];
+        return;
+    }
+    //rendering runs a separate program; keep it off the main thread, and show only the latest
+    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    dispatch_async(renderQueue, ^{
+        NSString *html = [renderer htmlForText:text];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            renderedText = text;
+            renderedHTML = html;
+            if (generation != renderGeneration) return;
+            [self showHTML:html ofNote:note title:noteTitle sameNote:sameNote generation:generation];
+        });
+    });
+}
+
+- (void)showHTML:(NSString *)processedString ofNote:(NoteObject *)note title:(NSString *)noteTitle sameNote:(BOOL)sameNote generation:(NSUInteger)generation
+{
+    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
     [[self window] setTitle:noteTitle];
     [sourceView replaceCharactersInRange:NSMakeRange(0, [[sourceView string] length]) withString:processedString];
     self.isPreviewOutdated = NO;
-
-    //the same note again: keep the reader's place (the page is replaced, so ask where it was first)
     [self installWebView];
+
+    //the same note, already showing in this template: replace just its content, which keeps the reader's place
+    NSString *elementID = nil;
+    NSString *content = [renderer contentElementHTMLForHTML:processedString title:noteTitle elementID:&elementID];
+    if (content && pageLoaded && note == pageNote && [noteTitle isEqualToString:pageTitle] &&
+        [elementID isEqualToString:pageContentElementID] && [[renderer templateKey] isEqual:pageTemplateKey]) {
+        [preview evaluateJavaScript:[[self class] scriptReplacingContentOfElement:elementID withHTML:content] completionHandler:^(id result, NSError *error) {
+            if ([result isKindOfClass:[NSNumber class]] && [result boolValue]) return;
+            if (generation == renderGeneration)
+                [self loadPageForHTML:processedString ofNote:note title:noteTitle sameNote:sameNote generation:generation];
+        }];
+        return;
+    }
+    [self loadPageForHTML:processedString ofNote:note title:noteTitle sameNote:sameNote generation:generation];
+}
+
+- (void)loadPageForHTML:(NSString *)processedString ofNote:(NoteObject *)note title:(NSString *)noteTitle sameNote:(BOOL)sameNote generation:(NSUInteger)generation
+{
+    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    //the same note again: keep the reader's place (the page is replaced, so ask where it was first)
     NSString *scrollScript = @"(document.scrollingElement || document.body).scrollTop";
     [preview evaluateJavaScript:sameNote ? scrollScript : @"0" completionHandler:^(id result, NSError *error) {
+        if (generation != renderGeneration) return;
         NSString *previewString = processedString;
         if (sameNote && [result respondsToSelector:@selector(doubleValue)] && [result doubleValue] > 0) {
-            previewString = [processedString stringByAppendingFormat:@"\n<script>window.addEventListener('load', function() { (document.scrollingElement || document.body).scrollTop = %f; });</script>", [result doubleValue]];
+            previewString = [processedString stringByAppendingFormat:@"\n<script id=\"%@\">window.addEventListener('load', function() { (document.scrollingElement || document.body).scrollTop = %f; });</script>", RestoreScrollScriptID, [result doubleValue]];
         }
         NSString *page = [renderer pageForHTML:previewString title:noteTitle];
+        NSString *elementID = nil;
+        pageNote = note;
+        pageTitle = noteTitle;
+        pageContentElementID = [renderer contentElementHTMLForHTML:processedString title:noteTitle elementID:&elementID] ? elementID : nil;
+        pageTemplateKey = [renderer templateKey];
+        pageLoaded = NO;
         NSURL *pageURL = [[self class] previewPageURL];
         if (![page writeToURL:pageURL atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
-            [preview loadHTMLString:page baseURL:nil];
+            pageNavigation = [preview loadHTMLString:page baseURL:nil];
             return;
         }
-        [preview loadFileURL:pageURL allowingReadAccessToURL:[NSURL fileURLWithPath:@"/"]];
+        pageNavigation = [preview loadFileURL:pageURL allowingReadAccessToURL:[NSURL fileURLWithPath:@"/"]];
     }];
 }
 
