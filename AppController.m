@@ -417,7 +417,6 @@ void outletObjectAwoke(id sender) {
 	
 	//tell us..
 	[prefsController registerWithTarget:self forChangesInSettings:
-	 @selector(setAliasDataForDefaultDirectory:sender:),  //when someone wants to load a new database
 	 @selector(setSortedTableColumnKey:reversed:sender:),  //when sorting prefs changed
 	 @selector(setNoteBodyFont:sender:),  //when to tell notationcontroller to restyle its notes
 	 @selector(setForegroundTextColor:sender:),  //ditto
@@ -2311,8 +2310,13 @@ terminateApp:
 	[dualSV removeFromSuperviewWithoutNeedingDisplay];
 	dualFieldItem = [[NSToolbarItem alloc] initWithItemIdentifier:@"DualField"];
 	[dualFieldItem setView:dualSV];
+	//minSize/maxSize are deprecated in favour of sizing the item's view with constraints, but that has not been
+	//verified to keep the search field stretching the full width of the expanded toolbar; keep the proven behaviour
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	[dualFieldItem setMaxSize:NSMakeSize(FLT_MAX, [dualSV frame].size.height)];
 	[dualFieldItem setMinSize:NSMakeSize(50.0f, [dualSV frame].size.height)];
+#pragma clang diagnostic pop
     [dualFieldItem setLabel:NSLocalizedString(@"Search or Create", @"placeholder text in search/create field")];
 	
 	toolbar = [[NSToolbar alloc] initWithIdentifier:@"NVToolbar"];

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11CE0000000000000000003 /* NVArchiving.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NVArchiving.m */; };
+		A11CE0000000000000000004 /* NVArchiving.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NVArchiving.m */; };
+		A11CE0000000000000000005 /* NVArchivingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000002 /* NVArchivingTests.m */; };
 		210A10690B66720F005BE981 /* BookmarksTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 210A10670B66720F005BE981 /* BookmarksTable.m */; };
 		210C07530B6BF0A2005D23A8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 210C07230B6BF0A1005D23A8 /* WebKit.framework */; };
 		2110C0D90B65F09F00F5C52E /* SavedSearches.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2110C0CF0B65F09E00F5C52E /* SavedSearches.nib */; };
@@ -78,12 +81,12 @@
 		21DF19B410D172F600543C35 /* DFCapLeftRoundedInactive.png in Resources */ = {isa = PBXBuildFile; fileRef = 21DF19B010D172F600543C35 /* DFCapLeftRoundedInactive.png */; };
 		21E6B09B0B6E6D0C001ABEDC /* URLGetter.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21E6B0950B6E6D0B001ABEDC /* URLGetter.nib */; };
 		21E6B09F0B6E6D18001ABEDC /* URLGetter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21E6B09D0B6E6D18001ABEDC /* URLGetter.m */; };
-		21F1CD6D0B3A38DB001FB5F6 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		21F1CD6F0B3A38DB001FB5F6 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		21F1CD6D0B3A38DB001FB5F6 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		21F1CD6F0B3A38DB001FB5F6 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F1CD700B3A38DB001FB5F6 /* PTKeyCodes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 21F1CD6A0B3A38DB001FB5F6 /* PTKeyCodes.plist */; };
-		21F1CD710B3A38DB001FB5F6 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		21F1CD980B3A3F77001FB5F6 /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		21F1CDAD0B3A401F001FB5F6 /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		21F1CD710B3A38DB001FB5F6 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		21F1CD980B3A3F77001FB5F6 /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		21F1CDAD0B3A401F001FB5F6 /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F459AD0A92E01D00FB6FFE /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21F4599B0A92E01C00FB6FFE /* Carbon.framework */; };
 		21FF94F30B5AD22800DB6A2F /* ExporterManager.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21FF94ED0B5AD22800DB6A2F /* ExporterManager.nib */; };
 		21FF94F70B5AD23B00DB6A2F /* ExporterManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21FF94F50B5AD23B00DB6A2F /* ExporterManager.m */; };
@@ -184,8 +187,8 @@
 		93B3482A1371547800658F98 /* HUDIconSave.png in Resources */ = {isa = PBXBuildFile; fileRef = 93B348261371547800658F98 /* HUDIconSave.png */; };
 		93B90E7A1386018200BEC5FB /* ExternalEditorListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E781386018200BEC5FB /* ExternalEditorListController.m */; };
 		93B90E84138601C100BEC5FB /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93B90E7E138601C100BEC5FB /* LICENSE.txt */; };
-		93B90E85138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		93B90E86138601C100BEC5FB /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		93B90E85138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		93B90E86138601C100BEC5FB /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		B683A0D316F1CDA600564A1D /* LinkBack@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C716F1CDA600564A1D /* LinkBack@2x.tif */; };
 		B683A0D416F1CDA600564A1D /* LinkBackPressed@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C816F1CDA600564A1D /* LinkBackPressed@2x.tif */; };
 		B683A0D516F1CDA600564A1D /* SnapBack@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C916F1CDA600564A1D /* SnapBack@2x.tif */; };
@@ -238,11 +241,11 @@
 		F02771BFAA6A59EF3226689E /* BlorPasswordRetriever.m in Sources */ = {isa = PBXBuildFile; fileRef = 219FD63D0B309B69004E132B /* BlorPasswordRetriever.m */; };
 		C2A0F6CD512E8D5027F16D34 /* idea_ossl.c in Sources */ = {isa = PBXBuildFile; fileRef = 211344440B354E000081B064 /* idea_ossl.c */; };
 		25424577BEDCB154CE675753 /* broken_md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 211345A90B35D8540081B064 /* broken_md5.c */; };
-		C62B6EF44808A10668AC5C54 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		61F158FEF89BE20B71903C78 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		B1F3E44983E1A5A65C72C678 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		410B5D775DE677368F3756AD /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		763AE2038000290F2D53F76C /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		C62B6EF44808A10668AC5C54 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		61F158FEF89BE20B71903C78 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		B1F3E44983E1A5A65C72C678 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		410B5D775DE677368F3756AD /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		763AE2038000290F2D53F76C /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		4605ACDD374BF2D296FAD538 /* MultiplePageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21C737940B50C73E0048C08A /* MultiplePageView.m */; };
 		11BCD1A8BB46DEB0C1D61691 /* ExporterManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21FF94F50B5AD23B00DB6A2F /* ExporterManager.m */; };
 		B94720D43CBB51F27CEB147A /* BookmarksTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 210A10670B66720F005BE981 /* BookmarksTable.m */; };
@@ -273,8 +276,8 @@
 		82684491EE24885225EEBA38 /* ETContentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA08C1F13301D5E004E3250 /* ETContentView.m */; };
 		04678DB8AE6727D0E76E12D6 /* ETScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C2CD036132ED47900CA0D7C /* ETScrollView.m */; };
 		A4F789BE5CA6D7C8315109B3 /* ExternalEditorListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E781386018200BEC5FB /* ExternalEditorListController.m */; };
-		6A33B6B9602433694C8DB879 /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		76F1E05B706E80B7FBE66A37 /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		6A33B6B9602433694C8DB879 /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		76F1E05B706E80B7FBE66A37 /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		7DD4D25D44CCC50EE6617E21 /* ETClipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C177AE6141EF95200BC0C0A /* ETClipView.m */; };
 		12D620887A427017090BC876 /* ETOverlayScroller.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C38E2C314223D6900131682 /* ETOverlayScroller.m */; };
 		34718EB654ACDEE3B2C4F211 /* NSFileManager+DirectoryLocations.m in Sources */ = {isa = PBXBuildFile; fileRef = 934C3FB814FDA74F000D14BA /* NSFileManager+DirectoryLocations.m */; };
@@ -362,6 +365,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A11CE0000000000000000000 /* NVArchiving.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVArchiving.h; sourceTree = "<group>"; };
+		A11CE0000000000000000001 /* NVArchiving.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVArchiving.m; sourceTree = "<group>"; };
+		A11CE0000000000000000002 /* NVArchivingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVArchivingTests.m; sourceTree = "<group>"; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		210A10660B66720F005BE981 /* BookmarksTable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = BookmarksTable.h; sourceTree = "<group>"; };
 		210A10670B66720F005BE981 /* BookmarksTable.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = BookmarksTable.m; sourceTree = "<group>"; };
@@ -859,6 +865,8 @@
 				048B1473D0F4023FAC6A1F24 /* NVSplitView.m */,
 				6A37956C7FD5533FED208FB6 /* NVSplitView.h */,
 				E0A0788F1432C8560CA302BD /* NVTheme.m */,
+				A11CE0000000000000000001 /* NVArchiving.m */,
+				A11CE0000000000000000000 /* NVArchiving.h */,
 				ECA60B9C7474BFE2351E83F2 /* NVTheme.h */,
 				A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */,
 				042DDB46E505E2A3C035CA60 /* NVTaskPaperMarkdown.h */,
@@ -1358,6 +1366,7 @@
 				A98525D7A5C2B26C2F7C450E /* NoteObjectTests.m */,
 				F384225420AF77379D8DF89B /* NVSplitViewTests.m */,
 				8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */,
+				A11CE0000000000000000002 /* NVArchivingTests.m */,
 				9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */,
 				9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */,
 				0A235F82D433A3B6B20ECF0A /* AlienNoteImporterTests.m */,
@@ -1623,6 +1632,7 @@
 			files = (
 				8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */,
 				711437CC0586B589020F4E59 /* NVTheme.m in Sources */,
+				A11CE0000000000000000003 /* NVArchiving.m in Sources */,
 				660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */,
 				7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */,
 				CE445F755D155920EB6B4680 /* NVHTMLMarkdown.m in Sources */,
@@ -1721,6 +1731,8 @@
 				2BEAFF072117A52D88C5C202 /* NVSplitViewTests.m in Sources */,
 				364D5222ACE98AA942BA847B /* NVSplitView.m in Sources */,
 				D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */,
+				A11CE0000000000000000005 /* NVArchivingTests.m in Sources */,
+				A11CE0000000000000000004 /* NVArchiving.m in Sources */,
 				7BBD2EF5C32C11C0C472D7B1 /* NVTheme.m in Sources */,
 				2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */,
 				1C22C292A48F41C818DC9528 /* NVTaskPaperMarkdown.m in Sources */,
@@ -2124,6 +2136,7 @@
 					"$(inherited)",
 					"-Werror=objc-method-access",
 					"-Werror=incompatible-pointer-types",
+					"-Werror=deprecated-declarations",
 				);
 			};
 			name = Development;
@@ -2324,6 +2337,7 @@
 					"$(inherited)",
 					"-Werror=objc-method-access",
 					"-Werror=incompatible-pointer-types",
+					"-Werror=deprecated-declarations",
 				);
 			};
 			name = ForBuilding;
@@ -2352,6 +2366,7 @@
 					"$(inherited)",
 					"-Werror=objc-method-access",
 					"-Werror=incompatible-pointer-types",
+					"-Werror=deprecated-declarations",
 				);
 			};
 			name = ForBuilding;
@@ -2380,6 +2395,7 @@
 					"$(inherited)",
 					"-Werror=objc-method-access",
 					"-Werror=incompatible-pointer-types",
+					"-Werror=deprecated-declarations",
 				);
 			};
 			name = Development;

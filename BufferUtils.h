@@ -35,8 +35,5 @@ NSInteger genericSortContextFirst(int (*context) (void*, void*), void* one, void
 NSInteger genericSortContextLast(void* one, void* two, int (*context) (void*, void*));
 void QuickSortBuffer(void **buffer, unsigned int objCount, int (*compar)(const void *, const void *));
 
-OSStatus FSCreateFileIfNotPresentInDirectory(FSRef *directoryRef, FSRef *childRef, CFStringRef filename, Boolean *created);
-OSStatus FSRefMakeInDirectoryWithString(FSRef *directoryRef, FSRef *childRef, CFStringRef filename, UniChar* charsBuffer);
-OSStatus FSRefWriteData(FSRef *fsRef, size_t maximumWriteSize, UInt64 bufferSize, const void* buffer, UInt16 modeOptions, Boolean truncateFile);
 
 CFStringRef CopyReasonFromFSErr(OSStatus err);

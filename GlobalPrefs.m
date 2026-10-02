@@ -22,6 +22,7 @@
 
 
 #import "GlobalPrefs.h"
+#import "NVArchiving.h"
 #import "NVTheme.h"
 #import "NVMarkupRenderer.h"
 #import "NSData_transformations.h"
@@ -39,7 +40,6 @@
 #define SEND_CALLBACKS() sendCallbacksForGlobalPrefs(self, _cmd, sender)
 
 static NSString *TriedToImportBlorKey = @"TriedToImportBlor";
-static NSString *DirectoryAliasKey = @"DirectoryAlias";
 static NSString *AutoCompleteSearchesKey = @"AutoCompleteSearches";
 static NSString *NoteAttributesVisibleKey = @"NoteAttributesVisible";
 static NSString *TableFontSizeKey = @"TableFontPointSize";
@@ -168,14 +168,12 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
             [NSNumber numberWithBool:NO], UseETScrollbarsOnLion,
             [NSNumber numberWithBool:NO], UsesMarkdownCompletions,
 
-			[NSArchiver archivedDataWithRootObject:
-			 [NSFont fontWithName:@"Helvetica" size:12.0f]], NoteBodyFontKey,
+			NVKeyedArchivedData([NSFont fontWithName:@"Helvetica" size:12.0f]), NoteBodyFontKey,
 			
-			[NSArchiver archivedDataWithRootObject:[NSColor blackColor]], ForegroundTextColorKey,
-			[NSArchiver archivedDataWithRootObject:[NSColor whiteColor]], BackgroundTextColorKey,
+			NVKeyedArchivedData([NSColor blackColor]), ForegroundTextColorKey,
+			NVKeyedArchivedData([NSColor whiteColor]), BackgroundTextColorKey,
 			
-			[NSArchiver archivedDataWithRootObject:
-			 [NSColor colorWithCalibratedRed:0.945 green:0.702 blue:0.702 alpha:1.0f]], SearchTermHighlightColorKey,
+			NVKeyedArchivedData([NSColor colorWithCalibratedRed:0.945 green:0.702 blue:0.702 alpha:1.0f]), SearchTermHighlightColorKey,
 			
 			[NSNumber numberWithFloat:[NSFont smallSystemFontSize]], TableFontSizeKey, 
 			[NSArray arrayWithObjects:NoteTitleColumnString, NoteDateModifiedColumnString, nil], NoteAttributesVisibleKey,
@@ -504,7 +502,7 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 		
 		searchTermHighlightAttributes = nil;
 		
-		[defaults setObject:[NSArchiver archivedDataWithRootObject:color] forKey:SearchTermHighlightColorKey];
+		[defaults setObject:NVKeyedArchivedData(color) forKey:SearchTermHighlightColorKey];
 		
 		SEND_CALLBACKS();
 	}
@@ -514,7 +512,7 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 	
 	NSData *theData = [defaults dataForKey:SearchTermHighlightColorKey];
 	if (theData) {
-		NSColor *color = (NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
+		NSColor *color = (NSColor *)NVUnarchivePreferenceValue(theData);
 		if (isRaw) return color;
 		if (color) {
 			//nslayoutmanager temporary attributes don't seem to like alpha components, so synthesize translucency using the bg color
@@ -604,7 +602,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	
 	noteBodyAttributes = nil; //cause method to re-update
 	
-	[defaults setObject:[NSArchiver archivedDataWithRootObject:noteBodyFont] forKey:NoteBodyFontKey]; 
+	[defaults setObject:NVKeyedArchivedData(noteBodyFont) forKey:NoteBodyFontKey]; 
 	
 	//restyle any PTF data on the clipboard to the new font
 	NSData *ptfData = [[NSPasteboard generalPasteboard] dataForType:NVPTFPboardType];
@@ -632,7 +630,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	if (!noteBodyFont) {
 		retry:
 		@try {
-			noteBodyFont = [NSUnarchiver unarchiveObjectWithData:[defaults objectForKey:NoteBodyFontKey]];
+			noteBodyFont = NVUnarchivePreferenceValue([defaults dataForKey:NoteBodyFontKey]);
 		} @catch (NSException *e) {
 			NSLog(@"Error trying to unarchive default note body font (%@, %@)", [e name], [e reason]);
 		}
@@ -720,7 +718,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	if (aColor) {
 		noteBodyAttributes = nil;
 		
-		[defaults setObject:[NSArchiver archivedDataWithRootObject:aColor] forKey:ForegroundTextColorKey];
+		[defaults setObject:NVKeyedArchivedData(aColor) forKey:ForegroundTextColorKey];
 		
 		SEND_CALLBACKS();
 	}	
@@ -734,7 +732,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 
 - (NSColor*)foregroundTextColor {
 	NSData *theData = [defaults dataForKey:ForegroundTextColorKey];
-	if (theData) return (NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
+	if (theData) return (NSColor *)NVUnarchivePreferenceValue(theData);
 	return nil;
 }
 
@@ -746,7 +744,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 		//so it's necessary to invalidate the effective cache of that computed highlight color
 		searchTermHighlightAttributes = nil;
 
-		[defaults setObject:[NSArchiver archivedDataWithRootObject:aColor] forKey:BackgroundTextColorKey];
+		[defaults setObject:NVKeyedArchivedData(aColor) forKey:BackgroundTextColorKey];
 	
 		SEND_CALLBACKS();
 	}
@@ -756,7 +754,7 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	//don't need to cache the unarchived color, as it's not used in a random-access pattern
 	
 	NSData *theData = [defaults dataForKey:BackgroundTextColorKey];
-	if (theData) return (NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
+	if (theData) return (NSColor *)NVUnarchivePreferenceValue(theData);
 
 	return nil;	
 }
@@ -914,68 +912,6 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 		bookmarksController = [[BookmarksController alloc] initWithBookmarks:[defaults arrayForKey:BookmarksKey]];
 	}
 	return bookmarksController;
-}
-
-- (void)setAliasDataForDefaultDirectory:(NSData*)alias sender:(id)sender {
-    [defaults setObject:alias forKey:DirectoryAliasKey];
-	
-    SEND_CALLBACKS();
-}
-
-- (NSData*)aliasDataForDefaultDirectory {
-    return [defaults dataForKey:DirectoryAliasKey];
-}
-
-- (NSString*)displayNameForDefaultDirectoryWithFSRef:(FSRef*)fsRef {
-
-    if (!fsRef)
-	return nil;
-    
-    if (IsZeros(fsRef, sizeof(FSRef))) {
-	if (![[self aliasDataForDefaultDirectory] fsRefAsAlias:fsRef])
-	    return nil;
-    }
-    CFStringRef displayName = NULL;
-    if (LSCopyDisplayNameForRef(fsRef, &displayName) == noErr) {
-	return CFBridgingRelease(displayName);
-    }
-    return nil;
-}
-
-- (NSString*)humanViewablePathForDefaultDirectory {
-    //resolve alias to fsref
-    FSRef targetRef;
-    if ([[self aliasDataForDefaultDirectory] fsRefAsAlias:&targetRef]) {	    
-	//follow the parent fsrefs up the tree, calling LSCopyDisplayNameForRef, hoping that the root is a drive name
-	
-	NSMutableArray *directoryNames = [NSMutableArray arrayWithCapacity:4];
-	FSRef parentRef, *currentRef = &targetRef;
-	
-	OSStatus err = noErr;
-	
-	do {
-	    
-	    if ((err = FSGetCatalogInfo(currentRef, kFSCatInfoNone, NULL, NULL, NULL, &parentRef)) == noErr) {
-		
-		CFStringRef displayName = NULL;
-		if ((err = LSCopyDisplayNameForRef(currentRef, &displayName)) == noErr) {
-		    
-		    if (displayName) {
-			[directoryNames insertObject:(__bridge id)displayName atIndex:0];
-			CFRelease(displayName);
-		    }
-		}
-		
-		currentRef = &parentRef;
-	    }
-	} while (err == noErr);
-	
-	//build new string delimited by triangles like pages in its recent items menu
-	return [directoryNames componentsJoinedByString:@" : "];
-	
-    }
-    
-    return nil;
 }
 
 - (void)setBlorImportAttempted:(BOOL)value {

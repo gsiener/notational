@@ -39,7 +39,7 @@ typedef struct _ViewLocationContext {
 	
 	BOOL viewMenusValid;
 	BOOL hadHighlightInForeground, hadHighlightInBackground;
-	BOOL shouldUseSecondaryHighlightColor, isActiveStyle;
+	BOOL shouldUseSecondaryHighlightColor, isActiveStyle, usesSourceListHighlight;
 	BOOL lastEventActivatedTagEdit, wasDeleting, isAutocompleting;
 	
 	__weak id labelsListSource;
@@ -73,6 +73,7 @@ typedef struct _ViewLocationContext {
 - (float)tableFontHeight;
 
 - (BOOL)isActiveStyle;
+- (BOOL)usesSourceListHighlight;
 - (void)setShouldUseSecondaryHighlightColor:(BOOL)value;
 - (void)_setActiveStyleState:(BOOL)activeStyle;
 - (void)updateTitleDereferencorState;

@@ -17,6 +17,7 @@
 
 
 #import "BlorPasswordRetriever.h"
+#import <Security/Security.h>
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "NSData_transformations.h"
@@ -51,9 +52,9 @@
 	[window close];
 	
 	if (![[GlobalPrefs defaultPrefs] triedToImportBlor])
-		NSRunAlertPanel(NSLocalizedString(@"Note Importing Cancelled", nil), 
-						NSLocalizedString(@"You can import your old notes at any time by choosing quotemarkImport...quotemark from the quotemarkNotequotemark menu and selecting your NotationalDatabase.blor file.",nil), 
-						NSLocalizedString(@"OK",nil), nil, nil);
+		NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"Note Importing Cancelled", nil), 
+				   NSLocalizedString(@"You can import your old notes at any time by choosing quotemarkImport...quotemark from the quotemarkNotequotemark menu and selecting your NotationalDatabase.blor file.",nil), 
+				   NSLocalizedString(@"OK",nil), nil, nil);
 }
 
 - (IBAction)importAction:(id)sender {
@@ -67,8 +68,12 @@
 		[window close];
 		
 	} else {
-		NSBeginAlertSheet(NSLocalizedString(@"Sorry, you entered an incorrect passphrase.",nil), NSLocalizedString(@"OK",nil), 
-						  nil, nil, window, nil, NULL, NULL, NULL, NSLocalizedString(@"Please try again.",nil));
+		NSAlert *alert = [[NSAlert alloc] init];
+		[alert setAlertStyle:NSAlertStyleWarning];
+		[alert setMessageText:NSLocalizedString(@"Sorry, you entered an incorrect passphrase.",nil)];
+		[alert setInformativeText:NSLocalizedString(@"Please try again.",nil)];
+		[alert addButtonWithTitle:NSLocalizedString(@"OK",nil)];
+		[alert beginSheetModalForWindow:window completionHandler:nil];
 	}	
 	
 }
@@ -78,17 +83,22 @@
 	NSString *keychainAccountString = [[path stringByAbbreviatingWithTildeInPath] lowercaseString];
     if ([keychainAccountString length] > 255) keychainAccountString = [keychainAccountString substringToIndex:255];
 	
-    const char *keychainAccountCString = [[keychainAccountString dataUsingEncoding:
-				[NSString defaultCStringEncoding] allowLossyConversion:YES] bytes];
 	
-	UInt32 len;
-	void *p = (void *)calloc(256, sizeof(char));
-	if (kcfindgenericpassword("NV", keychainAccountCString, 255, p, &len, NULL) != noErr) {
-		free(p);
-		return NULL;
-	}
+	//nvALT's ancestors stored the passphrase as a generic password: service "NV", account = the path above
+	NSData *accountData = [keychainAccountString dataUsingEncoding:[NSString defaultCStringEncoding] allowLossyConversion:YES];
+	NSString *account = accountData ? [[NSString alloc] initWithData:accountData encoding:[NSString defaultCStringEncoding]] : nil;
+	if (!account) return nil;
 	
-	return [NSData dataWithBytesNoCopy:p length:len freeWhenDone:YES];
+	NSDictionary *query = @{ (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+							 (__bridge id)kSecAttrService: @"NV",
+							 (__bridge id)kSecAttrAccount: account,
+							 (__bridge id)kSecReturnData: @YES,
+							 (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne };
+	CFTypeRef result = NULL;
+	if (SecItemCopyMatching((__bridge CFDictionaryRef)query, &result) != errSecSuccess || !result)
+		return nil;
+	
+	return CFBridgingRelease(result);
 }
 
 - (NSData*)validPasswordHashData {
@@ -107,7 +117,7 @@
 	//run dialog and grab PW
 	
 	if (!window) {
-		if (![NSBundle loadNibNamed:@"BlorPasswordRetriever" owner:self])  {
+		if (!NVLoadNib(@"BlorPasswordRetriever", self))  {
 			NSLog(@"Failed to load BlorPasswordRetriever.nib");
 			NSBeep();
 			return NULL;

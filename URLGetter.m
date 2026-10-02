@@ -37,7 +37,10 @@ static NSMutableSet *ActiveURLGetters(void) {
 		userData = someObj;
 		
 		[ActiveURLGetters() addObject:self];
-		downloader = [[NSURLDownload alloc] initWithRequest:[NSURLRequest requestWithURL:url] delegate:self];
+		//callbacks arrive on the main queue, so the progress panel and the delegate are only touched from there
+		session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:[NSOperationQueue mainQueue]];
+		downloadTask = [session downloadTaskWithURL:url];
+		[downloadTask resume];
 		
 		[self startProgressIndication:self];
         return self;
@@ -55,7 +58,7 @@ static NSMutableSet *ActiveURLGetters(void) {
 }
 
 - (IBAction)cancelDownload:(id)sender {
-	[downloader cancel];
+	[downloadTask cancel];
 
 	[self endDownloadWithPath:nil];
 }
@@ -108,52 +111,61 @@ static NSMutableSet *ActiveURLGetters(void) {
 	}
 }
 
-- (void)download:(NSURLDownload *)download didReceiveResponse:(NSURLResponse *)response {
-	maxExpectedByteCount = [response expectedContentLength];
-	//NSLog(@"max KB: %lld", maxExpectedByteCount/1024);
+- (void)URLSession:(NSURLSession *)urlSession downloadTask:(NSURLSessionDownloadTask *)task didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+	if (hasEnded) return;
+	
+	totalReceivedByteCount = totalBytesWritten;
+	maxExpectedByteCount = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : 0;
 	
 	[self updateProgress];
 }
 
-- (void)download:(NSURLDownload *)download didReceiveDataOfLength:(NSUInteger)length {
-	totalReceivedByteCount += length;
+//the session deletes the file it downloaded as soon as this returns, so move it somewhere we control
+- (void)URLSession:(NSURLSession *)urlSession downloadTask:(NSURLSessionDownloadTask *)task didFinishDownloadingToURL:(NSURL *)location {
+	if (hasEnded) return;
 	
-	[self updateProgress];
-}
-
-- (void)download:(NSURLDownload *)download decideDestinationWithSuggestedFilename:(NSString *)name {
+	NSString *name = [[task response] suggestedFilename];
+	if (![name length]) name = [[task originalRequest].URL lastPathComponent];
+	if (![name length]) name = @"download";
 	
 	tempDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
-   //if (![[NSFileManager defaultManager] createDirectoryAtPath:tempDirectory attributes:nil]) {
 	if (![[NSFileManager defaultManager]createFolderAtPath:tempDirectory]) {
 		NSLog(@"URLGetter: Couldn't create temporary directory!");
-		[download cancel];
+		tempDirectory = nil;
 		NSBeep();
+		return;
 	}
 	
-	downloadPath = [tempDirectory stringByAppendingPathComponent:name];
-	[download setDestination:downloadPath allowOverwrite:YES];
-	
-	//need to delete this stuff eventually
+	NSString *destination = [tempDirectory stringByAppendingPathComponent:name];
+	if ([[NSFileManager defaultManager] moveItemAtURL:location toURL:[NSURL fileURLWithPath:destination] error:NULL])
+		downloadPath = destination;
 }
 
-- (void)download:(NSURLDownload *)download didFailWithError:(NSError *)error {
+- (void)URLSession:(NSURLSession *)urlSession task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+	if (hasEnded) return; //cancelled
 	
-	NSString *reason = [error localizedDescription];
-	if (!reason) reason = NSLocalizedString(@"unknown error.", @"error description of last resort for why a URL couldn't be accessed");
-	NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The URL quotemark%@quotemark could not be accessed: %@.", nil), 
-		[url absoluteString], reason], @"", NSLocalizedString(@"OK",nil), nil, nil);
-	
-	
-	[self endDownloadWithPath:nil];
-}
-
-- (void)downloadDidFinish:(NSURLDownload *)download {
+	if (error) {
+		NSString *reason = [error localizedDescription];
+		if (!reason) reason = NSLocalizedString(@"unknown error.", @"error description of last resort for why a URL couldn't be accessed");
+		NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The URL quotemark%@quotemark could not be accessed: %@.", nil), 
+			[url absoluteString], reason], @"", NSLocalizedString(@"OK",nil), nil, nil);
+		
+		[self endDownloadWithPath:nil];
+		return;
+	}
 	
 	[self endDownloadWithPath:downloadPath];
 }
 
 - (void)endDownloadWithPath:(NSString*)path {
+	if (hasEnded) return;
+	hasEnded = YES;
+	
+	//the session retains its delegate until it is invalidated
+	[session invalidateAndCancel];
+	session = nil;
+	downloadTask = nil;
+	
 	isImporting = YES;
 	[self updateProgress];
 	

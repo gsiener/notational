@@ -63,14 +63,12 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (void)setBaseBodyFont:(NSFont*)aFont;
 - (NSFont*)baseBodyFont;
 
-- (BOOL)storesPasswordInKeychain;
 - (NSInteger)notesStorageFormat;
 - (BOOL)confirmFileDeletion;
 - (BOOL)doesEncryption;
 - (NSDictionary*)syncServiceAccounts;
 - (NSDictionary*)syncServiceAccountsForArchiving;
 - (NSDictionary*)syncAccountForServiceName:(NSString*)serviceName;
-- (NSString*)syncPasswordForServiceName:(NSString*)serviceName;
 - (NSUInteger)syncFrequencyInMinutesForServiceName:(NSString*)serviceName;
 - (BOOL)syncNotesShouldMergeForServiceName:(NSString*)serviceName;
 - (BOOL)syncServiceIsEnabled:(NSString*)serviceName;
@@ -80,19 +78,11 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (BOOL)firstTimeUsed;
 - (BOOL)secureTextEntry;
 
-- (void)forgetKeychainIdentifier;
-- (const char *)setKeychainIdentifier;
-- (SecKeychainItemRef)currentKeychainItem;
-- (NSData*)passwordDataFromKeychain;
-- (void)removeKeychainData;
-- (void)setKeychainData:(NSData*)data;
-
 - (void)setPreferencesAreStored;
-- (void)setStoresPasswordInKeychain:(BOOL)value;
 - (BOOL)canLoadPassphraseData:(NSData*)passData;
 - (BOOL)canLoadPassphrase:(NSString*)pass;
-- (void)setPassphraseData:(NSData*)passData inKeychain:(BOOL)inKeychain;
-- (void)setPassphraseData:(NSData*)passData inKeychain:(BOOL)inKeychain withIterations:(int)iterationCount;
+- (void)setPassphraseData:(NSData*)passData;
+- (void)setPassphraseData:(NSData*)passData withIterations:(int)iterationCount;
 - (BOOL)encryptDataInNewSession:(NSMutableData*)data;
 - (BOOL)decryptDataWithCurrentSettings:(NSMutableData*)data;
 - (NSData*)WALSessionKey;
@@ -101,13 +91,10 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (void)setConfirmsFileDeletion:(BOOL)value;
 - (void)setDoesEncryption:(BOOL)value;
 - (void)setSecureTextEntry:(BOOL)value;
-- (const char*)keychainSyncAccountNameForService:(NSString*)serviceName;
 - (void)setSyncUsername:(NSString*)username forService:(NSString*)serviceName;
-- (void)setSyncPassword:(NSString*)password forService:(NSString*)serviceName;
 - (void)setSyncFrequency:(NSUInteger)frequencyInMinutes forService:(NSString*)serviceName;
 - (void)setSyncEnabled:(BOOL)isEnabled forService:(NSString*)serviceName;
 - (void)setSyncShouldMerge:(BOOL)shouldMerge inCurrentAccountForService:(NSString*)serviceName;
-- (void)removeSyncPasswordForService:(NSString*)serviceName;
 - (void)setKeyLengthInBits:(unsigned int)newLength;
 
 + (NSString*)pathExtensionForFormat:(NSInteger)format;

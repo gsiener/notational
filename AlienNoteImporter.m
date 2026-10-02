@@ -63,8 +63,7 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 		if ([noteArray count] > 0) {
 			NSLog(@"importing BLOR");
 			NSData *passData = [[[importer documentSettings] objectForKey:RetrievedPasswordKey] dataUsingEncoding:NSUTF8StringEncoding];
-			BOOL shouldStoreInKeychain = [[[importer documentSettings] objectForKey:PasswordWasRetrievedFromKeychainKey] boolValue];
-			[prefs setPassphraseData:passData inKeychain:shouldStoreInKeychain];
+			[prefs setPassphraseData:passData];
 			[prefs setDoesEncryption:YES];
 			
 			[notation addNotes:noteArray];
@@ -545,9 +544,13 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	NSMutableArray *stickyNotes = nil;
 	NS_DURING
 		NSData *stickyData = [NSData uncachedDataFromFile:filename];
+		//the Stickies database is an NSArchiver typedstream written by Stickies.app, which only NSUnarchiver can read
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		NSUnarchiver *unarchiver = [[NSUnarchiver alloc] initForReadingWithData:stickyData];
 		[unarchiver decodeClassName:@"Document" asClassName:@"StickiesDocument"];
 		stickyNotes = [unarchiver decodeObject];
+#pragma clang diagnostic pop
 	NS_HANDLER
 		stickyNotes = nil;
 		NSLog(@"Error parsing stickies database: %@", [localException reason]);

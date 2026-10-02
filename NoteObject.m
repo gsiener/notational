@@ -840,7 +840,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	}
 	
 	NSStringEncoding encoding = NSUTF8StringEncoding;
-	NSMutableString *stringFromData = [NSMutableString newShortLivedStringFromData:data ofGuessedEncoding:&encoding withPath:NULL orWithFSRef:NULL];
+	NSMutableString *stringFromData = [NSMutableString newShortLivedStringFromData:data ofGuessedEncoding:&encoding withPath:NULL];
 	if (!stringFromData) {
 		NSLog(@"Couldn't make string out of data for note %@", titleString);
 		return NO;
@@ -909,7 +909,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	//so expect the delegate to know to schedule the same update itself
 }
 
-- (OSStatus)exportToDirectoryRef:(FSRef*)directoryRef withFilename:(NSString*)userFilename usingFormat:(int)storageFormat overwrite:(BOOL)overwrite {
+- (OSStatus)exportToDirectoryURL:(NSURL*)directoryURL withFilename:(NSString*)userFilename usingFormat:(int)storageFormat overwrite:(BOOL)overwrite {
 	
 	NSData *formattedData = nil;
 	NSError *error = nil;
@@ -952,33 +952,27 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	//one last replacing, though if the unique file-naming method worked this should be unnecessary
 	newfilename = [newfilename stringByReplacingOccurrencesOfString:@":" withString:@"/"];
 	
-	BOOL fileWasCreated = NO;
+	NSURL *fileURL = [directoryURL URLByAppendingPathComponent:newfilename isDirectory:NO];
+	if (!fileURL) return paramErr;
 	
-	FSRef fileRef;
-	OSStatus err = FSCreateFileIfNotPresentInDirectory(directoryRef, &fileRef, (__bridge CFStringRef)newfilename, (Boolean*)&fileWasCreated);
-	if (err != noErr) {
-		NSLog(@"FSCreateFileIfNotPresentInDirectory: %d", err);
-		return err;
-	}
-	if (!fileWasCreated && !overwrite) {
+	if (!overwrite && [[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]]) {
 		NSLog(@"File already existed!");
 		return dupFNErr;
 	}
-	if ((err = FSRefWriteData(&fileRef, 16 * 1024, [formattedData length], [formattedData bytes], 0, true)) != noErr) {
-		NSLog(@"error writing to temporary file: %d", err);
-		return err;
-    }
+	NSError *writeError = nil;
+	if (![formattedData writeToURL:fileURL options:0 error:&writeError]) {
+		NSLog(@"error exporting note: %@", writeError);
+		return [[writeError domain] isEqualToString:NSCocoaErrorDomain] && [writeError code] == NSFileWriteNoPermissionError ? permErr : ioErr;
+	}
 	NSFileManager *fileMan = [NSFileManager defaultManager];
 	if (PlainTextFormat == storageFormat) {
-		[fileMan setTextEncodingAttribute:NSUTF8StringEncoding atFSPath:[[fileMan pathWithFSRef:&fileRef] fileSystemRepresentation]];
+		[fileMan setTextEncodingAttribute:NSUTF8StringEncoding atFSPath:[fileURL fileSystemRepresentation]];
 	}
-	[fileMan setTags:[self orderedLabelTitles] atFSPath:[[fileMan pathWithFSRef:&fileRef] fileSystemRepresentation]];
+	[fileMan setTags:[self orderedLabelTitles] atFSPath:[fileURL fileSystemRepresentation]];
 	
 	//also export the note's modification and creation dates
-	FSCatalogInfo catInfo;
-	UCConvertCFAbsoluteTimeToUTCDateTime(createdDate, &catInfo.createDate);
-	UCConvertCFAbsoluteTimeToUTCDateTime(modifiedDate, &catInfo.contentModDate);
-	FSSetCatalogInfo(&fileRef, kFSCatInfoCreateDate | kFSCatInfoContentMod, &catInfo);
+	[fileURL setResourceValues:@{ NSURLCreationDateKey: [NSDate dateWithTimeIntervalSinceReferenceDate:createdDate],
+								  NSURLContentModificationDateKey: [NSDate dateWithTimeIntervalSinceReferenceDate:modifiedDate] } error:NULL];
 			
 	return noErr;
 }

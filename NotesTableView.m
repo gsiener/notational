@@ -40,6 +40,22 @@
 
 static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, SEL aSel, id target, NSInteger tag);
 
+//the source for option-drags of notes as text files: they can be copied out of the app, not dropped back onto it
+@interface NVNoteFileDragSourceObject : NSObject <NSDraggingSource>
+@end
+@implementation NVNoteFileDragSourceObject
+- (NSDragOperation)draggingSession:(NSDraggingSession *)session sourceOperationMaskForDraggingContext:(NSDraggingContext)context {
+	return context == NSDraggingContextWithinApplication ? NSDragOperationNone : NSDragOperationCopy;
+}
+@end
+
+static id<NSDraggingSource> NVNoteFileDragSource(void) {
+	static NVNoteFileDragSourceObject *source = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{ source = [[NVNoteFileDragSourceObject alloc] init]; });
+	return source;
+}
+
 @implementation NotesTableView
 
 //there's something wrong with this initialization under panther, I think
@@ -205,6 +221,10 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	return tableFontHeight;
 }
 
+- (BOOL)usesSourceListHighlight {
+	return usesSourceListHighlight;
+}
+
 - (BOOL)isActiveStyle {
 	return isActiveStyle;
 }
@@ -276,7 +296,13 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	BOOL isOneRow = !horiz || (![globalPrefs tableColumnsShowPreview] && !ColumnIsSet(NoteLabelsColumn, [globalPrefs tableColumnsBitmap]));
     if (IsLeopardOrLater){
 //        [self setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
+        usesSourceListHighlight = !isOneRow;
+        //the source-list highlight is deprecated in favour of NSTableViewStyleSourceList, which also changes the table's
+        //metrics and insets; keep the look the list has always had
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         [self setSelectionHighlightStyle:isOneRow ? NSTableViewSelectionHighlightStyleRegular : NSTableViewSelectionHighlightStyleSourceList];
+#pragma clang diagnostic pop
     }
 	NSLayoutManager *lm = [[NSLayoutManager alloc] init];
 	tableFontHeight = [lm defaultLineHeightForFont:font];
@@ -808,15 +834,15 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		if ([paths count] > 0) {
 			NSImage *image = [[NSWorkspace sharedWorkspace] iconForFile:[paths lastObject]];
 			
-			NSPasteboard *pboard = [NSPasteboard pasteboardWithName:NSPasteboardNameDrag]; 
-			NSMutableArray *fileURLs = [NSMutableArray arrayWithCapacity:[paths count]];
-			for (i=0; i<[paths count]; i++)
-				[fileURLs addObject:[NSURL fileURLWithPath:[paths objectAtIndex:i]]];
-			[pboard clearContents];
-			[pboard writeObjects:fileURLs];
+			NSMutableArray *dragItems = [NSMutableArray arrayWithCapacity:[paths count]];
+			for (i=0; i<[paths count]; i++) {
+				NSDraggingItem *item = [[NSDraggingItem alloc] initWithPasteboardWriter:[NSURL fileURLWithPath:[paths objectAtIndex:i]]];
+				[item setDraggingFrame:NSMakeRect(dragPoint.x, dragPoint.y - [image size].height, [image size].width, [image size].height) contents:image];
+				[dragItems addObject:item];
+			}
 			
 			[NSApp preventWindowOrdering]; 
-			[self dragImage:image at:dragPoint offset:NSZeroSize event:event pasteboard:pboard source:self slideBack:YES]; 
+			[self beginDraggingSessionWithItems:dragItems event:event source:NVNoteFileDragSource()];
 			return;
 		} else {
 			NSBeep();

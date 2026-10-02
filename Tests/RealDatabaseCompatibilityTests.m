@@ -17,6 +17,7 @@
 #import <XCTest/XCTest.h>
 #import "FrozenNotation.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 #import "NoteObject.h"
 #import "DeletedNoteObject.h"
 #import "WALController.h"
@@ -31,12 +32,8 @@
 - (FrozenNotation *)frozenNotationAtPath:(NSString *)path {
 	NSData *bytes = [NSData dataWithContentsOfFile:path];
 	XCTAssertNotNil(bytes, @"could not read %@", path);
-	FrozenNotation *frozen = nil;
-	@try {
-		frozen = [NSKeyedUnarchiver unarchiveObjectWithData:bytes];
-	} @catch (NSException *e) {
-		XCTFail(@"unarchiving failed: %@", [e reason]);
-	}
+	FrozenNotation *frozen = NVUnarchiveKeyedObject(bytes);
+	XCTAssertNotNil(frozen, @"unarchiving failed");
 	return frozen;
 }
 

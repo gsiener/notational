@@ -6,6 +6,7 @@
 #import "AppController_Simplenote.h"
 #import "NotationController.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
 #import "NVSyncEngine.h"
@@ -63,7 +64,7 @@ static BOOL loadingToken = NO;
 				if ([importer bodyFont]) [prefs setBaseBodyFont:[importer bodyFont]];
 				if ([importer textColor]) [prefs setForegroundTextColor:[importer textColor]];
 				[prefs setConfirmsFileDeletion:[importer confirmsDeletion]];
-				[store setMetadataValue:[[NSKeyedArchiver archivedDataWithRootObject:prefs] base64EncodedStringWithOptions:0]
+				[store setMetadataValue:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
 								 forKey:NotationSettingsKey];
 			}
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",

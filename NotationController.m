@@ -34,6 +34,7 @@
 #import "BufferUtils.h"
 #import "GlobalPrefs.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 #import "NoteAttributeColumn.h"
 #import "FrozenNotation.h"
 #import "AlienNoteImporter.h"
@@ -80,11 +81,7 @@
 		NotationPrefs *prefs = nil;
 		NSString *archived = [store metadataValueForKey:@"notationSettings"];
 		if (archived) {
-			@try {
-				prefs = [NSKeyedUnarchiver unarchiveObjectWithData:[[NSData alloc] initWithBase64EncodedString:archived options:0]];
-			} @catch (NSException *e) {
-				NSLog(@"could not read stored notation settings: %@", [e reason]);
-			}
+			prefs = NVUnarchiveKeyedObject([[NSData alloc] initWithBase64EncodedString:archived options:0]);
 		}
 		notationPrefs = ([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[NotationPrefs alloc] init];
 		[notationPrefs setNotesStorageFormat:SingleDatabaseFormat];
@@ -208,7 +205,7 @@
 	[self synchronizeNoteChanges:changeWritingTimer];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(synchronizeNoteChanges:) object:nil];
 	if ([notationPrefs preferencesChanged]) {
-		[notesStore setMetadataValue:[[NSKeyedArchiver archivedDataWithRootObject:notationPrefs] base64EncodedStringWithOptions:0]
+		[notesStore setMetadataValue:[NVKeyedArchivedData(notationPrefs) base64EncodedStringWithOptions:0]
 							  forKey:@"notationSettings"];
 		[notationPrefs setPreferencesAreStored];
 	}
@@ -867,7 +864,7 @@
 	NSUInteger i, noteCount = [noteArray count];
 	
 	__unsafe_unretained id *notes = (__unsafe_unretained id*)malloc(noteCount * sizeof(id));
-	[noteArray getObjects:notes];
+	[noteArray getObjects:notes range:NSMakeRange(0, noteCount)];
 	
 	for (i=0; i<noteCount; i++) {
 		NSUInteger noteIndex = [notesListDataSource indexOfObjectIdenticalTo:notes[i]];
@@ -953,11 +950,7 @@
 
 - (void)regeneratePreviewsForColumn:(NSTableColumn*)col visibleFilteredRows:(NSRange)rows forceUpdate:(BOOL)force {
     float width = [col width];
-    if(IsLionOrLater){
-        width-=[NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:[NSScroller preferredScrollerStyle]];
-    }else{
-    width-=[NSScroller scrollerWidthForControlSize:NSRegularControlSize];
-    }
+    width -= [NSScroller scrollerWidthForControlSize:NSControlSizeRegular scrollerStyle:[NSScroller preferredScrollerStyle]];
 	
 	if (force || roundf(width) != roundf(titleColumnWidth)) {
 		titleColumnWidth = width;

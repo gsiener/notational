@@ -13,6 +13,7 @@
 #import <XCTest/XCTest.h>
 #import "FrozenNotation.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 #import "NoteObject.h"
 #import "DeletedNoteObject.h"
 #import "WALController.h"
@@ -56,7 +57,7 @@
 	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setDoesEncryption:YES];
 	//low iteration count keeps the test fast; the derivation path is the same
-	[prefs setPassphraseData:[passphrase dataUsingEncoding:NSUTF8StringEncoding] inKeychain:NO withIterations:1000];
+	[prefs setPassphraseData:[passphrase dataUsingEncoding:NSUTF8StringEncoding] withIterations:1000];
 	return prefs;
 }
 
@@ -65,7 +66,7 @@
 	NSData *databaseBytes = [FrozenNotation frozenDataWithExistingNotes:notes deletedNotes:[NSMutableSet set] prefs:prefs];
 	XCTAssertNotNil(databaseBytes);
 	XCTAssertGreaterThan([databaseBytes length], (NSUInteger)0);
-	return [NSKeyedUnarchiver unarchiveObjectWithData:databaseBytes];
+	return NVUnarchiveKeyedObject(databaseBytes);
 }
 
 - (void)assertNotes:(NSArray *)actual matchNotes:(NSArray *)expected {

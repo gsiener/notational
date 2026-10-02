@@ -165,9 +165,10 @@
 - (BOOL)writeNoteObject:(id<SynchronizedNote>)aNoteObject {
 	//this method serializes a note object, encrypts it, and writes it to the log
     NSMutableData *noteData = [NSMutableData data];
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:noteData];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
 	[archiver encodeObject:aNoteObject forKey:@"aNote"];
 	[archiver finishEncoding];
+	[noteData appendData:[archiver encodedData]];
 	
     if ([noteData length])
 		return [self _encryptAndWriteData:noteData];
@@ -466,7 +467,8 @@
     
     id <SynchronizedNote> object = nil;
 	@try {
-		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:presumablySerializedData];
+		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:presumablySerializedData error:NULL];
+		[unarchiver setRequiresSecureCoding:NO];
 		object = [unarchiver decodeObjectForKey:@"aNote"];
     } @catch (NSException *e) {
 		NSLog(@"recoverNextObject got an exception while unarchiving object: %@; returning NSNull to skip", [e reason]);

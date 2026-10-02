@@ -186,12 +186,7 @@
 			return slotRect;
 		}
 			break;
-		case NSScrollerIncrementLine:
-			return NSZeroRect;
-			break;
-		case NSScrollerDecrementLine:
-			return NSZeroRect;
-			break;
+		//(the line-increment and line-decrement arrows no longer exist; they fall through to the default)
 		case NSScrollerIncrementPage:
 		{
 			NSRect incrementPageRect;

@@ -119,7 +119,7 @@
 - (void)testEncryptedDatabaseIsReportedNotRead {
 	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setDoesEncryption:YES];
-	[prefs setPassphraseData:[@"secret" dataUsingEncoding:NSUTF8StringEncoding] inKeychain:NO withIterations:1000];
+	[prefs setPassphraseData:[@"secret" dataUsingEncoding:NSUTF8StringEncoding] withIterations:1000];
 	[self writeDatabase:[NSArray arrayWithObject:[self note:@"Locked" body:@"x" labels:@""]] prefs:prefs];
 	XCTAssertEqual([[self importer] read], NVLegacyImportEncrypted);
 }

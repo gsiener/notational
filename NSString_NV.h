@@ -70,7 +70,7 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision);
 - (void)replaceTabsWithSpacesOfWidth:(NSInteger)tabWidth;
 + (NSMutableString*)newShortLivedStringFromFile:(NSString*)filename;
 + (NSMutableString*)newShortLivedStringFromData:(NSMutableData*)data ofGuessedEncoding:(NSStringEncoding*)encoding 
-									   withPath:(const char*)aPath orWithFSRef:(const FSRef*)fsRef;
+									   withPath:(const char*)aPath;
 @end
 
 @interface NSScanner (NV)

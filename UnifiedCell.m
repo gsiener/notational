@@ -163,12 +163,12 @@ NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL w
 	//draw note date and tags
 
 	NSMutableDictionary *baseAttrs = [self baseTextAttributes];
-	BOOL isActive = (IsLeopardOrLater && [tv selectionHighlightStyle] == NSTableViewSelectionHighlightStyleSourceList) ? YES : [tv isActiveStyle];
+	BOOL isActive = [tv usesSourceListHighlight] ? YES : [tv isActiveStyle];
 	
 	NSColor *textColor = ([self isHighlighted] && isActive) ? [NSColor whiteColor] : (![self isHighlighted] ? [[self class] dateColorForTint]/*[NSColor grayColor]*/ : nil);
 	if (textColor)
 		[baseAttrs setObject:textColor forKey:NSForegroundColorAttributeName];
-	if (IsSnowLeopardOrLater && [self isHighlighted] && ([tv selectionHighlightStyle] == NSTableViewSelectionHighlightStyleSourceList)) {
+	if ([self isHighlighted] && [tv usesSourceListHighlight]) {
 //		[baseAttrs setObject:ShadowForSnowLeopard() forKey:NSShadowAttributeName];
 	}
 	

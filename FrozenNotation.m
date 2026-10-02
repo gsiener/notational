@@ -19,6 +19,7 @@
 #import "FrozenNotation.h"
 #import "NSData_transformations.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 
 @implementation FrozenNotation
 
@@ -53,9 +54,10 @@
 	if (self=[super init]) {
 
 		notesData = [[NSMutableData alloc] init];
-		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:notesData];
+		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
 		[archiver encodeObject:notes forKey:@"notes"];
         [archiver finishEncoding];
+		notesData = [[archiver encodedData] mutableCopy];
 		
 		prefs = somePrefs;
 		deletedNoteSet = antiNotes;		
@@ -92,7 +94,7 @@
 	if (!frozenNotation)
 		return nil;
 	
-	NSData *encodedNotationData = [NSKeyedArchiver archivedDataWithRootObject:frozenNotation];
+	NSData *encodedNotationData = NVKeyedArchivedData(frozenNotation);
 	
 	return encodedNotationData;
 }
@@ -119,7 +121,8 @@
 			NSLog(@"Error decompressing data");
 			return nil;
 		}
-		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:notesData];
+		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:notesData error:NULL];
+		[unarchiver setRequiresSecureCoding:NO];
 		allNotes = [unarchiver decodeObjectForKey:@"notes"];
 		
 	} @catch (NSException *e) {

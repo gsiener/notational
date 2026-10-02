@@ -14,7 +14,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface URLGetter : NSObject <NSURLDownloadDelegate>
+@interface URLGetter : NSObject <NSURLSessionDownloadDelegate>
 {
     IBOutlet NSButton *cancelButton;
     IBOutlet NSTextField *objectURLStatus;
@@ -23,14 +23,15 @@
     IBOutlet NSPanel *window;
 	
 	NSURL *url;
-	NSURLDownload *downloader;
+	NSURLSession *session;
+	NSURLSessionDownloadTask *downloadTask;
 	NSString *downloadPath, *tempDirectory;
 	
 	id userData;
 	
 	id delegate; // strong on purpose: keeps the requester alive while the download runs
 	
-	BOOL isIndicating, isImporting;
+	BOOL isIndicating, isImporting, hasEnded;
 	
 	long long totalReceivedByteCount, maxExpectedByteCount;
 }

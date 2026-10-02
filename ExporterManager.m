@@ -70,9 +70,9 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 			filename = [filename stringByReplacingOccurrencesOfString:@":" withString:@"/"];
 		}
 		
-		FSRef directoryRef;
-		NSURL *url = (__bridge_transfer NSURL *)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (__bridge CFStringRef)directory, kCFURLPOSIXPathStyle, true);
-		if (!url || !CFURLGetFSRef((__bridge CFURLRef)url, &directoryRef)) {
+		NSURL *directoryURL = [NSURL fileURLWithPath:directory isDirectory:YES];
+		BOOL isDirectory = NO;
+		if (!directory || ![[NSFileManager defaultManager] fileExistsAtPath:directory isDirectory:&isDirectory] || !isDirectory) {
 			NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"The notes couldn't be exported because the directory quotemark%@quotemark couldn't be accessed.",nil),
 				[directory stringByAbbreviatingWithTildeInPath]], @"", NSLocalizedString(@"OK",nil), nil, nil);
 			return;
@@ -84,7 +84,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 			BOOL lastNote = i != [notes count] - 1;
 			NoteObject *note = [notes objectAtIndex:i];
 			
-			OSStatus err = [note exportToDirectoryRef:&directoryRef withFilename:filename usingFormat:storageFormat overwrite:overwriteNotes];
+			OSStatus err = [note exportToDirectoryURL:directoryURL withFilename:filename usingFormat:storageFormat overwrite:overwriteNotes];
 			
 			if (err == dupFNErr) {
 				//ask about overwriting
@@ -94,7 +94,7 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 										 NSLocalizedString(@"Replace",nil), NSLocalizedString(@"Don't Replace",nil), lastNote ? NSLocalizedString(@"Replace All",nil) : nil);
 				if (result == NSAlertFirstButtonReturn || result == NSAlertThirdButtonReturn) {
 					if (result == NSAlertThirdButtonReturn) overwriteNotes = YES;
-					err = [note exportToDirectoryRef:&directoryRef withFilename:filename usingFormat:storageFormat overwrite:YES];
+					err = [note exportToDirectoryURL:directoryURL withFilename:filename usingFormat:storageFormat overwrite:YES];
 				} else continue;
 			}
 			
@@ -110,8 +110,6 @@ void(^exportHandler)(NSInteger) =^(NSInteger returnCode) {
 				}
 			}
 		}
-		
-		FNNotify(&directoryRef, kFNDirectoryModifiedMessage, kFNNoImplicitAllSubscription);
 		
 	}
 }

@@ -7,6 +7,7 @@
 #import "NVNoteRecord.h"
 #import "FrozenNotation.h"
 #import "NotationPrefs.h"
+#import "NVArchiving.h"
 #import "NoteObject.h"
 #import "DeletedNoteObject.h"
 #import "WALController.h"
@@ -87,11 +88,7 @@ static BOOL NeedsRecovery(NoteObject *note) {
 	if (!bytes) return [[NSFileManager defaultManager] fileExistsAtPath:databasePath] ? NVLegacyImportUnreadable : NVLegacyImportNothingFound;
 
 	FrozenNotation *frozen = nil;
-	@try {
-		frozen = [NSKeyedUnarchiver unarchiveObjectWithData:bytes];
-	} @catch (NSException *e) {
-		NSLog(@"NVLegacyImporter: could not unarchive %@: %@", databasePath, [e reason]);
-	}
+	frozen = NVUnarchiveKeyedObject(bytes);
 	if (![frozen isKindOfClass:[FrozenNotation class]]) return NVLegacyImportUnreadable;
 
 	NotationPrefs *prefs = [frozen notationPrefs];
