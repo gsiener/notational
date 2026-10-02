@@ -17,6 +17,9 @@
 #import "NVTextMerge.h"
 #import "NSString_CustomTruncation.h"
 #import "NoteObject.h"
+#import "NoteObject_NVRecord.h"
+#import "NVNoteContent.h"
+#import "AttributedPlainText.h"
 #import "GlobalPrefs.h"
 #import "AlienNoteImporter.h"
 #import "AppController_Importing.h"
@@ -1661,10 +1664,17 @@ terminateApp:
 		[textView setFont:[prefsController noteBodyFont]];
 		
 		isCreatingANote = YES;
-		NSString *title = [[field stringValue] length] ? [field stringValue] : NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
-		NSAttributedString *attributedContents = [textView textStorage] ? [textView textStorage] : [[NSAttributedString alloc] initWithString:@"" attributes:
-																									 [prefsController noteBodyAttributes]];
-		NoteObject *note = [[NoteObject alloc] initWithNoteBody:attributedContents title:title delegate:notationController labels:nil];
+		//the search field's text then anything already in the editor is the new note's content, split into
+		//title and body as the Notes store splits it: a long name wraps into the body, leading spaces drop
+		NSMutableAttributedString *text = [[NSMutableAttributedString alloc] initWithString:[field stringValue] attributes:[prefsController noteBodyAttributes]];
+		if ([[textView textStorage] length]) {
+			if ([text length]) [[text mutableString] appendString:@"\n"];
+			[text appendAttributedString:[textView textStorage]];
+		}
+		NVNoteContent *content = [text trimLeadingTitle];
+		NoteObject *note = [[NoteObject alloc] initWithNoteBody:text content:content delegate:notationController labels:nil];
+		//typing continues after whatever of the name wrapped into the body
+		if ([text length]) [note setSelectedRange:NSMakeRange([text length], 0)];
 		[notationController addNewNote:note];
 		
 		isCreatingANote = NO;

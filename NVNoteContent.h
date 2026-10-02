@@ -16,6 +16,8 @@
 
 //shown in the notes list; "Untitled Note" when the first line is empty
 @property (nonatomic, readonly) NSString *title;
+//YES when the title is that placeholder: the content is blank
+@property (nonatomic, readonly) BOOL titleIsPlaceholder;
 @property (nonatomic, readonly) NSString *body;
 //the verbatim content this was split from
 @property (nonatomic, readonly) NSString *string;

@@ -16,7 +16,7 @@
 
 @implementation NVNoteContent
 
-@synthesize title, body, string;
+@synthesize title, body, string, titleIsPlaceholder;
 
 static NSCharacterSet *LineBreaks(void) {
 	static NSCharacterSet *set = nil;

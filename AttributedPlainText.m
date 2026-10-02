@@ -20,6 +20,7 @@
 #import "NSCollection_utils.h"
 #import "GlobalPrefs.h"
 #import "NSString_NV.h"
+#import "NVNoteContent.h"
 
 
 NSString *NVHiddenDoneTagAttributeName = @"NVDoneTag";
@@ -95,20 +96,18 @@ static BOOL _StringWithRangeIsProbablyObjC(NSString *string, NSRange blockRange)
 	}
 }
 
-- (NSString*)trimLeadingSyntheticTitle {
-	NSUInteger bodyLoc = 0;
-	
-	NSString *title = [[self string] syntheticTitleAndSeparatorWithContext:NULL bodyLoc:&bodyLoc maxTitleLen:60];
-
-	if (bodyLoc > 0 && [self length] >= bodyLoc) [self deleteCharactersInRange:NSMakeRange(0, bodyLoc)];
-
-	return title;
+- (NVNoteContent*)trimLeadingTitle {
+	NVNoteContent *content = [NVNoteContent contentWithString:[self string]];
+	//the body is the end of the content; everything before it is leading space, title and separator
+	[self deleteCharactersInRange:NSMakeRange(0, [self length] - [[content body] length])];
+	return content;
 }
 
-- (NSString*)prefixWithSourceString:(NSString*)source {
+- (void)prefixWithSourceString:(NSString*)source {
 	NSString *sourceWContext = [NSString stringWithFormat:@"%@ <%@>:\n\n", NSLocalizedString(@"From", @"prefix for source-URLs inserted into imported notes; e.g., 'From <http://www.apple.com>: ...'"), source];
-	[self insertAttributedString:[[NSAttributedString alloc] initWithString:sourceWContext] atIndex:0];
-	return sourceWContext;
+	//styled as the body it joins, which may already have been sanitized
+	[self insertAttributedString:[[NSAttributedString alloc] initWithString:sourceWContext attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]] atIndex:0];
+	[self addLinkAttributesForRange:NSMakeRange(0, [sourceWContext length])];
 }
 
 - (void)santizeForeignStylesForImporting {

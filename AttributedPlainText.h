@@ -20,6 +20,8 @@
 
 #define SEPARATE_ATTRS 0
 
+@class NVNoteContent;
+
 extern NSString *NVHiddenDoneTagAttributeName;
 extern NSString *NVHiddenBulletIndentAttributeName;
 
@@ -28,9 +30,12 @@ extern NSString *NVHiddenBulletIndentAttributeName;
 - (void)trimLeadingWhitespace;
 - (void)indentTextLists;
 - (void)removeAttachments;
-- (NSString*)prefixWithSourceString:(NSString*)source;
+//"From <source>:" and a blank line at the top of the receiver, a note's body
+- (void)prefixWithSourceString:(NSString*)source;
 
-- (NSString*)trimLeadingSyntheticTitle;
+//Leaves only the body of the receiver, a new note's content, split as the Notes store splits
+//content it reads back; returns that split (NVNoteContent), which has the title
+- (NVNoteContent*)trimLeadingTitle;
 
 #if SEPARATE_ATTRS
 + (NSMutableAttributedString*)attributedStringWithString:(NSString*)text attributesByRange:(NSDictionary*)attributes font:(NSFont*)font;

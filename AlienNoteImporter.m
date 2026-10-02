@@ -30,6 +30,8 @@
 #import "NotationPrefs.h"
 #import "NotationController.h"
 #import "NoteObject.h"
+#import "NoteObject_NVRecord.h"
+#import "NVNoteContent.h"
 
 NSString *PasswordWasRetrievedFromKeychainKey = @"PasswordRetrievedFromKeychain";
 NSString *RetrievedPasswordKey = @"RetrievedPassword";
@@ -225,16 +227,11 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 													  [[NSMutableAttributedString alloc] initWithString:[[[notes lastObject] contentString] string]];
 				if ([[[content string] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
 					//only add string if it has at least one non-whitespace character
-					NSUInteger prefixedSourceLength = [[content prefixWithSourceString:[[getter url] absoluteString]] length];
+					[content prefixWithSourceString:[[getter url] absoluteString]];
 					[content santizeForeignStylesForImporting];
 					
 					[[notes lastObject] setContentString:content];
 					if ([getter userData]) [[notes lastObject] setTitleString:[getter userData]];
-					
-					//prefixing should push existing selections forward:
-					NSRange selRange = [[notes lastObject] lastSelectedRange];
-					if (selRange.length && prefixedSourceLength)
-						[[notes lastObject] setSelectedRange:NSMakeRange(selRange.location + prefixedSourceLength, selRange.length)];
 					
 					[receptionDelegate noteImporter:self importedNotes:notes];
 					
@@ -393,41 +390,33 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 		
 
 	if (attributedStringFromData) {
-		[attributedStringFromData trimLeadingWhitespace];
 		[attributedStringFromData removeAttachments];
+		[attributedStringFromData santizeForeignStylesForImporting];
 		
 		NSString *processedFilename = [[filename lastPathComponent] stringByDeletingPathExtension];
-		NSUInteger bodyLoc = 0, prefixedSourceLength = 0;
-		NSString *title = [[attributedStringFromData string] syntheticTitleAndSeparatorWithContext:NULL bodyLoc:&bodyLoc maxTitleLen:36];
+		NVNoteContent *text = [NVNoteContent contentWithString:[attributedStringFromData string]];
 		
-		//if the synthetic title (generally the first line of the content) is shorter than the filename itself, just use the filename as the title
+		//if the text's title (generally its first line) is shorter than the filename itself, just use the filename as the title
 		//(or if this is a special case and we know the filename should be used)
-		if ([processedFilename length] > [title length] || [extension isEqualToString:@"nvhelp"] || [title isAMachineDirective] || 
-			[title isEqualToString:NSLocalizedString(@"Untitled Note", @"Title of a nameless note")]) {
-			title = processedFilename;
-			bodyLoc = 0;
-		} else {
-			//the first line is the title: a note's content is its title line then its body (ADR 0001),
-			//so take that line out of the body rather than repeating it (#29)
-			NSString *text = [attributedStringFromData string];
-			NSUInteger lineEnd = 0, contentsEnd = 0;
-			[text getLineStart:NULL end:&lineEnd contentsEnd:&contentsEnd forRange:NSMakeRange(0, 0)];
-			title = [text substringToIndex:contentsEnd];
-			[attributedStringFromData deleteCharactersInRange:NSMakeRange(0, lineEnd)];
-			bodyLoc = 0;
+		if ([processedFilename length] > [[text title] length] || [extension isEqualToString:@"nvhelp"] || [[text title] isAMachineDirective] ||
+			[text titleIsPlaceholder]) {
+			//the file name is the title line, and the whole text the body
+			[attributedStringFromData insertAttributedString:[[NSAttributedString alloc] initWithString:[processedFilename stringByAppendingString:@"\n"]
+																							  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]] atIndex:0];
 		}
+		//a note's content is its title line then its body (ADR 0001), so take the title out of the body
+		//rather than repeating it (#29), split as the Notes store will split it when read back (#33)
+		NVNoteContent *content = [attributedStringFromData trimLeadingTitle];
 		if ([sourceIdentifierString length])
-			prefixedSourceLength = [[attributedStringFromData prefixWithSourceString:sourceIdentifierString] length];
-		[attributedStringFromData santizeForeignStylesForImporting];
+			[attributedStringFromData prefixWithSourceString:sourceIdentifierString];
 		
 		
 		//transfer any openmeta tags associated with this file as tags for the new note
 		NSArray *openMetaTags = [[NSFileManager defaultManager] getTagsAtFSPath:[filename fileSystemRepresentation]];
 		
 		//we do not also use filename as uniqueFilename, as we are only importing--not taking ownership
-		NoteObject *noteObject = [[NoteObject alloc] initWithNoteBody:attributedStringFromData title:title delegate:nil labels:[openMetaTags componentsJoinedByString:@" "]];				
+		NoteObject *noteObject = [[NoteObject alloc] initWithNoteBody:attributedStringFromData content:content delegate:nil labels:[openMetaTags componentsJoinedByString:@" "]];
 		if (noteObject) {
-			if (bodyLoc > 0 && [attributedStringFromData length] >= bodyLoc + prefixedSourceLength) [noteObject setSelectedRange:NSMakeRange(prefixedSourceLength, bodyLoc)];
 			if (shouldGrabCreationDates) {
 				[noteObject setDateAdded:CFDateGetAbsoluteTime((__bridge CFDateRef)[attributes objectForKey:NSFileCreationDate])];
 			}
@@ -529,10 +518,9 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 				NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithRTFD:[doc RTFDData] documentAttributes:NULL];
 				[attributedString removeAttachments];
 				[attributedString santizeForeignStylesForImporting];
-				NSString *syntheticTitle = [attributedString trimLeadingSyntheticTitle];
+				NVNoteContent *content = [attributedString trimLeadingTitle];
 				
-				NoteObject *noteObject = [[NoteObject alloc] initWithNoteBody:attributedString title:syntheticTitle 
-																	  delegate:nil labels:nil];
+				NoteObject *noteObject = [[NoteObject alloc] initWithNoteBody:attributedString content:content delegate:nil labels:nil];
 				if (noteObject) {
 					[noteObject setDateAdded:CFDateGetAbsoluteTime((CFDateRef)[doc creationDate])];
 					[noteObject setDateModified:CFDateGetAbsoluteTime((CFDateRef)[doc modificationDate])];

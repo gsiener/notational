@@ -2,19 +2,13 @@
 //  NoteTitleRuleTests.m
 //  NotationTests
 //
-//  Characterization tests for #33: what title and body a new note gets on each way in,
-//  what content the Notes store keeps for it, and what title it has once that content is
-//  split again — after a relaunch (-initWithNoteRecord:) and after a Simplenote round trip
-//  (an edit made elsewhere coming back through -applyNoteRecord:).
-//
-//  Two rules split a note today:
-//   - -[NSString syntheticTitleAndSeparatorWithContext:...] when a note is made by paste or
-//     Services (36 characters), file import (36, but see below) and Stickies (60). Ends the
-//     title at a tab as well as at a line break.
-//   - NVNoteContent whenever stored content is read back. 60 characters; tabs stay in the title.
-//  Typing a new note's name in the search field uses neither: the field's text is the title.
-//
-//  These assert today's behavior, surprises included; they are not a specification.
+//  #33: every way a new note comes in splits its content into title and body by one rule,
+//  NVNoteContent's (the rule the Notes store's content is read back with): leading blank space
+//  skipped; the title is the first line, ending only at a line break; cut at 60 characters, at a
+//  space in the last 10; "Untitled Note" when blank. So a note has from the start the title and
+//  body it has after a relaunch (-initWithNoteRecord:) and after a Simplenote round trip (an edit
+//  made elsewhere coming back through -applyNoteRecord:), and its stored content is the text it
+//  was made from, its title line not repeated.
 //
 
 #import <XCTest/XCTest.h>
@@ -28,10 +22,12 @@
 #import "NVNoteRecord.h"
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
+#import "NVNoteContent.h"
 #import "NVFakeSimplenoteService.h"
 #import "GlobalPrefs.h"
 #import "DualField.h"
 #import "AttributedPlainText.h"
+#import "NSString_NV.h"
 
 @interface NotationController (TitleRuleTestAccess)
 - (NSArray *)allNotesForTitleRuleTesting;
@@ -50,7 +46,11 @@ static NSString *const TabLine = @"Name\tValue\nbody";
 static NSString *const LeadingBlanks = @"\n\n  Indented title\nbody";
 static NSString *const EmptyFirstLine = @"\nGroceries\neggs";
 
-//longer than any of the inputs' first lines, so import titles the note with it
+//Long100 cut at the last space before 60 characters, and the rest of it
+static NSString *const Cut100 = @"Notes from the long planning meeting about the new office";
+static NSString *const Rest100 = @"layout and the budget for next year, part2";
+
+//longer than the titles of the inputs but Line50's and Line100's, so import titles those notes with it
 static NSString *const LongFileName = @"A file name longer than any first line here";
 
 //the app controller is never initialized or loaded from its nib, only given the outlets the
@@ -114,8 +114,15 @@ static NSMutableArray *KeptControllers;
 
 //Paste, Services, and nv://make without a title: -[AppController addNotesFromPasteboard:] with plain text
 - (NoteObject *)pasted:(NSString *)text {
+	return [self pasted:text fromURL:nil];
+}
+
+//the URL as a browser puts it on the pasteboard alongside the text it was copied from
+- (NoteObject *)pasted:(NSString *)text fromURL:(NSString *)url {
 	NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
-	[pasteboard declareTypes:@[NSPasteboardTypeString] owner:nil];
+	NSString *urlType = [NSString customPasteboardTypeOfCode:0x4D5A0003];
+	[pasteboard declareTypes:url ? @[urlType, NSPasteboardTypeString] : @[NSPasteboardTypeString] owner:nil];
+	if (url) [pasteboard setString:[url stringByAppendingString:@"\nPage title"] forType:urlType];
 	[pasteboard setString:text forType:NSPasteboardTypeString];
 	AppController *app = [self app];
 	NoteObject *note = [self noteAddedBy:^{ XCTAssertTrue([app addNotesFromPasteboard:pasteboard]); }];
@@ -147,29 +154,30 @@ static NSMutableArray *KeptControllers;
 	NSMutableAttributedString *string = [[NSMutableAttributedString alloc] initWithString:text];
 	[string removeAttachments];
 	[string santizeForeignStylesForImporting];
-	NSString *title = [string trimLeadingSyntheticTitle];
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:string title:title delegate:nil labels:nil];
+	NVNoteContent *content = [string trimLeadingTitle];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:string content:content delegate:nil labels:nil];
 	NotationController *notation = controller;
 	return [self noteAddedBy:^{ [notation addNotes:@[note]]; }];
 }
 
 #pragma mark The round trip
 
-//The note as made, its stored content, the note read back from the store, and the note after
-//an edit elsewhere appends a line on Simplenote and comes back through -applyNoteRecord:.
-- (void)assertNote:(NoteObject *)note title:(NSString *)title body:(NSString *)body
-			stored:(NSString *)stored reloadedTitle:(NSString *)reloadedTitle reloadedBody:(NSString *)reloadedBody {
+//The note as made, its stored content, the note read back from the store, and the note after an
+//edit elsewhere appends a line on Simplenote and comes back through -applyNoteRecord:. The title
+//and body are the same throughout, and the title line is stored once.
+- (void)assertNote:(NoteObject *)note title:(NSString *)title body:(NSString *)body stored:(NSString *)stored {
 	XCTAssertEqualObjects(titleOfNote(note), title, @"title as made");
 	XCTAssertEqualObjects([[note contentString] string], body, @"body as made");
 
 	//adding a note saves it to the store at once
 	NVNoteRecord *record = [store noteWithID:[note noteRecordID]];
 	XCTAssertEqualObjects([record content], stored, @"stored content");
+	XCTAssertEqual([[[record content] componentsSeparatedByString:title] count], (NSUInteger)2, @"the title is stored once");
 
 	//relaunch
 	NoteObject *reloaded = [[NoteObject alloc] initWithNoteRecord:record delegate:nil];
-	XCTAssertEqualObjects(titleOfNote(reloaded), reloadedTitle, @"title after relaunch");
-	XCTAssertEqualObjects([[reloaded contentString] string], reloadedBody, @"body after relaunch");
+	XCTAssertEqualObjects(titleOfNote(reloaded), title, @"title after relaunch");
+	XCTAssertEqualObjects([[reloaded contentString] string], body, @"body after relaunch");
 
 	//Simplenote gets the stored content unchanged, and the push doesn't come back to the open note
 	XCTAssertTrue([engine syncOnceReturningError:NULL]);
@@ -181,206 +189,124 @@ static NSMutableArray *KeptControllers;
 	[server remoteSetContent:[stored stringByAppendingString:@"\nphone"] ofNote:[note noteRecordID]];
 	XCTAssertTrue([engine syncOnceReturningError:NULL]);
 	[[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-	XCTAssertEqualObjects(titleOfNote(note), reloadedTitle, @"title after a Simplenote edit");
+	XCTAssertEqualObjects(titleOfNote(note), title, @"title after a Simplenote edit");
 	XCTAssertEqualObjects([[note contentString] string],
-						  [reloadedBody length] ? [reloadedBody stringByAppendingString:@"\nphone"] : @"phone", @"body after a Simplenote edit");
+						  [body length] ? [body stringByAppendingString:@"\nphone"] : @"phone", @"body after a Simplenote edit");
+}
+
+//Each input as the content of a new note: its title and body, the content stored as given.
+//Tabs stay in the title; a long first line is cut at 60 characters with the rest in the body;
+//blank lines before the title are skipped.
+- (void)assertEachInputMadeBy:(NoteObject *(^)(NSString *text))make {
+	NSArray *expectations = @[@[ShortLine, @"Groceries", @"eggs\nmilk"],
+							  @[Line50, Long50, @"body"],
+							  @[Line100, Cut100, [Rest100 stringByAppendingString:@"\nbody"]],
+							  @[TabLine, @"Name\tValue", @"body"],
+							  @[LeadingBlanks, @"Indented title", @"body"],
+							  @[EmptyFirstLine, @"Groceries", @"eggs"]];
+	for (NSArray *expected in expectations) {
+		[self startOver];
+		[self assertNote:make(expected[0]) title:expected[1] body:expected[2] stored:expected[0]];
+	}
 }
 
 #pragma mark Paste and Services
 
-//Pasting keeps the whole text as the body and puts a synthetic title (36 characters, ends at
-//a tab) in front of it, so the stored content repeats the first line (#33 question 3: always).
-//The title survives relaunch because NVNoteContent finds that same short line again.
-
-- (void)testPasteShortFirstLine {
-	[self assertNote:[self pasted:ShortLine] title:@"Groceries" body:ShortLine
-			  stored:@"Groceries\nGroceries\neggs\nmilk" reloadedTitle:@"Groceries" reloadedBody:ShortLine];
+- (void)testPaste {
+	[self assertEachInputMadeBy:^NoteObject *(NSString *text) { return [self pasted:text]; }];
 }
 
-- (void)testPasteFiftyCharacterFirstLine {
-	//cut at the last space before 36 characters
-	[self assertNote:[self pasted:Line50] title:@"Meeting notes for the quarterly" body:Line50
-			  stored:[@"Meeting notes for the quarterly\n" stringByAppendingString:Line50]
-	   reloadedTitle:@"Meeting notes for the quarterly" reloadedBody:Line50];
-}
-
-- (void)testPasteHundredCharacterFirstLine {
-	[self assertNote:[self pasted:Line100] title:@"Notes from the long planning" body:Line100
-			  stored:[@"Notes from the long planning\n" stringByAppendingString:Line100]
-	   reloadedTitle:@"Notes from the long planning" reloadedBody:Line100];
-}
-
-- (void)testPasteFirstLineWithATab {
-	//the title ends at the tab
-	[self assertNote:[self pasted:TabLine] title:@"Name" body:TabLine
-			  stored:@"Name\nName\tValue\nbody" reloadedTitle:@"Name" reloadedBody:TabLine];
-}
-
-- (void)testPasteLeadingBlankLines {
-	//the blank lines stay at the top of the body until relaunch, when they become part of the separator
-	[self assertNote:[self pasted:LeadingBlanks] title:@"Indented title" body:LeadingBlanks
-			  stored:@"Indented title\n\n\n  Indented title\nbody" reloadedTitle:@"Indented title" reloadedBody:@"Indented title\nbody"];
-}
-
-- (void)testPasteEmptyFirstLine {
-	[self assertNote:[self pasted:EmptyFirstLine] title:@"Groceries" body:EmptyFirstLine
-			  stored:@"Groceries\n\nGroceries\neggs" reloadedTitle:@"Groceries" reloadedBody:@"Groceries\neggs"];
+- (void)testPasteFromAPageStartsTheBodyWithTheSource {
+	//the title is still the text's first line; the source heads the body
+	[self assertNote:[self pasted:ShortLine fromURL:@"https://example.com/groceries"] title:@"Groceries"
+				body:@"From <https://example.com/groceries>:\n\neggs\nmilk"
+			  stored:@"Groceries\nFrom <https://example.com/groceries>:\n\neggs\nmilk"];
+	[self startOver];
+	//a title cut from a long line gets a line break of its own before the source
+	[self assertNote:[self pasted:Long100 fromURL:@"https://example.com/plan"] title:Cut100
+				body:[@"From <https://example.com/plan>:\n\n" stringByAppendingString:Rest100]
+			  stored:[NSString stringWithFormat:@"%@ \nFrom <https://example.com/plan>:\n\n%@", Cut100, Rest100]];
 }
 
 #pragma mark File import, first line as title
 
-//When the first line is at least as long as the file name, it is the title, taken whole up to
-//the line break (#29); the 36-character synthetic title only decides which branch runs.
-
-- (void)testImportShortFirstLine {
-	[self assertNote:[self imported:ShortLine fileName:@"a"] title:@"Groceries" body:@"eggs\nmilk"
-			  stored:ShortLine reloadedTitle:@"Groceries" reloadedBody:@"eggs\nmilk"];
-}
-
-- (void)testImportFiftyCharacterFirstLine {
-	[self assertNote:[self imported:Line50 fileName:@"b"] title:Long50 body:@"body"
-			  stored:Line50 reloadedTitle:Long50 reloadedBody:@"body"];
-}
-
-- (void)testImportHundredCharacterFirstLineIsRetitledOnRelaunch {
-	//SURPRISE: the whole line is the title until relaunch (or an edit from Simplenote), when
-	//NVNoteContent's 60-character limit moves the end of it into the body
-	[self assertNote:[self imported:Line100 fileName:@"c"] title:Long100 body:@"body" stored:Line100
-	   reloadedTitle:@"Notes from the long planning meeting about the new office"
-		reloadedBody:@"layout and the budget for next year, part2\nbody"];
-}
-
-- (void)testImportFirstLineWithATab {
-	//the tab stays in the title on both sides
-	[self assertNote:[self imported:TabLine fileName:@"d"] title:@"Name\tValue" body:@"body"
-			  stored:TabLine reloadedTitle:@"Name\tValue" reloadedBody:@"body"];
-}
-
-- (void)testImportLeadingBlankLinesIsUntitledUntilRelaunch {
-	//SURPRISE: -trimLeadingWhitespace trims nothing (its NSScanner skips the very whitespace it
-	//means to scan), so the "first line" is the empty one: the note is "Untitled Note" with the
-	//rest as its body, the placeholder isn't stored, and relaunch titles it from the text
-	[self assertNote:[self imported:LeadingBlanks fileName:@"e"] title:@"Untitled Note" body:@"\n  Indented title\nbody"
-			  stored:@"\n  Indented title\nbody" reloadedTitle:@"Indented title" reloadedBody:@"body"];
-}
-
-- (void)testImportEmptyFirstLineIsUntitledUntilRelaunch {
-	[self assertNote:[self imported:EmptyFirstLine fileName:@"f"] title:@"Untitled Note" body:@"Groceries\neggs"
-			  stored:@"Groceries\neggs" reloadedTitle:@"Groceries" reloadedBody:@"eggs"];
+- (void)testImport {
+	[self assertEachInputMadeBy:^NoteObject *(NSString *text) { return [self imported:text fileName:@"a"]; }];
 }
 
 - (void)testImportingAFileThatStartsBlankIntoALibraryDoesNotCrash {
-	//#33: the empty first line once reached -initWithNoteBody:title: as @"", leaving the note's
-	//C title NULL, and search autocompletion's prefix connections strncmp()ed it as soon as the
-	//library held another note
+	//the empty first line once reached -initWithNoteBody:title: as @"", leaving the note's C title
+	//NULL, and search autocompletion's prefix connections strncmp()ed it as soon as the library
+	//held another note (an empty title itself is covered in NoteObjectTests)
 	XCTAssertTrue([[GlobalPrefs defaultPrefs] autoCompleteSearches], @"the prefix connections run only with autocompletion on");
 	NoteObject *other = [self imported:ShortLine fileName:@"a"];
 	NoteObject *note = [self imported:LeadingBlanks fileName:@"e"];
 	XCTAssertEqual([[controller allNotesForTitleRuleTesting] count], (NSUInteger)2);
-	XCTAssertNotNil(other);
+	XCTAssertEqualObjects(titleOfNote(note), @"Indented title");
 	Ivar cTitle = class_getInstanceVariable([NoteObject class], "cTitle");
-	char *title = *(char **)((uint8_t *)(__bridge void *)note + ivar_getOffset(cTitle));
-	XCTAssertTrue(title != NULL);
+	XCTAssertTrue(*(char **)((uint8_t *)(__bridge void *)note + ivar_getOffset(cTitle)) != NULL);
 	XCTAssertFalse(noteTitleIsAPrefixOfOtherNoteTitle(other, note));
 }
 
 #pragma mark File import, file name as title
 
-//When the file name is longer than the first line, it is the title and the whole text is the
-//body; the stored content is the name, a line break, then the text.
+//When the file name is longer than the text's title (or the text is blank), the content is the
+//name, a line break, then the text: the name is the title line, the text the body.
 
-- (void)testImportByFileNameKeepsTheTextWhole {
-	NSDictionary *inputs = @{@"a": ShortLine, @"b": Line50, @"c": Line100, @"d": TabLine};
+- (void)testImportByFileName {
+	NSDictionary *inputs = @{@"a": ShortLine, @"d": TabLine, @"e": LeadingBlanks, @"f": EmptyFirstLine};
+	NSDictionary *bodies = @{@"a": ShortLine, @"d": TabLine, @"e": @"Indented title\nbody", @"f": @"Groceries\neggs"};
 	for (NSString *key in inputs) {
 		[self startOver];
 		NSString *name = [NSString stringWithFormat:@"%@ %@", LongFileName, key];
-		[self assertNote:[self imported:inputs[key] fileName:name] title:name body:inputs[key]
-				  stored:[NSString stringWithFormat:@"%@\n%@", name, inputs[key]] reloadedTitle:name reloadedBody:inputs[key]];
+		[self assertNote:[self imported:inputs[key] fileName:name] title:name body:bodies[key]
+				  stored:[NSString stringWithFormat:@"%@\n%@", name, inputs[key]]];
 	}
 }
 
-- (void)testImportByFileNameLosesLeadingBlankLinesOnRelaunch {
-	//the blank lines (not trimmed, as above) stay at the top of the body until relaunch
-	NSString *name = [LongFileName stringByAppendingString:@" e"];
-	[self assertNote:[self imported:LeadingBlanks fileName:name] title:name body:LeadingBlanks
-			  stored:[NSString stringWithFormat:@"%@\n%@", name, LeadingBlanks] reloadedTitle:name reloadedBody:@"Indented title\nbody"];
+- (void)testImportByFileNameComparesTheTextsTitle {
+	//the 50-character first line, and the 57 characters of the 100-character one before the cut,
+	//are longer than this name: the text titles the note
+	NSString *name = [LongFileName stringByAppendingString:@" b"];
+	[self assertNote:[self imported:Line50 fileName:name] title:Long50 body:@"body" stored:Line50];
 	[self startOver];
-	name = [LongFileName stringByAppendingString:@" f"];
-	[self assertNote:[self imported:EmptyFirstLine fileName:name] title:name body:EmptyFirstLine
-			  stored:[NSString stringWithFormat:@"%@\n%@", name, EmptyFirstLine] reloadedTitle:name reloadedBody:@"Groceries\neggs"];
+	name = [LongFileName stringByAppendingString:@" c"];
+	[self assertNote:[self imported:Line100 fileName:name] title:Cut100 body:[Rest100 stringByAppendingString:@"\nbody"] stored:Line100];
+}
+
+- (void)testImportByALongFileNameCutsItAt60Characters {
+	NSString *name = @"An exceptionally long file name that keeps going past the sixty character title cap";
+	[self assertNote:[self imported:ShortLine fileName:name] title:@"An exceptionally long file name that keeps going past the"
+				body:[@"sixty character title cap\n" stringByAppendingString:ShortLine] stored:[NSString stringWithFormat:@"%@\n%@", name, ShortLine]];
+}
+
+- (void)testImportingABlankFileTitlesItByName {
+	[self assertNote:[self imported:@"\n  \n" fileName:@"Blank"] title:@"Blank" body:@"" stored:@"Blank\n\n  \n"];
 }
 
 #pragma mark Typing in the search field
 
-//The search field's text, verbatim, is the title; the body starts empty. The field holds one
-//line, so only the first-line cases apply.
+//The search field's text is the content; the field holds one line, so only the first-line cases apply.
 
-- (void)testTypedShortTitle {
-	[self assertNote:[self typed:@"Groceries"] title:@"Groceries" body:@""
-			  stored:@"Groceries" reloadedTitle:@"Groceries" reloadedBody:@""];
-}
-
-- (void)testTypedFiftyCharacterTitle {
-	[self assertNote:[self typed:Long50] title:Long50 body:@"" stored:Long50 reloadedTitle:Long50 reloadedBody:@""];
-}
-
-- (void)testTypedHundredCharacterTitleIsSplitOnRelaunch {
-	//SURPRISE: after relaunch (or an edit from Simplenote) the title is cut at 60 characters
-	//and the rest of the typed name becomes the body
-	[self assertNote:[self typed:Long100] title:Long100 body:@"" stored:Long100
-	   reloadedTitle:@"Notes from the long planning meeting about the new office"
-		reloadedBody:@"layout and the budget for next year, part2"];
-}
-
-- (void)testTypedTitleWithATab {
-	//a pasted tab stays in the title on both sides
-	[self assertNote:[self typed:@"Name\tValue"] title:@"Name\tValue" body:@""
-			  stored:@"Name\tValue" reloadedTitle:@"Name\tValue" reloadedBody:@""];
-}
-
-- (void)testTypedLeadingSpacesAreDroppedOnRelaunch {
-	//the spaces are kept in the stored content but not in the title read back from it
-	[self assertNote:[self typed:@"  Indented title"] title:@"  Indented title" body:@""
-			  stored:@"  Indented title" reloadedTitle:@"Indented title" reloadedBody:@""];
+- (void)testTyped {
+	NSArray *expectations = @[@[@"Groceries", @"Groceries", @""],
+							  @[Long50, Long50, @""],
+							  @[Long100, Cut100, Rest100],
+							  @[@"Name\tValue", @"Name\tValue", @""],
+							  @[@"  Indented title", @"Indented title", @""]];
+	for (NSArray *expected in expectations) {
+		[self startOver];
+		NoteObject *note = [self typed:expected[0]];
+		[self assertNote:note title:expected[1] body:expected[2] stored:expected[0]];
+		//typing goes on after the part of the name that wrapped into the body
+		if ([expected[2] length]) XCTAssertEqual([note lastSelectedRange].location, [expected[2] length]);
+	}
 }
 
 #pragma mark Stickies
 
-//-trimLeadingSyntheticTitle: 60 characters, ends at a tab, and takes the title and its
-//separator out of the body; the stored content joins them with a line break.
-
-- (void)testStickiesShortFirstLine {
-	[self assertNote:[self fromStickies:ShortLine] title:@"Groceries" body:@"eggs\nmilk"
-			  stored:ShortLine reloadedTitle:@"Groceries" reloadedBody:@"eggs\nmilk"];
-}
-
-- (void)testStickiesFiftyCharacterFirstLine {
-	[self assertNote:[self fromStickies:Line50] title:Long50 body:@"body"
-			  stored:Line50 reloadedTitle:Long50 reloadedBody:@"body"];
-}
-
-- (void)testStickiesHundredCharacterFirstLineGainsALineBreak {
-	//the same 60-character cut as NVNoteContent, so the title is stable; the stored content
-	//has a line break where the space was
-	[self assertNote:[self fromStickies:Line100] title:@"Notes from the long planning meeting about the new office"
-				body:@"layout and the budget for next year, part2\nbody"
-			  stored:@"Notes from the long planning meeting about the new office\nlayout and the budget for next year, part2\nbody"
-	   reloadedTitle:@"Notes from the long planning meeting about the new office"
-		reloadedBody:@"layout and the budget for next year, part2\nbody"];
-}
-
-- (void)testStickiesTabBecomesALineBreak {
-	//SURPRISE: the tab is the separator, so it is dropped and stored as a line break
-	[self assertNote:[self fromStickies:TabLine] title:@"Name" body:@"Value\nbody"
-			  stored:@"Name\nValue\nbody" reloadedTitle:@"Name" reloadedBody:@"Value\nbody"];
-}
-
-- (void)testStickiesLeadingBlankLinesAndEmptyFirstLine {
-	[self assertNote:[self fromStickies:LeadingBlanks] title:@"Indented title" body:@"body"
-			  stored:@"Indented title\nbody" reloadedTitle:@"Indented title" reloadedBody:@"body"];
-	[self startOver];
-	[self assertNote:[self fromStickies:EmptyFirstLine] title:@"Groceries" body:@"eggs"
-			  stored:@"Groceries\neggs" reloadedTitle:@"Groceries" reloadedBody:@"eggs"];
+- (void)testStickies {
+	[self assertEachInputMadeBy:^NoteObject *(NSString *text) { return [self fromStickies:text]; }];
 }
 
 @end

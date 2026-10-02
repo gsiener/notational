@@ -29,6 +29,8 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 #import "AttributedPlainText.h"
 #import "NSCollection_utils.h"
 #import "NoteObject.h"
+#import "NoteObject_NVRecord.h"
+#import "NVNoteContent.h"
 #import "NotationPrefs.h"
 
 @implementation AppController (Importing)
@@ -127,16 +129,15 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 		if (hasRTFData && ![prefsController pastePreservesStyle]) //fallback scenario
 			newString = [[NSMutableAttributedString alloc] initWithString:[newString string]];
 		
-		NSUInteger bodyLoc = 0, prefixedSourceLength = 0;
-		NSString *noteTitle = [[newString string] syntheticTitleAndSeparatorWithContext:NULL bodyLoc:&bodyLoc maxTitleLen:36];
+		[newString santizeForeignStylesForImporting];
+		//the text is the new note's content: its first line the title, the rest the body
+		NVNoteContent *content = [newString trimLeadingTitle];
 		if ([sourceIdentifierString length] > 0) {
 			//add the URL or wherever it was that this piece of text came from
-			prefixedSourceLength = [[newString prefixWithSourceString:sourceIdentifierString] length];
+			[newString prefixWithSourceString:sourceIdentifierString];
 		}
-		[newString santizeForeignStylesForImporting];
 		
-		NoteObject *note = [[NoteObject alloc] initWithNoteBody:newString title:noteTitle delegate:notationController labels:nil];
-		if (bodyLoc > 0 && [newString length] >= bodyLoc + prefixedSourceLength) [note setSelectedRange:NSMakeRange(prefixedSourceLength, bodyLoc)];
+		NoteObject *note = [[NoteObject alloc] initWithNoteBody:newString content:content delegate:notationController labels:nil];
 		[notationController addNewNote:note];
 		
 		return note != nil;

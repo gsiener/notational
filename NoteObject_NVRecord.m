@@ -41,6 +41,13 @@ static NSTimeInterval RecordDateFromAbsoluteTime(CFAbsoluteTime time) {
 	return self;
 }
 
+- (id)initWithNoteBody:(NSAttributedString *)body content:(NVNoteContent *)content delegate:(id)aDelegate labels:(NSString *)labels {
+	if ((self = [self initWithNoteBody:body title:[content title] delegate:aDelegate labels:labels])) {
+		recordContent = content;
+	}
+	return self;
+}
+
 - (NSString *)noteRecordID {
 	if (!recordID) recordID = [NVNoteRecord newNoteID];
 	return recordID;
