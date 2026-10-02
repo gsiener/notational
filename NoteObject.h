@@ -30,6 +30,7 @@
 @class LabelObject;
 @class NotesTableView;
 @class ExternalEditor;
+@class NVNoteContent;
 
 typedef struct _NoteFilterContext {
 	char* needle;
@@ -60,6 +61,11 @@ typedef struct _NoteFilterContext {
 	CFUUIDBytes uniqueNoteIDBytes;
 	
 	NSMutableDictionary *syncServicesMD;
+	
+	//the Simplenote id, and how the stored content split into title and body (NoteObject_NVRecord);
+	//not archived: both come from the Notes store
+	NSString *recordID;
+	NVNoteContent *recordContent;
 	
 	//more metadata
 	NSRange selectedRange;

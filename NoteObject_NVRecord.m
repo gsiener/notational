@@ -9,9 +9,6 @@
 #import "NotationPrefs.h"
 #import "GlobalPrefs.h"
 #import "AttributedPlainText.h"
-#import <objc/runtime.h>
-
-static char RecordIDKey, ContentSplitKey;
 
 static NSString *LabelStringFromTags(NSArray *tags) {
 	return [tags count] ? [tags componentsJoinedByString:@" "] : @"";
@@ -33,8 +30,8 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 	[body addLinkAttributesForRange:NSMakeRange(0, [body length])];
 	[body addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [body length])];
 	if ((self = [self initWithNoteBody:body title:[split title] delegate:aDelegate labels:LabelStringFromTags([record tags])])) {
-		objc_setAssociatedObject(self, &RecordIDKey, [record noteID], OBJC_ASSOCIATION_COPY);
-		objc_setAssociatedObject(self, &ContentSplitKey, split, OBJC_ASSOCIATION_RETAIN);
+		recordID = [[record noteID] copy];
+		recordContent = split;
 		if ([record creationDate] > 0) [self setDateAdded:[record creationDate] - kCFAbsoluteTimeIntervalSince1970];
 		if ([record modificationDate] > 0) [self setDateModified:[record modificationDate] - kCFAbsoluteTimeIntervalSince1970];
 	}
@@ -42,17 +39,12 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 }
 
 - (NSString *)noteRecordID {
-	NSString *recordID = objc_getAssociatedObject(self, &RecordIDKey);
-	if (!recordID) {
-		recordID = [NVNoteRecord newNoteID];
-		objc_setAssociatedObject(self, &RecordIDKey, recordID, OBJC_ASSOCIATION_COPY);
-	}
+	if (!recordID) recordID = [NVNoteRecord newNoteID];
 	return recordID;
 }
 
 - (NVNoteRecord *)noteRecordRepresentation {
-	NVNoteContent *split = objc_getAssociatedObject(self, &ContentSplitKey);
-	if (!split) split = [NVNoteContent contentWithString:@""];
+	NVNoteContent *split = recordContent ? recordContent : [NVNoteContent contentWithString:@""];
 	NVNoteRecord *record = [[NVNoteRecord alloc] init];
 	[record setNoteID:[self noteRecordID]];
 	[record setContent:[split stringWithTitle:titleOfNote(self) body:[[self contentString] string]]];
@@ -64,7 +56,7 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 
 - (BOOL)applyNoteRecord:(NVNoteRecord *)record {
 	NVNoteContent *split = [NVNoteContent contentWithString:[record content]];
-	objc_setAssociatedObject(self, &ContentSplitKey, split, OBJC_ASSOCIATION_RETAIN);
+	recordContent = split;
 
 	BOOL changed = NO;
 	if (![[split title] isEqualToString:titleOfNote(self)] || ![[split body] isEqualToString:[[self contentString] string]]) {

@@ -35,6 +35,8 @@
 
 @interface NotationController : NSObject <NVNoteDelegate> {
     NSMutableArray *allNotes;
+	//the same notes by Simplenote id; kept in step wherever allNotes gains or loses a note
+	NSMutableDictionary *notesByRecordID;
     FastListDataSource *notesListDataSource;
     LabelsListController *labelsListController;
 	GlobalPrefs *prefsController;

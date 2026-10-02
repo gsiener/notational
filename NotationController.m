@@ -47,6 +47,7 @@
 - (id)init {
     if (self=[super init]) {
 		allNotes = [[NSMutableArray alloc] init]; //<--the authoritative list of all memory-accessible notes
+		notesByRecordID = [[NSMutableDictionary alloc] init];
 		labelsListController = [[LabelsListController alloc] init];
 		prefsController = [GlobalPrefs defaultPrefs];
 		notesListDataSource = [[FastListDataSource alloc] init];
@@ -86,7 +87,7 @@
 		for (NVNoteRecord *record in [store allNotes]) {
 			if ([record deleted]) continue;
 			NoteObject *note = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
-			if (note) [allNotes addObject:note];
+			if (note) [self _insertNote:note];
 		}
 		applyingRemoteChanges = NO;
 		
@@ -114,9 +115,18 @@
 }
 
 - (NoteObject *)noteForRecordID:(NSString *)recordID {
-	for (NoteObject *note in allNotes)
-		if ([[note noteRecordID] isEqualToString:recordID]) return note;
-	return nil;
+	return recordID ? [notesByRecordID objectForKey:recordID] : nil;
+}
+
+//every note enters and leaves the list through these two, so the id index stays in step
+- (void)_insertNote:(NoteObject *)note {
+	[allNotes addObject:note];
+	[notesByRecordID setObject:note forKey:[note noteRecordID]];
+}
+
+- (void)_deleteNote:(NoteObject *)note {
+	[allNotes removeObjectIdenticalTo:note];
+	if ([notesByRecordID objectForKey:[note noteRecordID]] == note) [notesByRecordID removeObjectForKey:[note noteRecordID]];
 }
 
 - (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
@@ -126,14 +136,11 @@
 
 //NVSyncEngineDelegate, on the main thread
 - (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
-	NSMutableDictionary *byID = [NSMutableDictionary dictionaryWithCapacity:[allNotes count]];
-	for (NoteObject *note in allNotes) [byID setObject:note forKey:[note noteRecordID]];
-	
 	BOOL listChanged = NO;
 	NSMutableArray *removed = [NSMutableArray array];
 	applyingRemoteChanges = YES;
 	for (NVNoteRecord *record in records) {
-		NoteObject *note = [byID objectForKey:[record noteID]];
+		NoteObject *note = [notesByRecordID objectForKey:[record noteID]];
 		if (note && [unwrittenNotes containsObject:note]) {
 			//edited here since the last save; that save will be pushed and merged by the server
 			continue;
@@ -151,7 +158,7 @@
 		} else {
 			NoteObject *added = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (added) {
-				[allNotes addObject:added];
+				[self _insertNote:added];
 				listChanged = YES;
 			}
 		}
@@ -159,13 +166,13 @@
 	applyingRemoteChanges = NO;
 	
 	for (NSString *recordID in noteIDs) {
-		NoteObject *note = [byID objectForKey:recordID];
+		NoteObject *note = [notesByRecordID objectForKey:recordID];
 		if (note) [removed addObject:note];
 	}
 	for (NoteObject *note in removed) {
 		[note disconnectLabels];
 		[note abortEditingInExternalEditor];
-		[allNotes removeObjectIdenticalTo:note];
+		[self _deleteNote:note];
 		[[prefsController bookmarksController] removeBookmarkForNote:note];
 		listChanged = YES;
 	}
@@ -431,7 +438,7 @@
 - (void)_addNote:(NoteObject*)aNoteObject {
     [aNoteObject setDelegate:self];	
 	
-    [allNotes addObject:aNoteObject];
+    [self _insertNote:aNoteObject];
 }
 
 
@@ -467,7 +474,7 @@
 	[aNoteObject disconnectLabels];
 	[aNoteObject abortEditingInExternalEditor];
 	
-    [allNotes removeObjectIdenticalTo:aNoteObject];
+    [self _deleteNote:aNoteObject];
 	[unwrittenNotes removeObject:aNoteObject];
 	//deleting moves the note to Simplenote's trash; undo restores it with the next save
 	NVNoteRecord *trashed = [aNoteObject noteRecordRepresentation];

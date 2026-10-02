@@ -153,6 +153,28 @@
 	XCTAssertEqualObjects([created objectForKey:@"tags"], [NSArray arrayWithObject:@"inbox"]);
 }
 
+- (void)testNotesAreFoundByRecordIDAsTheyComeAndGo {
+	NSString *loaded = [server remoteCreateNoteWithContent:@"Loaded\nat launch" tags:nil];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	XCTAssertEqual([controller noteForRecordID:loaded], [self noteTitled:@"Loaded"]);
+
+	NSString *remote = [server remoteCreateNoteWithContent:@"From the phone\nhi" tags:nil];
+	[self syncAndDeliver];
+	XCTAssertEqual([controller noteForRecordID:remote], [self noteTitled:@"From the phone"]);
+
+	NoteObject *local = [[NoteObject alloc] initWithNoteBody:[[NSAttributedString alloc] initWithString:@"body"] title:@"Local" delegate:controller labels:nil];
+	[controller addNotes:[NSArray arrayWithObject:local]];
+	XCTAssertEqual([controller noteForRecordID:[local noteRecordID]], local);
+
+	[controller removeNote:local];
+	XCTAssertNil([controller noteForRecordID:[local noteRecordID]]);
+	[server remoteTrashNote:remote];
+	[self syncAndDeliver];
+	XCTAssertNil([controller noteForRecordID:remote]);
+	XCTAssertNil([controller noteForRecordID:nil]);
+}
+
 - (void)testSettingsPersistInTheStore {
 	[self openController];
 	[[controller notationPrefs] setConfirmsFileDeletion:NO];
