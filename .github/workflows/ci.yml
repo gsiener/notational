@@ -30,53 +30,14 @@ jobs:
           xcodebuild -version
 
       - name: build app
-        run: |
-          xcodebuild \
-            -project Notation.xcodeproj \
-            -scheme 'Notation Release' \
-            -configuration ForBuilding \
-            -derivedDataPath build/DerivedData \
-            -archivePath build/Notational.xcarchive \
-            archive
+        run: scripts/build.sh
 
-      # after the build: the Markup renderer's golden-file tests use the bundled multimarkdown
+      # once, with Address Sanitizer: memory errors in the C buffers fail the build (#26)
       - name: test
-        run: |
-          xcodebuild test \
-            -project Notation.xcodeproj \
-            -scheme NotationTests \
-            -derivedDataPath build/DerivedData \
-            -resultBundlePath build/TestResults.xcresult
-
-      # memory errors in the C buffers and manual retain/release code (#26) fail the build
-      - name: test with Address Sanitizer
-        run: |
-          xcodebuild test \
-            -project Notation.xcodeproj \
-            -scheme NotationTests \
-            -derivedDataPath build/DerivedDataASan \
-            -enableAddressSanitizer YES
+        run: scripts/test.sh
 
       - name: verify app
-        run: |
-          app=build/Notational.xcarchive/Products/Applications/Notational.app
-          for bin in "$app/Contents/MacOS/Notational" "$app/Contents/Resources/multimarkdown"; do
-            archs=$(lipo -archs "$bin")
-            echo "$bin: $archs"
-            case " $archs " in *" arm64 "*) ;; *) echo "::error::$bin is not arm64"; exit 1 ;; esac
-          done
-          # only system libraries may be linked; nothing from Homebrew, nix or the build machine
-          if otool -L "$app/Contents/MacOS/Notational" | tail -n +2 | grep -vE '^\s+(/System/Library/|/usr/lib/)'; then
-            echo "::error::unexpected non-system library dependency"; exit 1
-          fi
-          # no scripting runtimes (#28): no interpreter scripts shipped, nothing launched through perl/python/ruby
-          scripts=$(find "$app" \( -name '*.pl' -o -name '*.pm' -o -name '*.py' -o -name '*.pyc' -o -name '*.rb' \) -print)
-          if [ -n "$scripts" ]; then echo "::error::scripts in the app bundle:"; echo "$scripts"; exit 1; fi
-          if grep -rnE '/usr/bin/(perl|python|ruby)|Ruby\.framework|env (perl|python|ruby)' --include='*.m' --include='*.h' . ; then
-            echo "::error::code launches a scripting runtime"; exit 1
-          fi
-          codesign --verify --deep --strict "$app"
-          ditto -c -k --keepParent "$app" build/Notational.zip
+        run: scripts/verify.sh
 
       # drive the built app's UI in a throwaway home folder (#31); runs here, never on a desktop
       - name: UI smoke tests

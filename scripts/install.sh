@@ -13,8 +13,7 @@ DEST="${1:-$HOME/Applications}"
 ARCHIVE=build/Notational.xcarchive
 APP="$ARCHIVE/Products/Applications/Notational.app"
 
-xcodebuild -project Notation.xcodeproj -scheme 'Notation Release' -configuration ForBuilding \
-	-derivedDataPath build/DerivedData -archivePath "$ARCHIVE" archive -quiet
+scripts/build.sh -quiet
 
 if [ -z "${SIGN_IDENTITY+set}" ]; then
 	SIGN_IDENTITY=$(security find-identity -v -p codesigning | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -n 1)

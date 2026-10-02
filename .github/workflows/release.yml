@@ -16,23 +16,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: test
-        run: xcodebuild test -project Notation.xcodeproj -scheme NotationTests
       - name: build app
-        run: |
-          xcodebuild \
-            -target Notation \
-            -configuration ForBuilding \
-            -scheme 'Notation Release' \
-            -archivePath ./Notational.xcarchive \
-            archive
-          ditto -c -k --keepParent Notational.xcarchive/Products/Applications/Notational.app Notational.zip
+        run: scripts/build.sh
+      # after the build: the Markup renderer's golden-file tests use the bundled multimarkdown
+      - name: test
+        run: scripts/test.sh
+      - name: verify app
+        run: scripts/verify.sh
       - uses: actions/upload-artifact@v7
         with:
           name: Notational
-          path: Notational.zip
+          path: build/Notational.zip
       - name: release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            Notational.zip
+            build/Notational.zip
