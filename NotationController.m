@@ -28,7 +28,6 @@
 #import "NoteObject_NVRecord.h"
 #import "NSCollection_utils.h"
 #import "NoteObject.h"
-#import "DeletedNoteObject.h"
 #import "NSString_NV.h"
 #import "NSFileManager_NV.h"
 #import "BufferUtils.h"
@@ -47,10 +46,7 @@
 
 - (id)init {
     if (self=[super init]) {
-		notesChanged = NO;
-		
 		allNotes = [[NSMutableArray alloc] init]; //<--the authoritative list of all memory-accessible notes
-		deletedNotes = [[NSMutableSet alloc] init];
 		labelsListController = [[LabelsListController alloc] init];
 		prefsController = [GlobalPrefs defaultPrefs];
 		notesListDataSource = [[FastListDataSource alloc] init];
@@ -84,11 +80,8 @@
 			prefs = NVUnarchiveKeyedObject([[NSData alloc] initWithBase64EncodedString:archived options:0]);
 		}
 		notationPrefs = ([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[NotationPrefs alloc] init];
-		[notationPrefs setNotesStorageFormat:SingleDatabaseFormat];
 		[notationPrefs setDelegate:self];
 		
-		allNotes = [[NSMutableArray alloc] init];
-		deletedNotes = [[NSMutableSet alloc] init];
 		applyingRemoteChanges = YES;
 		for (NVNoteRecord *record in [store allNotes]) {
 			if ([record deleted]) continue;
@@ -127,8 +120,8 @@
 }
 
 - (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"NVSyncStatusDidChangeNotification" object:self
-													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:@"status"]];
+	[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:self
+													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:NVSyncStatusKey]];
 }
 
 //NVSyncEngineDelegate, on the main thread
@@ -194,14 +187,12 @@
 
 }
 
-//used to ensure a newly-written Notes & Settings file is valid before finalizing the save
-//read the file back from disk, deserialize it, decrypt and decompress it, and compare the notes roughly to our current notes
-//stick the newest unique recovered notes into allNotes
+//notation prefs delegate method
 - (void)flushEverything {
 	[self flushAllNoteChanges];
 }
 
-- (BOOL)flushAllNoteChanges {
+- (void)flushAllNoteChanges {
 	[self synchronizeNoteChanges:changeWritingTimer];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(synchronizeNoteChanges:) object:nil];
 	if ([notationPrefs preferencesChanged]) {
@@ -210,18 +201,6 @@
 		[notationPrefs setPreferencesAreStored];
 	}
 	[notesStore waitUntilWritten];
-	notesChanged = NO;
-	return YES;
-}
-
-//notation prefs delegate method
-- (void)databaseEncryptionSettingsChanged {
-	//encryption no longer applies: notes live in Simplenote (ADR 0001)
-}
-
-//notation prefs delegate method
-- (void)databaseSettingsChangedFromOldFormat:(NSInteger)oldFormat {
-	//storage formats no longer apply: notes live in Simplenote (ADR 0001)
 }
 
 - (void)synchronizeNoteChanges:(NSTimer*)timer {
@@ -429,14 +408,11 @@
 
 	if ([allNotes containsObject:note]) {
 	
-		BOOL immediately = NO;
-		notesChanged = YES;
-		
 		[unwrittenNotes addObject:note];
 		
 		//always synchronize absolutely no matter what 15 seconds after any change
 		if (!changeWritingTimer)
-			changeWritingTimer = [NSTimer scheduledTimerWithTimeInterval:(immediately ? 0.0 : 15.0) target:self 
+			changeWritingTimer = [NSTimer scheduledTimerWithTimeInterval:15.0 target:self 
 									 selector:@selector(synchronizeNoteChanges:)
 									 userInfo:nil repeats:NO];
 		
@@ -444,18 +420,8 @@
 		//this avoids excessive writing and any potential and unnecessary disk access while user types
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(synchronizeNoteChanges:) object:nil];
 		
-		if (walWriter) {
-			//perhaps a more general user interface activity timer would be better for this? update process syncs every 30 secs, anyway...
-			[NSObject cancelPreviousPerformRequestsWithTarget:walWriter selector:@selector(synchronize) object:nil];
-			//fsyncing WAL to disk can cause noticeable interruption when run from main thread
-			[walWriter performSelector:@selector(synchronize) withObject:nil afterDelay:15.0];
-		}
-		
-		if (!immediately) {
-			//timer is already scheduled if immediately is true
-			//queue to write 2.7 seconds after last user change; 
-			[self performSelector:@selector(synchronizeNoteChanges:) withObject:nil afterDelay:2.7];
-		}
+		//queue to write 2.7 seconds after last user change; 
+		[self performSelector:@selector(synchronizeNoteChanges:) withObject:nil afterDelay:2.7];
 	} else {
 		NSLog(@"not writing note %@ because it is not controlled by NoteController", note);
 	}
@@ -466,9 +432,6 @@
     [aNoteObject setDelegate:self];	
 	
     [allNotes addObject:aNoteObject];
-	[deletedNotes removeObject:aNoteObject];
-    
-    notesChanged = YES;
 }
 
 
@@ -506,27 +469,15 @@
 	
     [allNotes removeObjectIdenticalTo:aNoteObject];
 	[unwrittenNotes removeObject:aNoteObject];
-	if (notesStore) {
-		//deleting moves the note to Simplenote's trash; undo restores it with the next save
-		NVNoteRecord *trashed = [aNoteObject noteRecordRepresentation];
-		[trashed setDeleted:YES];
-		[trashed setModificationDate:[[NSDate date] timeIntervalSince1970]];
-		[notesStore saveLocalEdit:trashed];
-		[syncEngine syncNow];
-	}
-	if (!notesStore) [self _addDeletedNote:aNoteObject];
+	//deleting moves the note to Simplenote's trash; undo restores it with the next save
+	NVNoteRecord *trashed = [aNoteObject noteRecordRepresentation];
+	[trashed setDeleted:YES];
+	[trashed setModificationDate:[[NSDate date] timeIntervalSince1970]];
+	[notesStore saveLocalEdit:trashed];
+	[syncEngine syncNow];
 	
-    
-    notesChanged = YES;
-	
-	//force-write any cached note changes to make sure that their LSNs are smaller than this deleted note's LSN
+	//force-write any cached note changes before the removal
 	[self synchronizeNoteChanges:nil];
-    
-	//add journal removal event
-	if (walWriter && ![walWriter writeRemovalForNote:aNoteObject]) {
-		NSLog(@"Couldn't log note removal");
-	}
-	
     
 	[self _registerDeletionUndoForNote:aNoteObject];
 		
@@ -537,41 +488,6 @@
 	[self updateTitlePrefixConnections];
     
     [self refilterNotes];
-}
-
-- (void)_purgeAlreadyDistributedDeletedNotes {
-	//purge deletedNotes of objects without any more syncMD entries;
-	//once a note has been deleted from all services, there's no need to keep it around anymore
-
-	NSUInteger i = 0;
-	NSArray *dnArray = [deletedNotes allObjects];
-	for (i = 0; i<[dnArray count]; i++) {
-		DeletedNoteObject *dnObj = [dnArray objectAtIndex:i];
-		if (![[dnObj syncServicesMD] count]) {
-			[deletedNotes removeObject:dnObj];
-			notesChanged = YES;
-		}
-	}
-	//NSLog(@"%s: deleted notes left: %@", _cmd, deletedNotes);
-}
-
-- (DeletedNoteObject*)_addDeletedNote:(id<SynchronizedNote>)aNote {
-	//currently coupled to -[allNotes removeObjectIdenticalTo:]
-	//don't need to remember this deleted note unless it was already synced with some service
-	//furthermore, after that deleted note has been remotely-removed from all services with which it was previously synced,
-	//can it be purged from this database once and for all?
-	//e.g., each successful syncservice deletion would also remove that service's entry from syncServicesMD
-	//when syncServicesMD was empty, it would be removed from the set
-	//but what about synchronization systems without explicit delete APIs?
-	
-	if ([[aNote syncServicesMD] count]) {
-		//it is important to use the actual deleted note if one is passed
-		DeletedNoteObject *deletedNote = [aNote isKindOfClass:[DeletedNoteObject class]] ? aNote : [DeletedNoteObject deletedNoteWithNote:aNote];
-		[deletedNotes addObject:deletedNote];
-		notesChanged = YES;
-		return deletedNote;
-	}
-	return nil;
 }
 
 - (void)_registerDeletionUndoForNote:(NoteObject*)aNote {	
@@ -882,10 +798,6 @@
 	return [notesListDataSource indexOfObjectIdenticalTo:note];
 }
 
-- (NSUInteger)totalNoteCount {
-	return [allNotes count];
-}
-
 - (NoteAttributeColumn*)sortColumn {
 	return sortColumn;
 }
@@ -994,8 +906,7 @@
 
 
 - (void)dealloc {
- 
-	[walWriter setDelegate:nil];
+
 	[notationPrefs setDelegate:nil];
 	[allNotes makeObjectsPerformSelector:@selector(setDelegate:) withObject:nil];
 
@@ -1005,28 +916,6 @@
 	free(manglingString);
 	
 	[syncEngine setDelegate:nil];
-}
-
-#pragma mark nvALT stuff
-- (NSString *)createCachesFolder{
-    NSString *path = nil;
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-    if ([paths count])    {
-        path = [[paths objectAtIndex:0] stringByAppendingPathComponent:[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"]];
-        NSError *theError=nil;
-        if ((path!=nil)&&([[NSFileManager defaultManager]createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&theError])) {
-//           NSLog(@"cache folder :>%@<",path);
-            return path;
-        }else{
-            NSLog(@"error creating cache folder:");
-            if (theError) {
-                NSLog(@"%@",[theError description]);
-            }
-        }
-    }else{
-        NSLog(@"Unable to find or create cache folder:\n%@", path);
-    }
-    return nil;
 }
 
 @end

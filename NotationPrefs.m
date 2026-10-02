@@ -30,21 +30,9 @@
 #define DEFAULT_KEY_LENGTH 256
 
 
-#define INIT_DICT_ACCT() NSMutableDictionary *accountDict = ServiceAccountDictInit(self, serviceName)
-
 NSString *NotationPrefsDidChangeNotification = @"NotationPrefsDidChangeNotification";
 
 @implementation NotationPrefs
-
-NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serviceName) {
-	NSMutableDictionary *accountDict = [prefs->syncServiceAccounts objectForKey:serviceName];
-	if (!accountDict) [prefs->syncServiceAccounts setObject:(accountDict = [[NSMutableDictionary alloc] init]) forKey:serviceName];
-	return accountDict;
-}
-
-+ (int)appVersion {
-	return [[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"] intValue];
-}
 
 - (id)init {
     if (self=[super init]) {
@@ -55,7 +43,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		hashIterationCount = DEFAULT_HASH_ITERATIONS;
 		keyLengthInBits = DEFAULT_KEY_LENGTH;
 		baseBodyFont = [[GlobalPrefs defaultPrefs] noteBodyFont];
-		//foregroundColor = [[GlobalPrefs defaultPrefs] foregroundTextColor];
 		foregroundColor = [[NVTheme currentTheme] foregroundColor];
 		epochIteration = 0;
 		
@@ -104,8 +91,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 			NSLog(@"Error trying to unarchive foreground text color (%@, %@)", [e name], [e reason]);
 		}
 		if (!foregroundColor || ![foregroundColor isKindOfClass:[NSColor class]]) {
-			//foregroundColor = [[GlobalPrefs defaultPrefs] foregroundTextColor];
-			
 			foregroundColor = [[NVTheme currentTheme] foregroundColor];
 			preferencesChanged = YES;
 		}
@@ -184,10 +169,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	return syncServiceAccounts;
 }
 
-- (NSDictionary*)syncAccountForServiceName:(NSString*)serviceName {
-	return [syncServiceAccounts objectForKey:serviceName];
-}
-
 - (NSDictionary*)syncServiceAccountsForArchiving {
 	NSMutableDictionary *tempDict = [syncServiceAccounts mutableCopy];
 	
@@ -203,21 +184,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		[account removeObjectForKey:@"password"];
 	}
 	return tempDict;
-}
-
-- (BOOL)syncNotesShouldMergeForServiceName:(NSString*)serviceName {
-	NSDictionary *accountDict = [self syncAccountForServiceName:serviceName];
-	NSString *username = [accountDict objectForKey:@"username"];
-	return username && [[accountDict objectForKey:@"shouldmerge"] isEqualToString:username];
-}
-
-- (NSUInteger)syncFrequencyInMinutesForServiceName:(NSString*)serviceName {
-	NSUInteger freq = MIN([[[self syncAccountForServiceName:serviceName] objectForKey:@"frequency"] unsignedIntValue], 30U);
-	return freq == 0 ? 5 : freq;
-}
-
-- (BOOL)syncServiceIsEnabled:(NSString*)serviceName {
-	return [[[self syncAccountForServiceName:serviceName] objectForKey:@"enabled"] boolValue];
 }
 
 - (unsigned int)keyLengthInBits {
@@ -327,9 +293,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	verifierKey = [masterKey derivedKeyOfLength:keyLength salt:verifySalt iterations:1];
 
 	preferencesChanged = YES;
-	
-	if ([delegate respondsToSelector:@selector(databaseEncryptionSettingsChanged)])
-		[delegate databaseEncryptionSettingsChanged];
 }
 
 - (NSData*)WALSessionKey {
@@ -344,12 +307,8 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 
 - (void)setNotesStorageFormat:(NSInteger)formatID {
 	if (formatID != notesStorageFormat) {
-		NSInteger oldFormat = notesStorageFormat;
 		notesStorageFormat = formatID;	
 		preferencesChanged = YES;
-		
-		if ([delegate respondsToSelector:@selector(databaseSettingsChangedFromOldFormat:)])
-			[delegate databaseSettingsChangedFromOldFormat:oldFormat];
 		
 		//should notationprefs need to do this?
 		if ([delegate respondsToSelector:@selector(flushEverything)])
@@ -363,7 +322,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 }
 
 - (void)setDoesEncryption:(BOOL)value {
-	BOOL oldValue = doesEncryption;
 	doesEncryption = value;
 	
 	preferencesChanged = YES;
@@ -372,11 +330,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		//clear out the verifier key and salt?
 		verifierKey = nil;
 		masterKey = nil;
-	}
-	
-	if (oldValue != value) {
-		if ([delegate respondsToSelector:@selector(databaseEncryptionSettingsChanged)])
-			[delegate databaseEncryptionSettingsChanged];
 	}
 }
 
@@ -396,65 +349,6 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		[[NSUserDefaults standardUserDefaults] removeObjectForKey:ShouldHideSecureTextEntryWarningKey];
 		[tem disableSecureTextEntry];
 	}
-}
-
-- (void)setSyncEnabled:(BOOL)isEnabled forService:(NSString*)serviceName {
-	INIT_DICT_ACCT();
-	
-	if ([self syncServiceIsEnabled:serviceName] != isEnabled) {
-		[accountDict setObject:[NSNumber numberWithBool:isEnabled] forKey:@"enabled"];
-		
-		preferencesChanged = YES;
-		[delegate syncSettingsChangedForService:serviceName];
-	}
-}
-
-- (void)setSyncFrequency:(NSUInteger)frequencyInMinutes forService:(NSString*)serviceName {
-	INIT_DICT_ACCT();
-	
-	if ([self syncFrequencyInMinutesForServiceName:serviceName] != frequencyInMinutes) {
-		[accountDict setObject:[NSNumber numberWithUnsignedInteger:frequencyInMinutes] forKey:@"frequency"];
-		preferencesChanged = YES;
-		[delegate syncSettingsChangedForService:serviceName];
-	}
-}
-
-- (void)setSyncShouldMerge:(BOOL)shouldMerge inCurrentAccountForService:(NSString*)serviceName {
-	INIT_DICT_ACCT();
-	
-	if ([self syncNotesShouldMergeForServiceName:serviceName] != shouldMerge) {
-		NSString *username = [accountDict objectForKey:@"username"];
-		if (username) {
-			NSLog(@"%@: %d, %@",  NSStringFromSelector(_cmd), shouldMerge, username);
-			if (shouldMerge) {
-				[accountDict setObject:username forKey:@"shouldmerge"];
-			} else {
-				[accountDict removeObjectForKey:@"shouldmerge"];
-			}
-			preferencesChanged = YES;
-		} else {
-			NSLog(@" no username found in %@", serviceName);
-		}
-	}
-}
-
-- (void)setSyncUsername:(NSString*)username forService:(NSString*)serviceName {
-	
-	INIT_DICT_ACCT();
-	
-	if (![[accountDict objectForKey:@"username"] isEqualToString:username]) {
-		[accountDict setObject:username forKey:@"username"];
-		
-		preferencesChanged = YES;
-		[delegate syncSettingsChangedForService:serviceName];
-	}
-}
-
-- (void)setKeyLengthInBits:(unsigned int)newLength {
-	//can't do this because we don't have password string
-    /*keyLengthInBits = newLength;
-    preferencesChanged = YES;
-    */
 }
 
 + (NSString*)pathExtensionForFormat:(NSInteger)format {

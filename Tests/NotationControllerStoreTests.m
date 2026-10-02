@@ -156,7 +156,7 @@
 - (void)testSettingsPersistInTheStore {
 	[self openController];
 	[[controller notationPrefs] setConfirmsFileDeletion:NO];
-	XCTAssertTrue([controller flushAllNoteChanges]);
+	[controller flushAllNoteChanges];
 	[controller closeAllResources];
 	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
 	controller = nil;

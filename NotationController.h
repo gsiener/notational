@@ -20,14 +20,12 @@
 #import "NVNoteDelegate.h"
 #import "FastListDataSource.h"
 #import "LabelsListController.h"
-#import "WALController.h"
 
 #import <CoreServices/CoreServices.h>
 
 //enum { kUISearch, kUINewNote, kUIDeleteNote, kUIRenameNote, kUILabelOperation };
 
 @class NoteObject;
-@class DeletedNoteObject;
 @class NotationPrefs;
 @class NoteAttributeColumn;
 @class NoteBookmark;
@@ -54,14 +52,10 @@
     
     NotationPrefs *notationPrefs;
 	
-	NSMutableSet *deletedNotes;
-    
 	unsigned int lastCheckedDateInHours;
 	int lastLayoutStyleGenerated;
     
-    WALStorageController *walWriter;
     NSMutableSet *unwrittenNotes;
-	BOOL notesChanged;
 	NSTimer *changeWritingTimer;
 	NSUndoManager *undoManager;
 	
@@ -79,16 +73,13 @@
 - (NoteObject *)noteForRecordID:(NSString *)recordID;
 
 - (id)init;
-- (BOOL)flushAllNoteChanges;
+- (void)flushAllNoteChanges;
 - (void)flushEverything;
 
 
 
 - (id)delegate;
 - (void)setDelegate:(id)theDelegate;
-
-- (void)databaseEncryptionSettingsChanged;
-- (void)databaseSettingsChangedFromOldFormat:(NSInteger)oldFormat;
 
 - (void)synchronizeNoteChanges:(NSTimer*)timer;
 
@@ -106,8 +97,6 @@
 - (void)_addNote:(NoteObject*)aNoteObject;
 - (void)removeNote:(NoteObject*)aNoteObject;
 - (void)removeNotes:(NSArray*)noteArray;
-- (void)_purgeAlreadyDistributedDeletedNotes;
-- (DeletedNoteObject*)_addDeletedNote:(id<SynchronizedNote>)aNote;
 - (void)_registerDeletionUndoForNote:(NoteObject*)aNote;
 
 - (BOOL)openFiles:(NSArray*)filenames;
@@ -128,7 +117,6 @@
 - (NSArray*)notesAtIndexes:(NSIndexSet*)indexSet;
 - (NSIndexSet*)indexesOfNotes:(NSArray*)noteSet;
 - (NSUInteger)indexInFilteredListForNoteIdenticalTo:(NoteObject*)note;
-- (NSUInteger)totalNoteCount;
 
 - (void)scheduleUpdateListForAttribute:(NSString*)attribute;
 - (NoteAttributeColumn*)sortColumn;
@@ -149,7 +137,6 @@
 #pragma mark nvALT stuff
 
 - (void)removeNotesAtIndexes:(NSIndexSet *)indexes;
-- (NSString *)createCachesFolder;
 
 @end
 
