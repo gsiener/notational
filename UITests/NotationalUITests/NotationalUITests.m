@@ -32,7 +32,7 @@
 	//a normal app with a menu bar, whatever the machine's saved preferences say
 	//closing the main window would otherwise quit the app (the default)
 	app.launchArguments = @[@"-ShowDockIcon", @"YES", @"-StatusBarItem", @"NO", @"-ConfirmNoteDeletion", @"NO",
-							 @"-QuitWhenClosingMainWindow", @"NO"];
+							 @"-QuitWhenClosingMainWindow", @"NO", @"-SuppressSignInPrompt", @"YES"];
 	[app launch];
 	XCTAssertTrue([app.windows[@"Notational"] waitForExistenceWithTimeout:20], @"main window never appeared");
 	[self dismissAccountWindow];
@@ -71,6 +71,16 @@
 		XCTFail(@"no %@ ▸ %@; the menu has: %@", menu, item, [titles componentsJoinedByString:@" | "]);
 	}
 	[menuItem click];
+}
+
+//the item reads Collapse or Expand depending on the list's state
+- (void)toggleNotesList {
+	XCUIElement *bar = app.menuBars.firstMatch;
+	[bar.menuBarItems[@"View"] click];
+	XCUIElementQuery *items = bar.menuBarItems[@"View"].menus.menuItems;
+	XCUIElement *item = items[@"Collapse Notes List"].exists ? items[@"Collapse Notes List"] : items[@"Expand Notes List"];
+	XCTAssertTrue(item.exists, @"no Collapse/Expand Notes List item");
+	[item click];
 }
 
 - (XCUIElement *)mainWindow { return app.windows[@"Notational"]; }
@@ -128,8 +138,8 @@
 	[self createNoteTitled:@"Layout note" body:@"some words to count"];
 	[self choose:@"Switch to Horizontal Layout" inMenu:@"View"];
 	[self choose:@"Switch to Vertical Layout" inMenu:@"View"];
-	[self choose:@"Collapse Notes List" inMenu:@"View"];
-	[self choose:@"Collapse Notes List" inMenu:@"View"];
+	[self toggleNotesList];
+	[self toggleNotesList];
 	[self choose:@"Show Word Count" inMenu:@"View"];
 	[self choose:@"Show Word Count" inMenu:@"View"];
 	[self assertStillRunning];

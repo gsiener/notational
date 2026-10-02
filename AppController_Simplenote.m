@@ -167,7 +167,9 @@ static BOOL loadingToken = NO;
 												 name:NVSyncStatusDidChangeNotification object:nil];
 	
 	//never signed in: notes come from Simplenote, so say so instead of showing an empty list
-	if (![[notationController notesStore] metadataValueForKey:AccountKey])
+	//(UI tests launch with -SuppressSignInPrompt YES; the menu item still opens the window)
+	if (![[notationController notesStore] metadataValueForKey:AccountKey] &&
+		![[NSUserDefaults standardUserDefaults] boolForKey:@"SuppressSignInPrompt"])
 		[self performSelector:@selector(showSimplenoteAccount:) withObject:nil afterDelay:0.3];
 }
 
