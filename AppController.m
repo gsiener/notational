@@ -73,6 +73,8 @@ NSInteger popped;
 BOOL splitViewAwoke;
 
 
+static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
+
 @implementation AppController
 
 @synthesize isEditing;
@@ -683,6 +685,11 @@ terminateApp:
     splitViewIsRestoring = YES;   //a collapsed list is restored even though no note is open yet
     [splitView setAutosaveName:name];
     splitViewIsRestoring = NO;
+    //NSSplitView's autosave keeps sizes but not reliably a hidden subview, so collapsing is remembered separately
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:NotesListCollapsedKey] && ![self notesListIsCollapsed]) {
+        lastNotesDimension = [self notesListDimension];
+        [notesSubview setHidden:YES];
+    }
     notesWasCollapsed = [self notesListIsCollapsed];
     if (notesWasCollapsed) {
         [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
@@ -704,6 +711,7 @@ terminateApp:
     }
     notesWasCollapsed = collapsed;
     if (splitViewIsChangingLayout) return;
+    [[NSUserDefaults standardUserDefaults] setBool:collapsed forKey:NotesListCollapsedKey];
     if (collapsed) {
         [self setDualFieldIsVisible:NO];
         [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
