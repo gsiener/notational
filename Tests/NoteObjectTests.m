@@ -8,6 +8,8 @@
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
 #import "NVNoteRecord.h"
+#import "GlobalPrefs.h"
+#import "AttributedPlainText.h"
 
 @class ODBEditor;
 @interface NoteObject (ExternalEditing)
@@ -134,6 +136,26 @@ static NVNoteRecord *Record(NSString *content, NSArray *tags) {
 - (void)testARecordWithoutLabelsHasNoTags {
 	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:nil labels:nil];
 	XCTAssertEqualObjects([[note noteRecordRepresentation] tags], [NSArray array]);
+}
+
+//links are found when the body is first asked for, not at load; what the editor shows is the same
+- (void)testANoteFromARecordShowsItsLinksAndDoneLines {
+	NSString *body = @"see https://example.com and [[Other note]]\nbuy milk @done\nplain";
+	NoteObject *note = [[NoteObject alloc] initWithNoteRecord:Record([@"Title\n" stringByAppendingString:body], @[]) delegate:nil];
+
+	NSMutableAttributedString *expected = [[NSMutableAttributedString alloc] initWithString:body attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
+	[expected addLinkAttributesForRange:NSMakeRange(0, [expected length])];
+	[expected addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [expected length])];
+	XCTAssertEqualObjects([note contentString], expected);
+	XCTAssertEqualObjects([[note contentString] attribute:NSLinkAttributeName atIndex:6 effectiveRange:NULL], [NSURL URLWithString:@"https://example.com"]);
+	//the record written back is unchanged by the styling
+	XCTAssertEqualObjects([[note noteRecordRepresentation] content], [@"Title\n" stringByAppendingString:body]);
+}
+
+- (void)testAnEditBeforeTheBodyIsShownKeepsTheEditorsAttributes {
+	NoteObject *note = [[NoteObject alloc] initWithNoteRecord:Record(@"Title\nhttps://example.com", @[]) delegate:nil];
+	[note setContentString:Body(@"https://example.com typed")];
+	XCTAssertNil([[note contentString] attribute:NSLinkAttributeName atIndex:0 effectiveRange:NULL]);
 }
 
 @end

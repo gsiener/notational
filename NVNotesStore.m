@@ -34,6 +34,7 @@ static NSString *const SyncPointKey = @"syncPoint";
 - (BOOL)_writeRecord:(NVNoteRecord *)record;
 - (void)_deleteRecordWithID:(NSString *)noteID;
 - (NSArray *)_recordsWhere:(const char *)where;
+- (NSArray *)_recordsWithColumns:(const char *)columns where:(const char *)where;
 @end
 
 @implementation NVNotesStoreTransactionImpl
@@ -95,6 +96,8 @@ static id JSONObject(NSString *string) {
 }
 
 static const char *NoteColumns = "id, content, tags, deleted, created, modified, server_data, confirmed_version, pending, revision";
+//the same without server_data, the second full copy of each note; only the Sync engine needs it
+static const char *ListColumns = "id, content, tags, deleted, created, modified, NULL, confirmed_version, pending, revision";
 
 static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 	NVNoteRecord *record = [[NVNoteRecord alloc] init];
@@ -115,9 +118,13 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 }
 
 - (NSArray *)_recordsWhere:(const char *)where {
+	return [self _recordsWithColumns:NoteColumns where:where];
+}
+
+- (NSArray *)_recordsWithColumns:(const char *)columns where:(const char *)where {
 	NSMutableArray *records = [NSMutableArray array];
 	if (!db) return records;
-	NSString *sql = [NSString stringWithFormat:@"SELECT %s FROM notes%s%s", NoteColumns, where ? " WHERE " : "", where ? where : ""];
+	NSString *sql = [NSString stringWithFormat:@"SELECT %s FROM notes%s%s", columns, where ? " WHERE " : "", where ? where : ""];
 	sqlite3_stmt *stmt = NULL;
 	if (sqlite3_prepare_v2(db, [sql UTF8String], -1, &stmt, NULL) != SQLITE_OK) {
 		NSLog(@"NVNotesStore: %@", SQLiteError(db, 0, @"select"));
@@ -301,6 +308,12 @@ static NVNoteRecord *RecordFromRow(sqlite3_stmt *stmt) {
 - (NSArray *)allNotes {
 	__block NSArray *records = nil;
 	dispatch_sync(queue, ^{ records = [self _recordsWhere:NULL]; });
+	return records;
+}
+
+- (NSArray *)allNotesWithoutServerData {
+	__block NSArray *records = nil;
+	dispatch_sync(queue, ^{ records = [self _recordsWithColumns:ListColumns where:NULL]; });
 	return records;
 }
 

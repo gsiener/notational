@@ -83,7 +83,8 @@
 		notationPrefs = ([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[NotationPrefs alloc] init];
 		[notationPrefs setDelegate:self];
 		
-		for (NVNoteRecord *record in [store allNotes]) {
+		//the list doesn't need the server copies
+		for (NVNoteRecord *record in [store allNotesWithoutServerData]) {
 			if ([record deleted]) continue;
 			NoteObject *note = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (note) [self _insertNote:note];

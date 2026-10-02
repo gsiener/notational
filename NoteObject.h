@@ -66,6 +66,9 @@ typedef struct _NoteFilterContext {
 	//not archived: both come from the Notes store
 	NSString *recordID;
 	NVNoteContent *recordContent;
+	//links in a note loaded from the store are found when its body is first asked for (-contentString),
+	//not for every note at launch
+	BOOL linksNeedDetecting;
 	
 	//more metadata
 	NSRange selectedRange;

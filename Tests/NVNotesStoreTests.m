@@ -164,6 +164,30 @@
 	XCTAssertEqual([store noteCount], (NSUInteger)0);
 }
 
+- (void)testListingLeavesOutOnlyTheServerData {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"Title\nbody" version:3]] into:store];
+	NVNoteRecord *edit = [store noteWithID:@"a"];
+	[edit setContent:@"Title\nedited"];
+	[edit setDeleted:YES];
+	[store saveLocalEdit:edit];
+
+	NSArray *listed = [store allNotesWithoutServerData];
+	XCTAssertEqual([listed count], (NSUInteger)1);
+	NVNoteRecord *full = [store noteWithID:@"a"], *record = [listed firstObject];
+	XCTAssertEqualObjects([record noteID], [full noteID]);
+	XCTAssertEqualObjects([record content], [full content]);
+	XCTAssertEqualObjects([record tags], [full tags]);
+	XCTAssertEqual([record deleted], [full deleted]);
+	XCTAssertEqual([record creationDate], [full creationDate]);
+	XCTAssertEqual([record modificationDate], [full modificationDate]);
+	XCTAssertEqual([record confirmedVersion], [full confirmedVersion]);
+	XCTAssertEqual([record pending], [full pending]);
+	XCTAssertEqual([record localRevision], [full localRevision]);
+	XCTAssertEqualObjects([record serverData], [NSDictionary dictionary]);
+	XCTAssertEqualObjects([[full serverData] objectForKey:@"futureField"], @"x");
+}
+
 - (void)testMetadata {
 	NVNotesStore *store = [self openStore];
 	XCTAssertNil([store syncPoint]);

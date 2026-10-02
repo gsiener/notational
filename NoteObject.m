@@ -341,6 +341,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		
 		[coder encodeObject:titleString forKey:VAR_STR(titleString)];
 		[coder encodeObject:labelString forKey:VAR_STR(labelString)];
+		[self _detectLinksIfNeeded];
 		[coder encodeObject:contentString forKey:VAR_STR(contentString)];
 	}
 }
@@ -394,6 +395,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 - (void)setContentString:(NSAttributedString*)attributedString updateTime:(BOOL)updateTime {
 	if (attributedString) {
 		[contentString setAttributedString:attributedString];
+		linksNeedDetecting = NO;
 		
 		[self updateTablePreviewString];
 		contentCacheNeedsUpdate = YES;
@@ -405,7 +407,14 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	}
 }
 - (NSAttributedString*)contentString {
+	[self _detectLinksIfNeeded];
 	return contentString;
+}
+
+- (void)_detectLinksIfNeeded {
+	if (!linksNeedDetecting) return;
+	linksNeedDetecting = NO;
+	[contentString addLinkAttributesForRange:NSMakeRange(0, [contentString length])];
 }
 
 - (void)updateContentCacheCStringIfNecessary {
@@ -563,6 +572,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 }
 
 - (void)_resanitizeContent {
+	[self _detectLinksIfNeeded];
 	[contentString santizeForeignStylesForImporting];
 	
 	//renormalize the title, in case it is still somehow derived from decomposed HFS+ filenames
@@ -575,6 +585,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 //how do we write a thousand RTF files at once, repeatedly? 
 
 - (void)updateUnstyledTextWithBaseFont:(NSFont*)baseFont {
+	[self _detectLinksIfNeeded];
 
 	if ([contentString restyleTextToFont:[[GlobalPrefs defaultPrefs] noteBodyFont] usingBaseFont:baseFont] > 0) {
 		[undoManager removeAllActions];
@@ -846,6 +857,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 																								  attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
 	
 	contentString = attributedStringFromData;
+	linksNeedDetecting = NO;
 	[contentString santizeForeignStylesForImporting];
 	
 	contentCacheNeedsUpdate = YES;
@@ -867,6 +879,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	[attributedBodyString addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [attributedBodyString length])];
 	
 	[contentString setAttributedString:attributedBodyString];
+	linksNeedDetecting = NO;
 	contentCacheNeedsUpdate = YES;
 	[self updateContentCacheCStringIfNecessary];
 	[undoManager removeAllActions];
@@ -923,7 +936,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	NSData *formattedData = nil;
 	NSError *error = nil;
 	
-	NSMutableAttributedString *contentMinusColor = [contentString mutableCopy];
+	NSMutableAttributedString *contentMinusColor = [[self contentString] mutableCopy];
 	[contentMinusColor removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, [contentMinusColor length])];
 
 	

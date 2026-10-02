@@ -11,7 +11,7 @@
 //    xcodebuild test -project Notation.xcodeproj -scheme NotationTests \
 //      -only-testing:NotationTests/RealDatabaseCompatibilityTests
 //
-//  Logs counts and settings only, never note contents. Skipped when unset.
+//  Logs counts, settings and timings only, never note contents. Skipped when unset.
 //
 
 #import <XCTest/XCTest.h>
@@ -23,6 +23,9 @@
 #import "WALController.h"
 #import "NVLegacyImporter.h"
 #import "NVNoteContent.h"
+#import "NVNotesStore.h"
+#import "NVNoteRecord.h"
+#import "NotationController.h"
 
 @interface RealDatabaseCompatibilityTests : XCTestCase
 @end
@@ -133,6 +136,69 @@
 	NSLog(@"[compat] migration: total=%lu synced=%lu wouldRecover=%lu journalRecords=%lu",
 		  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes],
 		  (unsigned long)[[importer recoveredNotes] count], (unsigned long)[importer journalRecords]);
+}
+
+//Launch cost of the Simplenote-backed path: the database's notes, as a synced Notes store
+//(each row carrying its server copy), loaded into a NotationController as the app does at launch
+- (void)testLoadingTheNotesThroughTheStore {
+	NSString *path = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_DATABASE"];
+	if (![path length]) {
+		XCTSkip(@"set TEST_RUNNER_NV_DATABASE to a copy of a Notes & Settings file");
+	}
+	FrozenNotation *frozen = [self frozenNotationAtPath:path];
+	NotationPrefs *prefs = [frozen notationPrefs];
+	if ([prefs doesEncryption]) XCTSkip(@"database is encrypted");
+	OSStatus err = noErr;
+	NSArray *notes = [frozen unpackedNotesWithPrefs:prefs returningError:&err];
+	XCTAssertGreaterThan([notes count], (NSUInteger)0);
+
+	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
+	NSString *storePath = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
+	NVNotesStore *store = [NVNotesStore storeAtPath:storePath error:NULL];
+	XCTAssertNotNil(store);
+	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		for (NoteObject *note in notes) {
+			NVNoteRecord *record = [[NVNoteRecord alloc] init];
+			[record setNoteID:[NVNoteRecord newNoteID]];
+			[record setContent:[note combinedContentWithContextSeparator:[[[note syncServicesMD] objectForKey:@"SN"] objectForKey:@"SepStr"]]];
+			[record setTags:[note orderedLabelTitles] ? [note orderedLabelTitles] : [NSArray array]];
+			[record setCreationDate:createdDateOfNote(note) + kCFAbsoluteTimeIntervalSince1970];
+			[record setModificationDate:modifiedDateOfNote(note) + kCFAbsoluteTimeIntervalSince1970];
+			[record setServerData:[record dataForPush]];
+			[record setConfirmedVersion:1];
+			[t putNote:record];
+		}
+	}];
+	[store close];
+
+	NSMutableArray *storeTimes = [NSMutableArray array], *listTimes = [NSMutableArray array], *controllerTimes = [NSMutableArray array];
+	NSUInteger loaded = 0, run;
+	for (run = 0; run < 5; run++) {
+		@autoreleasepool {
+			store = [NVNotesStore storeAtPath:storePath error:NULL];
+			CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
+			loaded = [[store allNotes] count];
+			[storeTimes addObject:[NSNumber numberWithDouble:CFAbsoluteTimeGetCurrent() - start]];
+			start = CFAbsoluteTimeGetCurrent();
+			[store allNotesWithoutServerData];
+			[listTimes addObject:[NSNumber numberWithDouble:CFAbsoluteTimeGetCurrent() - start]];
+			start = CFAbsoluteTimeGetCurrent();
+			NotationController *controller = [[NotationController alloc] initWithNotesStore:store];
+			[controllerTimes addObject:[NSNumber numberWithDouble:CFAbsoluteTimeGetCurrent() - start]];
+			[controller closeAllResources];
+			[NSObject cancelPreviousPerformRequestsWithTarget:controller];
+			[store close];
+		}
+	}
+	NSArray *sortedStore = [storeTimes sortedArrayUsingSelector:@selector(compare:)];
+	NSArray *sortedList = [listTimes sortedArrayUsingSelector:@selector(compare:)];
+	NSArray *sortedController = [controllerTimes sortedArrayUsingSelector:@selector(compare:)];
+	NSLog(@"[compat] launch load of %lu notes: store allNotes median %.0f ms, allNotesWithoutServerData median %.0f ms; NotationController initWithNotesStore median %.0f ms (min %.0f, max %.0f)",
+		  (unsigned long)loaded, [[sortedStore objectAtIndex:2] doubleValue] * 1000.0, [[sortedList objectAtIndex:2] doubleValue] * 1000.0,
+		  [[sortedController objectAtIndex:2] doubleValue] * 1000.0, [[sortedController firstObject] doubleValue] * 1000.0,
+		  [[sortedController lastObject] doubleValue] * 1000.0);
+	XCTAssertEqual(loaded, [notes count]);
+	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
 }
 
 @end

@@ -36,6 +36,9 @@ extern NSString *const NVNotesStoreErrorDomain;
 #pragma mark Reading
 
 - (NSArray *)allNotes;
+//every note with an empty serverData: what the notes list needs, without the second full copy
+//of each note the server data holds. Not for anything that pushes or writes records back.
+- (NSArray *)allNotesWithoutServerData;
 - (NVNoteRecord *)noteWithID:(NSString *)noteID;
 - (NSArray *)pendingNotes;
 - (NSUInteger)noteCount;
