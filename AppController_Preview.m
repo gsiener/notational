@@ -15,9 +15,4 @@
     return [[textView textStorage] string];
 }
 
--(NSInteger)currentPreviewMode
-{	
-    return currentPreviewMode;
-}
-
 @end

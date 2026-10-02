@@ -219,13 +219,9 @@ static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
 		[self setUpStatusBarItem];
 	}
 	
-	//a saved mode that no longer exists (Textile) previews as MultiMarkdown
-	currentPreviewMode = [NVMarkupRenderer formatFromInteger:[[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"]];
-    if (currentPreviewMode == NVMarkupMarkdown) {
-        [multiMarkdownPreview setState:NSControlStateValueOn];
-    } else if (currentPreviewMode == NVMarkupMultiMarkdown) {
-        [multiMarkdownPreview setState:NSControlStateValueOn];
-    }
+	//which View ▸ Preview item is checked (-validateMenuItem:); a saved mode that no longer exists
+	//(Textile) shows as MultiMarkdown
+	currentPreviewMode = [[NSUserDefaults standardUserDefaults] integerForKey:@"markupPreviewMode"] == NVMarkupMarkdown ? NVMarkupMarkdown : NVMarkupMultiMarkdown;
 	
 	outletObjectAwoke(self);
 }
@@ -2694,8 +2690,9 @@ terminateApp:
 
     - (IBAction)openCustomPreviewFolder:(id)sender
     {
-        [PreviewController createCustomFiles];
-        [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[[NSFileManager defaultManager] applicationSupportDirectory]]];
+        NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+        [renderer installCustomTemplate];
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[renderer customTemplateFolder]]];
     }
 
     - (IBAction)lockPreview:(id)sender

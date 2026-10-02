@@ -1,6 +1,6 @@
 //
 //  NVMarkupRendererTests.m
-//  The Markup renderer (#4): format routing, the TaskPaper pre-pass, page assembly,
+//  The Markup renderer (#4): the TaskPaper pre-pass, page assembly, the preview template,
 //  and golden files rendered by the real tools.
 //
 
@@ -33,8 +33,9 @@
 @end
 
 @interface NVMarkupRendererTests : XCTestCase {
-	FakeMarkupTool *markdown, *multiMarkdown, *taskPaper;
+	FakeMarkupTool *markdown, *taskPaper;
 	NVMarkupRenderer *renderer;
+	NSString *folder;
 }
 @end
 
@@ -43,46 +44,36 @@
 - (void)setUp {
 	[super setUp];
 	markdown = [FakeMarkupTool toolWithPrefix:@"md:"];
-	multiMarkdown = [FakeMarkupTool toolWithPrefix:@"mmd:"];
 	taskPaper = [FakeMarkupTool toolWithPrefix:@"tp:"];
-	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
-						   markdown, [NSNumber numberWithInteger:NVMarkupMarkdown],
-						   multiMarkdown, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
-	renderer = [[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaper];
+	renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:markdown taskPaperTool:taskPaper];
+	folder = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
 }
 
 - (void)tearDown {
+	[[NSFileManager defaultManager] removeItemAtPath:folder error:NULL];
 	[super tearDown];
 }
 
-#pragma mark Formats
+#pragma mark Converting
 
-- (void)testEachFormatUsesItsTool {
-	XCTAssertEqualObjects([renderer htmlForText:@"x" format:NVMarkupMarkdown], @"md:x");
-	XCTAssertEqualObjects([renderer htmlForText:@"x" format:NVMarkupMultiMarkdown], @"mmd:x");
-}
-
-- (void)testUnknownFormatsAreMultiMarkdown {
-	XCTAssertEqual([NVMarkupRenderer formatFromInteger:0], (NVMarkupFormat)NVMarkupMultiMarkdown);
-	XCTAssertEqual([NVMarkupRenderer formatFromInteger:NVMarkupMarkdown], (NVMarkupFormat)NVMarkupMarkdown);
-	//13373 was Textile
-	XCTAssertEqual([NVMarkupRenderer formatFromInteger:13373], (NVMarkupFormat)NVMarkupMultiMarkdown);
-	XCTAssertEqualObjects([renderer htmlForText:@"x" format:42], @"mmd:x");
+- (void)testTheTextGoesThroughTheMarkdownTool {
+	XCTAssertEqualObjects([renderer htmlForText:@"x"], @"md:x");
+	XCTAssertEqualObjects([renderer htmlForText:nil], @"md:");
 }
 
 - (void)testTaskPaperOutlinesAreConvertedFirst {
-	XCTAssertEqualObjects([renderer htmlForText:@"Home:\n\t- task @taskpaper" format:NVMarkupMultiMarkdown], @"mmd:tp:Home:\n\t- task @taskpaper");
-	XCTAssertEqualObjects([renderer htmlForText:@"Archive:\n\t- done" format:NVMarkupMarkdown], @"md:tp:Archive:\n\t- done");
+	XCTAssertEqualObjects([renderer htmlForText:@"Home:\n\t- task @taskpaper"], @"md:tp:Home:\n\t- task @taskpaper");
+	XCTAssertEqualObjects([renderer htmlForText:@"Archive:\n\t- done"], @"md:tp:Archive:\n\t- done");
 }
 
 - (void)testOrdinaryNotesSkipTheTaskPaperPass {
-	[renderer htmlForText:@"just a note" format:NVMarkupMultiMarkdown];
+	[renderer htmlForText:@"just a note"];
 	XCTAssertNil([taskPaper lastInput]);
 }
 
 - (void)testAFailingToolShowsTheTextAndWhy {
-	[multiMarkdown setFails:YES];
-	NSString *html = [renderer htmlForText:@"a < b" format:NVMarkupMultiMarkdown];
+	[markdown setFails:YES];
+	NSString *html = [renderer htmlForText:@"a < b"];
 	XCTAssertTrue([html rangeOfString:@"tool broke"].location != NSNotFound, @"%@", html);
 	XCTAssertTrue([html rangeOfString:@"<pre>a &lt; b</pre>"].location != NSNotFound, @"%@", html);
 }
@@ -112,6 +103,59 @@
 	XCTAssertEqualObjects([NVMarkupRenderer documentWithHTML:document title:@"T" templateHTML:@"<div>{%content%}</div>" css:nil supportPath:nil], document);
 	XCTAssertTrue([NVMarkupRenderer isCompleteDocument:@"  <!DOCTYPE html><html></html>"]);
 	XCTAssertFalse([NVMarkupRenderer isCompleteDocument:@"<p>x</p>"]);
+}
+
+#pragma mark The preview template
+
+- (NSString *)write:(NSString *)contents to:(NSString *)name inFolder:(NSString *)subfolder modified:(NSTimeInterval)secondsAgo {
+	NSString *dir = [folder stringByAppendingPathComponent:subfolder];
+	[[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+	NSString *path = [dir stringByAppendingPathComponent:name];
+	XCTAssertTrue([contents writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
+	[[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate: [NSDate dateWithTimeIntervalSinceNow:-secondsAgo]} ofItemAtPath:path error:NULL];
+	return path;
+}
+
+- (void)useTemplateFolders {
+	[renderer setCustomTemplateFolder:[folder stringByAppendingPathComponent:@"custom"]];
+	[renderer setBundledTemplateFolder:[folder stringByAppendingPathComponent:@"bundled"]];
+	[self write:@"bundled {%content%} <style>{%style%}</style>" to:@"template.html" inFolder:@"bundled" modified:100];
+	[self write:@"b{}" to:@"custom.css" inFolder:@"bundled" modified:100];
+}
+
+- (void)testThePageUsesTheAppTemplateUntilTheUserHasTheirOwn {
+	[self useTemplateFolders];
+	XCTAssertEqualObjects([renderer pageForHTML:@"<p>x</p>" title:@"T"], @"bundled <p>x</p> <style>b{}</style>");
+
+	[self write:@"mine {%content%} {%support%} <style>{%style%}</style>" to:@"template.html" inFolder:@"custom" modified:50];
+	NSString *support = [renderer customTemplateFolder];
+	XCTAssertEqualObjects([renderer pageForHTML:@"<p>x</p>" title:@"T"], ([NSString stringWithFormat:@"mine <p>x</p> %@ <style>b{}</style>", support]));
+}
+
+- (void)testTemplateEditsAreSeenOnTheNextPage {
+	[self useTemplateFolders];
+	NSString *path = [self write:@"one {%content%}" to:@"template.html" inFolder:@"custom" modified:50];
+	XCTAssertEqualObjects([renderer pageForHTML:@"x" title:@"T"], @"one x");
+
+	//read once: new contents under the same modification date aren't read
+	NSDate *readDate = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:NULL] fileModificationDate];
+	[@"unseen {%content%}" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	[[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate: readDate} ofItemAtPath:path error:NULL];
+	XCTAssertEqualObjects([renderer pageForHTML:@"x" title:@"T"], @"one x");
+
+	[self write:@"two {%content%}" to:@"template.html" inFolder:@"custom" modified:10];
+	XCTAssertEqualObjects([renderer pageForHTML:@"x" title:@"T"], @"two x");
+}
+
+- (void)testInstallingTheCustomTemplateKeepsTheUsersFiles {
+	[self useTemplateFolders];
+	[self write:@"starter css" to:@"customclean.css" inFolder:@"bundled" modified:100];
+	[self write:@"starter html" to:@"templateclean.html" inFolder:@"bundled" modified:100];
+	NSString *mine = [self write:@"my css" to:@"custom.css" inFolder:@"custom" modified:10];
+	[renderer installCustomTemplate];
+	XCTAssertEqualObjects([NSString stringWithContentsOfFile:mine encoding:NSUTF8StringEncoding error:NULL], @"my css");
+	NSString *installed = [[renderer customTemplateFolder] stringByAppendingPathComponent:@"template.html"];
+	XCTAssertEqualObjects([NSString stringWithContentsOfFile:installed encoding:NSUTF8StringEncoding error:NULL], @"starter html");
 }
 
 #pragma mark Process tools
@@ -159,34 +203,31 @@ static NSString *MultiMarkdownPath(void) {
 
 - (NVMarkupRenderer *)realRenderer {
 	NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:MultiMarkdownPath() arguments:nil];
-	NSDictionary *tools = [NSDictionary dictionaryWithObjectsAndKeys:
-						   mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
-						   mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
 	NVTaskPaperMarkdown *taskPaperTool = [[NVTaskPaperMarkdown alloc] init];
-	return [[NVMarkupRenderer alloc] initWithTools:tools taskPaperTool:taskPaperTool];
+	return [[NVMarkupRenderer alloc] initWithMarkdownTool:mmd taskPaperTool:taskPaperTool];
 }
 
-- (void)assertFixture:(NSString *)name format:(NVMarkupFormat)format {
+- (void)assertFixture:(NSString *)name {
 	NSString *fixtures = [RepoPath() stringByAppendingPathComponent:@"Tests/Fixtures/Markup"];
 	NSString *text = [NSString stringWithContentsOfFile:[fixtures stringByAppendingPathComponent:[name stringByAppendingPathExtension:@"txt"]] encoding:NSUTF8StringEncoding error:NULL];
 	NSString *expected = [NSString stringWithContentsOfFile:[fixtures stringByAppendingPathComponent:[name stringByAppendingPathExtension:@"html"]] encoding:NSUTF8StringEncoding error:NULL];
 	XCTAssertNotNil(text);
-	XCTAssertEqualObjects([[self realRenderer] htmlForText:text format:format], expected, @"%@", name);
+	XCTAssertEqualObjects([[self realRenderer] htmlForText:text], expected, @"%@", name);
 }
 
 - (void)testGoldenMultiMarkdown {
 	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
-	[self assertFixture:@"multimarkdown" format:NVMarkupMultiMarkdown];
+	[self assertFixture:@"multimarkdown"];
 }
 
 - (void)testGoldenMarkdown {
 	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
-	[self assertFixture:@"markdown" format:NVMarkupMarkdown];
+	[self assertFixture:@"markdown"];
 }
 
 - (void)testGoldenTaskPaper {
 	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
-	[self assertFixture:@"taskpaper" format:NVMarkupMultiMarkdown];
+	[self assertFixture:@"taskpaper"];
 }
 
 

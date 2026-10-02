@@ -24,8 +24,6 @@
   IBOutlet NSButton *printPreviewButton;
   BOOL isPreviewOutdated;
   BOOL isPreviewSticky;
-	NSString *cssString;
-	NSString *htmlString;
 
 	IBOutlet NSButton *includeTemplate;
   IBOutlet NSTextField *templateNote;
@@ -47,7 +45,4 @@
 -(BOOL)previewIsVisible;
 -(void)togglePreview:(id)sender;
 -(void)requestPreviewUpdate:(NSNotification *)notification;
-+(void)createCustomFiles;
-+(NSString *)css;
-+(NSString *)html;
 @end

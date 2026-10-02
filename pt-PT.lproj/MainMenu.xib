@@ -690,7 +690,6 @@ CA
                 <outlet property="fsMenuItem" destination="1300" id="1301"/>
                 <outlet property="lockNoteItem" destination="1293" id="1297"/>
                 <outlet property="mainView" destination="1213" id="1285"/>
-                <outlet property="multiMarkdownPreview" destination="1262" id="1267"/>
                 <outlet property="notesScrollView" destination="1221" id="1279"/>
                 <outlet property="notesTableView" destination="1222" id="1230"/>
                 <outlet property="previewToggler" destination="1260" id="1271"/>

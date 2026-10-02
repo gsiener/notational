@@ -2,22 +2,20 @@
 //  NVMarkupRenderer.h
 //  Notation
 //
-//  Turns note text into HTML for the preview and Save HTML (#4). Owns the markup
-//  formats, the TaskPaper pre-pass, the preview template and running the tools that do
-//  the conversion. Each tool is an adapter behind NVMarkupTool, so swapping one touches
-//  only the tool for that format.
+//  Turns note text into HTML for the preview and Save HTML (#4). Owns the TaskPaper
+//  pre-pass, the preview template and running the tools that do the conversion. Each
+//  tool is an adapter behind NVMarkupTool, so swapping one touches only that tool.
 //
 
 #import <Foundation/Foundation.h>
 
-//the format a note's text is written in; the values are the View ▸ Preview menu item tags
-//and what the markupPreviewMode preference stores
+//the View ▸ Preview menu's modes: its items' tags and what the markupPreviewMode preference
+//stores. The renderer doesn't tell them apart; both render with MultiMarkdown.
 enum {
 	NVMarkupMarkdown = 13371,
 	NVMarkupMultiMarkdown = 13372,
 	//13373 was Textile, dropped with its perl (#28); a saved 13373 reads as MultiMarkdown
 };
-typedef NSInteger NVMarkupFormat;
 
 //a program (or code) that converts text to HTML
 @protocol NVMarkupTool <NSObject>
@@ -32,23 +30,35 @@ typedef NSInteger NVMarkupFormat;
 
 @interface NVMarkupRenderer : NSObject
 
-//the bundled multimarkdown, and the native TaskPaper pass
+//the bundled multimarkdown and the native TaskPaper pass; the preview template from the
+//application support folder, falling back to the copy in the app
 + (NVMarkupRenderer *)defaultRenderer;
 
-//tools for each format (NSNumber of NVMarkupFormat → id<NVMarkupTool>), and the tool that turns
-//TaskPaper outlines into Markdown before MultiMarkdown sees them (may be nil)
-- (id)initWithTools:(NSDictionary *)toolsByFormat taskPaperTool:(id<NVMarkupTool>)taskPaperTool;
+//markdownTool turns the note into HTML; taskPaperTool (may be nil) first turns TaskPaper
+//outlines into Markdown
+- (id)initWithMarkdownTool:(id<NVMarkupTool>)markdownTool taskPaperTool:(id<NVMarkupTool>)taskPaperTool;
 
-//the saved preference or a menu tag as a format; anything unknown is MultiMarkdown
-+ (NVMarkupFormat)formatFromInteger:(NSInteger)value;
+//where the preview template comes from: template.html and custom.css in customTemplateFolder
+//when the user has them, else in bundledTemplateFolder. customTemplateFolder is also the
+//template's {%support%}.
+@property (nonatomic, copy) NSString *customTemplateFolder;
+@property (nonatomic, copy) NSString *bundledTemplateFolder;
 
 //HTML for the text: usually a fragment, but MultiMarkdown makes a whole document when the
 //note starts with metadata. If the tool fails, an HTML message saying so.
-- (NSString *)htmlForText:(NSString *)text format:(NVMarkupFormat)format;
+- (NSString *)htmlForText:(NSString *)text;
 
-//a complete page: the HTML (from -htmlForText:format:) placed in templateHTML, which uses
-//{%title%}, {%content%}, {%style%} and {%support%}; without a template, a plain XHTML page.
-//HTML that is already a whole document is returned unchanged.
+//the HTML (from -htmlForText:) as a complete page in the preview template. The template files
+//are read once, and again only when the one in use changes.
+- (NSString *)pageForHTML:(NSString *)html title:(NSString *)title;
+
+//copies starter template.html and custom.css into customTemplateFolder for the user to edit,
+//leaving any already there alone
+- (void)installCustomTemplate;
+
+//a complete page: the HTML placed in templateHTML, which uses {%title%}, {%content%}, {%style%}
+//and {%support%}; without a template, a plain XHTML page. HTML that is already a whole document
+//is returned unchanged.
 + (NSString *)documentWithHTML:(NSString *)html title:(NSString *)title templateHTML:(NSString *)templateHTML
 						   css:(NSString *)css supportPath:(NSString *)supportPath;
 

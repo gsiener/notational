@@ -5,6 +5,7 @@
 
 #import "NVMarkupRenderer.h"
 #import "NVTaskPaperMarkdown.h"
+#import "NSFileManager+DirectoryLocations.h"
 
 static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 
@@ -68,38 +69,37 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 @end
 
 @interface NVMarkupRenderer () {
-	NSDictionary *tools;
+	id<NVMarkupTool> markdownTool;
 	id<NVMarkupTool> taskPaperTool;
+	//file name → {path, modification date, contents} of the template file last read
+	NSMutableDictionary *templateFiles;
 }
 @end
 
 @implementation NVMarkupRenderer
+
+@synthesize customTemplateFolder, bundledTemplateFolder;
 
 + (NVMarkupRenderer *)defaultRenderer {
 	static NVMarkupRenderer *renderer = nil;
 	if (!renderer) {
 		NSString *resources = [[NSBundle mainBundle] resourcePath];
 		NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:[resources stringByAppendingPathComponent:@"multimarkdown"] arguments:nil];
-		NVTaskPaperMarkdown *taskPaper = [[NVTaskPaperMarkdown alloc] init];
 		//plain Markdown is rendered by MultiMarkdown too, as the preview always did
-		NSDictionary *byFormat = [NSDictionary dictionaryWithObjectsAndKeys:
-								  mmd, [NSNumber numberWithInteger:NVMarkupMarkdown],
-								  mmd, [NSNumber numberWithInteger:NVMarkupMultiMarkdown], nil];
-		renderer = [[NVMarkupRenderer alloc] initWithTools:byFormat taskPaperTool:taskPaper];
+		renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:mmd taskPaperTool:[[NVTaskPaperMarkdown alloc] init]];
+		[renderer setCustomTemplateFolder:[[NSFileManager defaultManager] applicationSupportDirectory]];
+		[renderer setBundledTemplateFolder:resources];
 	}
 	return renderer;
 }
 
-- (id)initWithTools:(NSDictionary *)toolsByFormat taskPaperTool:(id<NVMarkupTool>)aTaskPaperTool {
+- (id)initWithMarkdownTool:(id<NVMarkupTool>)aMarkdownTool taskPaperTool:(id<NVMarkupTool>)aTaskPaperTool {
 	if ((self = [super init])) {
-		tools = [toolsByFormat copy];
+		markdownTool = aMarkdownTool;
 		taskPaperTool = aTaskPaperTool;
+		templateFiles = [[NSMutableDictionary alloc] init];
 	}
 	return self;
-}
-
-+ (NVMarkupFormat)formatFromInteger:(NSInteger)value {
-	return value == NVMarkupMarkdown ? NVMarkupMarkdown : NVMarkupMultiMarkdown;
 }
 
 static NSString *EscapedHTML(NSString *string) {
@@ -115,8 +115,7 @@ static BOOL LooksLikeTaskPaper(NSString *text) {
 	return [text rangeOfString:@"Archive:"].location != NSNotFound || [text rangeOfString:@"@taskpaper"].location != NSNotFound;
 }
 
-- (NSString *)htmlForText:(NSString *)text format:(NVMarkupFormat)format {
-	format = [[self class] formatFromInteger:format];
+- (NSString *)htmlForText:(NSString *)text {
 	text = text ? text : @"";
 	NSError *error = nil;
 	if (taskPaperTool && LooksLikeTaskPaper(text)) {
@@ -125,11 +124,10 @@ static BOOL LooksLikeTaskPaper(NSString *text) {
 		else NSLog(@"TaskPaper conversion failed, rendering the outline as is: %@", [error localizedDescription]);
 		error = nil;
 	}
-	id<NVMarkupTool> tool = [tools objectForKey:[NSNumber numberWithInteger:format]];
-	NSString *html = [tool convertText:text error:&error];
+	NSString *html = [markdownTool convertText:text error:&error];
 	if (html) return html;
 
-	NSString *reason = tool ? [error localizedDescription] : @"no converter for this format";
+	NSString *reason = markdownTool ? [error localizedDescription] : @"no converter";
 	NSLog(@"Couldn't render the note: %@", reason);
 	return [NSString stringWithFormat:@"<p><strong>Couldn't render this note</strong> (%@).</p>\n<pre>%@</pre>\n",
 			EscapedHTML(reason), EscapedHTML(text)];
@@ -159,6 +157,49 @@ static BOOL LooksLikeTaskPaper(NSString *text) {
 	[page replaceOccurrencesOfString:@"{%style%}" withString:css ? css : @"" options:0 range:NSMakeRange(0, [page length])];
 	[page replaceOccurrencesOfString:@"{%content%}" withString:html options:0 range:NSMakeRange(0, [page length])];
 	return page;
+}
+
+#pragma mark The preview template
+
+//the user's copy of a template file if there is one, else the app's; read again only when the
+//file in use, or its modification date, changes
+- (NSString *)templateFile:(NSString *)name {
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	NSString *path = [customTemplateFolder stringByAppendingPathComponent:name];
+	if (!path || ![fileManager fileExistsAtPath:path]) path = [bundledTemplateFolder stringByAppendingPathComponent:name];
+	if (!path) return nil;
+	NSDate *modified = [[fileManager attributesOfItemAtPath:path error:NULL] fileModificationDate];
+
+	NSDictionary *cached = [templateFiles objectForKey:name];
+	NSDate *cachedModified = [cached objectForKey:@"modified"];
+	if (![[cached objectForKey:@"path"] isEqualToString:path] || !(modified == cachedModified || [modified isEqualToDate:cachedModified])) {
+		NSString *contents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];
+		NSMutableDictionary *entry = [NSMutableDictionary dictionaryWithObject:path forKey:@"path"];
+		if (modified) [entry setObject:modified forKey:@"modified"];
+		if (contents) [entry setObject:contents forKey:@"contents"];
+		[templateFiles setObject:entry forKey:name];
+		cached = entry;
+	}
+	return [cached objectForKey:@"contents"];
+}
+
+- (NSString *)pageForHTML:(NSString *)html title:(NSString *)title {
+	return [[self class] documentWithHTML:html title:title templateHTML:[self templateFile:@"template.html"]
+									  css:[self templateFile:@"custom.css"] supportPath:customTemplateFolder];
+}
+
+- (void)installCustomTemplate {
+	if (!customTemplateFolder) return;
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	[fileManager createDirectoryAtPath:customTemplateFolder withIntermediateDirectories:YES attributes:nil error:NULL];
+	//the starters are plainer than the app's own template and style
+	NSDictionary *starters = [NSDictionary dictionaryWithObjectsAndKeys:@"customclean.css", @"custom.css", @"templateclean.html", @"template.html", nil];
+	for (NSString *name in starters) {
+		NSString *path = [customTemplateFolder stringByAppendingPathComponent:name];
+		if ([fileManager fileExistsAtPath:path]) continue;
+		NSData *starter = [NSData dataWithContentsOfFile:[bundledTemplateFolder stringByAppendingPathComponent:[starters objectForKey:name]]];
+		if (starter) [fileManager createFileAtPath:path contents:starter attributes:nil];
+	}
 }
 
 @end

@@ -12,7 +12,6 @@
 #import "NVMarkupRenderer.h"
 #import "NoteObject.h"
 #import "BTTransparentScroller.h"
-#import "NSFileManager_NV.h"
 #import "NSFileManager+DirectoryLocations.h"
 
 #define kDefaultMarkupPreviewVisible @"markupPreviewVisible"
@@ -49,7 +48,6 @@
     if ((self = [super initWithWindowNibName:@"MarkupPreview" owner:self])) {
         self.isPreviewOutdated = YES;
         self.isPreviewSticky = NO;
-        //        [[self class] createCustomFiles];
         BOOL showPreviewWindow = [[NSUserDefaults standardUserDefaults] boolForKey:kDefaultMarkupPreviewVisible];
         if (showPreviewWindow) {
             [[self window] orderFront:self];
@@ -68,8 +66,6 @@
 -(void)awakeFromNib
 {
     [self installWebView];
-    cssString = [[self class] css];
-    htmlString = [[self class] html];
     lastNote = [(AppController *)[NSApp delegate] selectedNoteObject];
     [sourceView setTextContainerInset:NSMakeSize(10.0,12.0)];
     NSScrollView *scrlView=[sourceView enclosingScrollView];
@@ -196,46 +192,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     [[previewMenu itemWithTitle:@"Toggle Preview Window"]setState:0];
 }
 
-+(NSString*)css {
-    NSFileManager *mgr = [NSFileManager defaultManager];
-    NSString *folder = [[NSFileManager defaultManager] applicationSupportDirectory];
-    NSString *cssFileName = @"custom.css";
-    NSString *customCSSPath = [folder stringByAppendingPathComponent: cssFileName];
-    if ([mgr fileExistsAtPath:customCSSPath]) {
-        return [NSString stringWithContentsOfFile:customCSSPath
-                                         encoding:NSUTF8StringEncoding
-                                            error:NULL];
-    } else {
-        NSString *cssPath = [[NSBundle mainBundle] pathForResource:@"custom" ofType:@"css" inDirectory:nil];
-        return [NSString stringWithContentsOfFile:cssPath encoding:NSUTF8StringEncoding error:nil];
-    }
-
-    //	if (![mgr fileExistsAtPath:customCSSPath]) {
-    //		[[self class] createCustomFiles];
-    //	}
-
-
-}
-
-+(NSString*)html {
-    NSFileManager *mgr = [NSFileManager defaultManager];
-
-    NSString *folder = [[NSFileManager defaultManager] applicationSupportDirectory];
-    NSString *htmlFileName = @"template.html";
-    NSString *customHTMLPath = [folder stringByAppendingPathComponent: htmlFileName];
-    if ([mgr fileExistsAtPath:customHTMLPath]) {
-        return [NSString stringWithContentsOfFile:customHTMLPath
-                                         encoding:NSUTF8StringEncoding
-                                            error:NULL];
-    } else {
-        NSString *htmlPath = [[NSBundle mainBundle] pathForResource:@"template" ofType:@"html" inDirectory:nil];
-        return [NSString stringWithContentsOfFile:htmlPath encoding:NSUTF8StringEncoding error:nil];
-    }
-    //	if (![mgr fileExistsAtPath:customHTMLPath]) {
-    //		[[self class] createCustomFiles];
-    //	}
-}
-
 -(void)preview:(id)object
 {
     if (self.isPreviewSticky) {
@@ -244,14 +200,11 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     AppController *app = object;
     NSString *rawString = [app noteContent];
     NoteObject *note = [app selectedNoteObject];
-    NSString *processedString = [[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]];
+    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    NSString *processedString = [renderer htmlForText:rawString];
     NSString *noteTitle = note ? [NSString stringWithFormat:@"%@",titleOfNote(note)] : @"";
     BOOL sameNote = (lastNote == note);
-    if (!sameNote) {
-        cssString = [[self class] css];
-        htmlString = [[self class] html];
-        lastNote = note;
-    }
+    lastNote = note;
     [[self window] setTitle:noteTitle];
     [sourceView replaceCharactersInRange:NSMakeRange(0, [[sourceView string] length]) withString:processedString];
     self.isPreviewOutdated = NO;
@@ -264,8 +217,7 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
         if (sameNote && [result respondsToSelector:@selector(doubleValue)] && [result doubleValue] > 0) {
             previewString = [processedString stringByAppendingFormat:@"\n<script>window.addEventListener('load', function() { (document.scrollingElement || document.body).scrollTop = %f; });</script>", [result doubleValue]];
         }
-        NSString *page = [NVMarkupRenderer documentWithHTML:previewString title:noteTitle templateHTML:htmlString css:cssString
-                                                supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
+        NSString *page = [renderer pageForHTML:previewString title:noteTitle];
         NSURL *pageURL = [[self class] previewPageURL];
         if (![page writeToURL:pageURL atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
             [preview loadHTMLString:page baseURL:nil];
@@ -273,42 +225,6 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
         }
         [preview loadFileURL:pageURL allowingReadAccessToURL:[NSURL fileURLWithPath:@"/"]];
     }];
-}
-
-+ (void) createCustomFiles
-{
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-
-    NSString *folder = [[NSFileManager defaultManager] applicationSupportDirectory];
-    if ([fileManager fileExistsAtPath: folder] == NO)
-    {
-        [fileManager createFolderAtPath:folder];
-        //				[fileManager createDirectoryAtPath: folder attributes: nil];
-
-    }
-
-    NSString *cssFileName = @"custom.css";
-    NSString *cssFile = [folder stringByAppendingPathComponent: cssFileName];
-
-    if ([fileManager fileExistsAtPath:cssFile] == NO)
-    {
-        NSString *cssPath = [[NSBundle mainBundle] pathForResource:@"customclean" ofType:@"css" inDirectory:nil];
-        NSString *cssString = [NSString stringWithContentsOfFile:cssPath encoding:NSUTF8StringEncoding error:nil];
-        NSData *cssData = [NSData dataWithBytes:[cssString UTF8String] length:[cssString length]];
-        [fileManager createFileAtPath:cssFile contents:cssData attributes:nil];
-    }
-
-    NSString *htmlFileName = @"template.html";
-    NSString *htmlFile = [folder stringByAppendingPathComponent: htmlFileName];
-
-    if ([fileManager fileExistsAtPath:htmlFile] == NO)
-    {
-        NSString *htmlPath = [[NSBundle mainBundle] pathForResource:@"templateclean" ofType:@"html" inDirectory:nil];
-        NSString *htmlString = [NSString stringWithContentsOfFile:htmlPath encoding:NSUTF8StringEncoding error:nil];
-        NSData *htmlData = [NSData dataWithBytes:[htmlString UTF8String] length:[htmlString length]];
-        [fileManager createFileAtPath:htmlFile contents:htmlData attributes:nil];
-    }
-
 }
 
 -(IBAction)makePreviewSticky:(id)sender
@@ -359,23 +275,10 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
 }
 
 //the same HTML as the preview, as a page of its own or inside the preview template
-- (NSString *)savedHTMLForApp:(AppController *)app {
-    NSString *html = [[NVMarkupRenderer defaultRenderer] htmlForText:[app noteContent] format:[app currentPreviewMode]];
-    NSString *noteTitle = [app selectedNoteObject] ? titleOfNote([app selectedNoteObject]) : @"";
-    BOOL embed = [includeTemplate state] == NSControlStateValueOn;
-    return [NVMarkupRenderer documentWithHTML:html title:noteTitle templateHTML:embed ? [[self class] html] : nil
-                                          css:embed ? [[self class] css] : nil supportPath:[[NSFileManager defaultManager] applicationSupportDirectory]];
-}
-
-- (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
-    if (returnCode == NSModalResponseOK) {
-
-        AppController *app = (AppController *)[[NSApplication sharedApplication] delegate];
-        NSString *processedString = [self savedHTMLForApp:app];
-        NSURL *file = [sheet URL];
-        NSError *error;
-        [processedString writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error];
-    }
+- (NSString *)savedPageForHTML:(NSString *)html title:(NSString *)noteTitle {
+    if ([includeTemplate state] == NSControlStateValueOn)
+        return [[NVMarkupRenderer defaultRenderer] pageForHTML:html title:noteTitle];
+    return [NVMarkupRenderer documentWithHTML:html title:noteTitle templateHTML:nil css:nil supportPath:nil];
 }
 
 -(IBAction)saveHTML:(id)sender
@@ -405,8 +308,9 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     [savePanel setAllowedContentTypes:contentTypes];
 
 
-    NSString *rawString = [app noteContent];
-    if ([NVMarkupRenderer isCompleteDocument:[[NVMarkupRenderer defaultRenderer] htmlForText:rawString format:[app currentPreviewMode]]]) {
+    //rendered once: for the template choice now, and for the file if the user saves
+    NSString *html = [[NVMarkupRenderer defaultRenderer] htmlForText:[app noteContent]];
+    if ([NVMarkupRenderer isCompleteDocument:html]) {
         [includeTemplate setState:0];
         [includeTemplate setEnabled:NO];
         [templateNote setStringValue:@"Template embed unavailable because your note will render as a full XHTML document"];
@@ -416,11 +320,10 @@ static NSString *const LogBridgeScript = @"window.Cocoa = {log: function(s) { wi
     }
 
     NSString *noteTitle =  ([app selectedNoteObject]) ? [NSString stringWithFormat:@"%@",titleOfNote([app selectedNoteObject])] : @"";
-    //	[savePanel beginSheetForDirectory:nil file:noteTitle modalForWindow:[self window] modalDelegate:self didEndSelector:@selector(savePanelDidEnd:returnCode:contextInfo:) contextInfo:nil];
     savePanel.nameFieldStringValue=noteTitle;
     [savePanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-            NSString *processedString = [self savedHTMLForApp:app];
+            NSString *processedString = [self savedPageForHTML:html title:noteTitle];
             NSURL *file = [savePanel URL];
             NSError *error;
             [processedString writeToURL:file atomically:YES encoding:NSUTF8StringEncoding error:&error];

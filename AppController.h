@@ -99,8 +99,6 @@
 	NSArray *savedSelectedNotes;
 	BOOL hasLaunched;
     PreviewController *previewController;
-    // IBOutlet NSMenuItem *markdownPreview;
-    IBOutlet NSMenuItem *multiMarkdownPreview;
     IBOutlet NSMenuItem *previewToggler;
     IBOutlet NSMenuItem *lockNoteItem;
     IBOutlet NSMenuItem *printPreviewItem;
