@@ -292,71 +292,6 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision) {
 }
 
 
-- (NSString*)syntheticTitleAndSeparatorWithContext:(NSString**)sepStr bodyLoc:(NSUInteger*)bodyLoc maxTitleLen:(NSUInteger)maxTitleLen {
-	return [self syntheticTitleAndSeparatorWithContext:sepStr bodyLoc:bodyLoc oldTitle:nil maxTitleLen:maxTitleLen];
-}
-
-- (NSString*)syntheticTitleAndSeparatorWithContext:(NSString**)sepStr bodyLoc:(NSUInteger*)bodyLoc 
-										  oldTitle:(NSString*)oldTitle maxTitleLen:(NSUInteger)maxTitleLen {
-	
-	//break string into pieces for turning into a note
-	//find the first line, whitespace or no whitespace
-	
-	NSCharacterSet *titleDelimiters = [NSCharacterSet characterSetWithCharactersInString:
-											  [NSString stringWithFormat:@"\n\r\t%C%C",(unichar) NSLineSeparatorCharacter, (unichar)NSParagraphSeparatorCharacter]];
-	
-	NSScanner *scanner = [NSScanner scannerWithString:self];
-	[scanner setCharactersToBeSkipped:[[NSMutableCharacterSet alloc] init]];
-	
-	//skip any blank space before the title; this will not be preserved for round-tripped syncing
-	BOOL didSkipInitialWS = [scanner scanCharactersFromSet:[NSCharacterSet whitespaceAndNewlineCharacterSet] intoString:NULL];
-	
-	if ([oldTitle length] > maxTitleLen) {
-		//break apart the string based on an existing title (if it still matches) that would have been longer than our default truncation limit
-		
-		NSString *contentStartStr = didSkipInitialWS && [scanner scanLocation] < [self length] ? [self substringFromIndex:[scanner scanLocation]] : self;
-		if ([contentStartStr length] >= [oldTitle length] && [contentStartStr hasPrefix:oldTitle]) {
-			
-			[scanner setScanLocation:[oldTitle length] + (didSkipInitialWS ? [scanner scanLocation] : 0)];
-			[scanner scanContextualSeparator:sepStr withPrecedingString:oldTitle];
-			if (bodyLoc) *bodyLoc = [scanner scanLocation];
-			return oldTitle;
-		}
-	}
-	
-	//grab the title
-	NSString *firstLine = nil;
-	[scanner scanUpToCharactersFromSet:titleDelimiters intoString:&firstLine];
-	
-	if ([firstLine length] > maxTitleLen) {
-		//what if this title is too long? then we need to break it up and start the body after that
-		NSRange lastSpaceInFirstLine = [firstLine rangeOfString:@" " options: NSBackwardsSearch | NSLiteralSearch
-														  range:NSMakeRange(maxTitleLen - 10, 10)];
-		if (lastSpaceInFirstLine.location == NSNotFound) {
-			lastSpaceInFirstLine.location = maxTitleLen;
-		}
-		[scanner setScanLocation:[scanner scanLocation] - ([firstLine length] - lastSpaceInFirstLine.location)];
-		firstLine = [firstLine substringToIndex:lastSpaceInFirstLine.location];
-		
-		[scanner scanContextualSeparator:sepStr withPrecedingString:firstLine];		
-		if (bodyLoc) *bodyLoc = [scanner scanLocation];
-		return firstLine;
-	}
-	
-	//grab blank space between the title and the body; common case:
-	[scanner scanContextualSeparator:sepStr withPrecedingString:firstLine];
-	if (bodyLoc) *bodyLoc = [scanner scanLocation];
-	
-	return [firstLine length] ? firstLine : NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
-}
-
-- (NSString*)syntheticTitleAndTrimmedBody:(NSString**)newBody {
-	NSUInteger bodyLoc = 0;
-	NSString *title = [self syntheticTitleAndSeparatorWithContext:NULL bodyLoc:&bodyLoc maxTitleLen:60];
-	if (newBody) *newBody = [self substringFromIndex:bodyLoc];
-	return title;
-}
-
 //the following three methods + function come courtesy of Mike Ferris' TextExtras
 + (NSString *)tabbifiedStringWithNumberOfSpaces:(NSInteger)origNumSpaces tabWidth:(NSInteger)tabWidth usesTabs:(BOOL)usesTabs {
 	static NSMutableString *sharedString = nil;
@@ -716,42 +651,6 @@ BOOL IsHardLineBreakUnichar(unichar uchar, NSString *str, unsigned charIndex) {
 		
 	return nil;
 }
-
-@end
-
-@implementation NSScanner (NV)
-
-//useful for -syntheticTitleAndSeparatorWithContext:bodyLoc:oldTitle:
-- (void)scanContextualSeparator:(NSString**)sepStr withPrecedingString:(NSString*)firstLine {
-	
-	if (![firstLine length]) {
-		//no initial preceding string, so context won't make sense
-		if (sepStr) *sepStr = @"";
-		return;
-	}
-	NSUInteger len = [[self string] length];
-	if ([self scanCharactersFromSet:[NSCharacterSet whitespaceAndNewlineCharacterSet] intoString:sepStr]) {
-		if (sepStr && *sepStr) {
-			if ([self scanLocation] >= len) goto noBody;
-			//typical case
-			*sepStr = [NSString stringWithFormat:@"%C%@%C", [firstLine characterAtIndex:[firstLine length] - 1], *sepStr, 
-					   [[self string] characterAtIndex:[self scanLocation]]];
-		}
-	} else if (sepStr) {
-		//is this the end of the string, or was the scanner's location previously somewhere in the middle?
-		if ([self scanLocation] >= len) {
-		noBody: //all one line
-			*sepStr = @"";
-		} else {
-			//middle of the "title", probably because it is too long; grab the two surrounding characters
-			*sepStr = [NSString stringWithFormat:@"%C%C", [firstLine characterAtIndex:[firstLine length] - 1], 
-					   [[self string] characterAtIndex:[self scanLocation]]];
-		}
-	}
-	
-	//location of _following_ string (usually the body of a note) will now be [self scanLocation]
-}
-
 
 @end
 

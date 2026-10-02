@@ -27,7 +27,6 @@ extern NSString *NVHiddenBulletIndentAttributeName;
 
 @interface NSMutableAttributedString (AttributedPlainText)
 
-- (void)trimLeadingWhitespace;
 - (void)indentTextLists;
 - (void)removeAttachments;
 //"From <source>:" and a blank line at the top of the receiver, a note's body

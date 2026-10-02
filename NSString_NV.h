@@ -35,10 +35,6 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision);
 - (NSString*)fourCharTypeString;
 - (BOOL)isAMachineDirective;
 - (void)copyItemToPasteboard:(id)sender;
-- (NSString*)syntheticTitleAndSeparatorWithContext:(NSString**)sepStr bodyLoc:(NSUInteger*)bodyLoc maxTitleLen:(NSUInteger)maxTitleLen;
-- (NSString*)syntheticTitleAndSeparatorWithContext:(NSString**)sepStr bodyLoc:(NSUInteger*)bodyLoc 
-										  oldTitle:(NSString*)oldTitle maxTitleLen:(NSUInteger)maxTitleLen;
-- (NSString*)syntheticTitleAndTrimmedBody:(NSString**)newBody;
 + (NSString *)tabbifiedStringWithNumberOfSpaces:(NSInteger)origNumSpaces tabWidth:(NSInteger)tabWidth usesTabs:(BOOL)usesTabs;
 - (NSInteger)numberOfLeadingSpacesFromRange:(NSRange*)range tabWidth:(NSInteger)tabWidth;
 
@@ -71,10 +67,6 @@ CFDateFormatterRef simplenoteDateFormatter(int lowPrecision);
 + (NSMutableString*)newShortLivedStringFromFile:(NSString*)filename;
 + (NSMutableString*)newShortLivedStringFromData:(NSMutableData*)data ofGuessedEncoding:(NSStringEncoding*)encoding 
 									   withPath:(const char*)aPath;
-@end
-
-@interface NSScanner (NV)
-- (void)scanContextualSeparator:(NSString**)sepStr withPrecedingString:(NSString*)firstLine;
 @end
 
 @interface NSCharacterSet (NV)

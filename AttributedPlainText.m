@@ -30,22 +30,6 @@ static BOOL _StringWithRangeIsProbablyObjC(NSString *string, NSRange blockRange)
 
 @implementation NSMutableAttributedString (AttributedPlainText)
 
-- (void)trimLeadingWhitespace {
-	NSMutableCharacterSet *whiteSet = [[NSMutableCharacterSet alloc] init];
-	[whiteSet formUnionWithCharacterSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	//include attachment characters and non-breaking spaces. anything else?
-	unichar badChars[2] = { NSAttachmentCharacter, 0x00A0 };
-	[whiteSet addCharactersInString:[NSString stringWithCharacters:badChars length:2]];
-	
-	NSScanner *scanner = [NSScanner scannerWithString:[self string]];
-	
-	if ([scanner scanCharactersFromSet:whiteSet intoString:NULL]) {
-		if ([scanner scanLocation] > 0) {
-			[self deleteCharactersInRange:NSMakeRange(0, [scanner scanLocation])];
-			//NSLog(@"deleting %d chars", [scanner scanLocation]);
-		}
-	}
-}
 - (void)indentTextLists {
 	//contributed by tewe
 	@try {

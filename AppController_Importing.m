@@ -56,8 +56,8 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 		sourceIdentifierString = [[pasteboard dataForType:WebArchivePboardType] pathURLFromWebArchive];
 		//gecko URL!
 	} else if ([types containsObject:[NSString customPasteboardTypeOfCode:0x4D5A0003]]) {
-		//lazilly use syntheticTitle to get first line, even though that's not how our API is documented
-		sourceIdentifierString = [[pasteboard stringForType:[NSString customPasteboardTypeOfCode:0x4D5A0003]] syntheticTitleAndTrimmedBody:NULL];
+		//the URL is the first line (lazily taken as a note's title would be, even though that's not how our API is documented)
+		sourceIdentifierString = [[NVNoteContent contentWithString:[pasteboard stringForType:[NSString customPasteboardTypeOfCode:0x4D5A0003]]] title];
 		unichar nullChar = 0x0;
 		sourceIdentifierString = [sourceIdentifierString stringByReplacingOccurrencesOfString:
 								  [NSString stringWithCharacters:&nullChar length:1] withString:@""];
@@ -76,11 +76,11 @@ static NSString *const WebArchivePboardType = @"Apple Web Archive pasteboard typ
 				[[url scheme] caseInsensitiveCompare:@"https"] == NSOrderedSame ||
 				[[url scheme] caseInsensitiveCompare:@"ftp"] == NSOrderedSame) {
 				NSString *linkTitleType = [NSString customPasteboardTypeOfCode:0x75726C6E];
-				NSString *linkTitle = [types containsObject:linkTitleType] ? [[pasteboard stringForType:linkTitleType] syntheticTitleAndTrimmedBody:NULL] : nil;
+				NSString *linkTitle = [types containsObject:linkTitleType] ? [[NVNoteContent contentWithString:[pasteboard stringForType:linkTitleType]] title] : nil;
 				if (!linkTitle) {
 					//try urld instead of urln
 					linkTitleType = [NSString customPasteboardTypeOfCode:0x75726C64];
-					linkTitle = [types containsObject:linkTitleType] ? [[pasteboard stringForType:linkTitleType] syntheticTitleAndTrimmedBody:NULL] : nil;
+					linkTitle = [types containsObject:linkTitleType] ? [[NVNoteContent contentWithString:[pasteboard stringForType:linkTitleType]] title] : nil;
 				}
 				[[[AlienNoteImporter alloc] init] importURLInBackground:url linkTitle:linkTitle receptionDelegate:self];
 				return YES;
