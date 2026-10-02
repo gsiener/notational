@@ -27,13 +27,28 @@ static NSArray *LinesOf(NSString *text) {
 	return lines;
 }
 
-//hunks turning base into other, in base order
-static NSUInteger DiffLines(NSArray *base, NSArray *other, NVLineHunk **outHunks) {
-	NSUInteger n = [base count], m = [other count];
+//each line as a number from a table shared by the texts being compared, so equal lines have equal
+//numbers and the diff compares integers; free() the result
+static NSUInteger *LineNumbersOf(NSArray *lines, NSMutableDictionary *table) {
+	NSUInteger count = [lines count], i;
+	NSUInteger *numbers = malloc(sizeof(NSUInteger) * (count ? count : 1));
+	for (i = 0; i < count; i++) {
+		NSString *line = [lines objectAtIndex:i];
+		NSNumber *number = [table objectForKey:line];
+		if (!number) {
+			number = [NSNumber numberWithUnsignedInteger:[table count]];
+			[table setObject:number forKey:line];
+		}
+		numbers[i] = [number unsignedIntegerValue];
+	}
+	return numbers;
+}
+
+//hunks turning base (n lines) into other (m lines), in base order
+static NSUInteger DiffLines(const NSUInteger *base, NSUInteger n, const NSUInteger *other, NSUInteger m, NVLineHunk **outHunks) {
 	NSUInteger prefix = 0, suffix = 0;
-	while (prefix < n && prefix < m && [[base objectAtIndex:prefix] isEqualToString:[other objectAtIndex:prefix]]) prefix++;
-	while (suffix < n - prefix && suffix < m - prefix &&
-		   [[base objectAtIndex:n - 1 - suffix] isEqualToString:[other objectAtIndex:m - 1 - suffix]]) suffix++;
+	while (prefix < n && prefix < m && base[prefix] == other[prefix]) prefix++;
+	while (suffix < n - prefix && suffix < m - prefix && base[n - 1 - suffix] == other[m - 1 - suffix]) suffix++;
 
 	NSUInteger bn = n - prefix - suffix, om = m - prefix - suffix;
 	NVLineHunk *hunks = malloc(sizeof(NVLineHunk) * (bn + om + 1));
@@ -53,10 +68,12 @@ static NSUInteger DiffLines(NSArray *base, NSArray *other, NVLineHunk **outHunks
 	//LCS lengths over the middle section, from the end
 	unsigned int *lcs = calloc((bn + 1) * (om + 1), sizeof(unsigned int));
 #define LCS(i, j) lcs[(i) * (om + 1) + (j)]
+	const NSUInteger *baseMiddle = base + prefix, *otherMiddle = other + prefix;
 	NSInteger i, j;
 	for (i = (NSInteger)bn - 1; i >= 0; i--) {
+		NSUInteger line = baseMiddle[i];
 		for (j = (NSInteger)om - 1; j >= 0; j--) {
-			if ([[base objectAtIndex:prefix + i] isEqualToString:[other objectAtIndex:prefix + j]])
+			if (line == otherMiddle[j])
 				LCS(i, j) = LCS(i + 1, j + 1) + 1;
 			else
 				LCS(i, j) = MAX(LCS(i + 1, j), LCS(i, j + 1));
@@ -66,7 +83,7 @@ static NSUInteger DiffLines(NSArray *base, NSArray *other, NVLineHunk **outHunks
 	NSUInteger bi = 0, oj = 0;
 	BOOL inHunk = NO;
 	while (bi < bn || oj < om) {
-		BOOL same = bi < bn && oj < om && [[base objectAtIndex:prefix + bi] isEqualToString:[other objectAtIndex:prefix + oj]];
+		BOOL same = bi < bn && oj < om && baseMiddle[bi] == otherMiddle[oj];
 		if (same) {
 			if (inHunk) {
 				hunks[count].end = prefix + bi;
@@ -127,8 +144,14 @@ static void AppendLines(NSMutableString *out, NSArray *lines, NSRange range) {
 	NSArray *o = LinesOf(addedNewline ? [ours stringByAppendingString:@"\n"] : ours);
 	NSArray *t = LinesOf(addedNewline ? [theirs stringByAppendingString:@"\n"] : theirs);
 
+	NSMutableDictionary *table = [NSMutableDictionary dictionary];
+	NSUInteger *bNumbers = LineNumbersOf(b, table), *oNumbers = LineNumbersOf(o, table), *tNumbers = LineNumbersOf(t, table);
 	NVLineHunk *oursHunks = NULL, *theirsHunks = NULL;
-	NSUInteger oc = DiffLines(b, o, &oursHunks), tc = DiffLines(b, t, &theirsHunks);
+	NSUInteger oc = DiffLines(bNumbers, [b count], oNumbers, [o count], &oursHunks);
+	NSUInteger tc = DiffLines(bNumbers, [b count], tNumbers, [t count], &theirsHunks);
+	free(bNumbers);
+	free(oNumbers);
+	free(tNumbers);
 
 	NSMutableString *merged = [NSMutableString string];
 	NSUInteger pos = 0, oi = 0, ti = 0;

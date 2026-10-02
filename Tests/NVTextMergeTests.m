@@ -25,6 +25,27 @@
 	XCTAssertEqualObjects(merged, @"title\nONE\ntwo\nTHREE\n");
 }
 
+//a long note with lines that repeat, edited throughout on both sides
+- (void)testLongNotesWithRepeatedLinesMergeLineByLine {
+	NSMutableArray *base = [NSMutableArray array], *ours = [NSMutableArray array], *theirs = [NSMutableArray array], *expected = [NSMutableArray array];
+	NSUInteger i;
+	for (i = 0; i < 1500; i++) {
+		NSString *line = i % 3 ? [NSString stringWithFormat:@"line %lu", (unsigned long)i] : @"- [ ] same";
+		[base addObject:line];
+		NSString *mine = i % 50 == 1 ? [line stringByAppendingString:@" (mine)"] : line;
+		[ours addObject:mine];
+		[expected addObject:mine];
+		[theirs addObject:line];
+		if (i % 70 == 35) {
+			[theirs addObject:@"from the phone"];
+			[expected addObject:@"from the phone"];
+		}
+	}
+	NSString *merged = [NVTextMerge mergeBase:[base componentsJoinedByString:@"\n"] ours:[ours componentsJoinedByString:@"\n"]
+									   theirs:[theirs componentsJoinedByString:@"\n"]];
+	XCTAssertEqualObjects(merged, [expected componentsJoinedByString:@"\n"]);
+}
+
 - (void)testAppendsFromBothSidesBothSurvive {
 	NSString *base = @"title\n\nbase line";
 	NSString *merged = [NVTextMerge mergeBase:base ours:@"title\n\nbase line\nfrom A" theirs:@"title\n\nbase line\nfrom B"];
