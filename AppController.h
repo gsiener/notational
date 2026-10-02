@@ -52,9 +52,6 @@
     NSStatusItem *statusItem;
 	IBOutlet NSMenu *statBarMenu;
 	TagEditingManager *tagEditor;
-	NSColor *backgrndColor;
-	NSColor *foregrndColor;
-	NSInteger userScheme;
 	NSString *noteFormat;
 	NSTextView *theFieldEditor;
     NSDictionary *fieldAttributes;
@@ -184,15 +181,11 @@ void outletObjectAwoke(id sender);
 //- (IBAction)openFileInEditor:(id)sender;
 //- (NSArray *)getTxtAppList;
 //- (void)updateTextApp:(id)sender;
+//View ▸ Color Schemes: each switches the Theme, and the Theme's notification recolours the window
 - (IBAction)setBWColorScheme:(id)sender;
 - (IBAction)setLCColorScheme:(id)sender;
 - (IBAction)setUserColorScheme:(id)sender;
 - (void)updateFieldAttributes;
-- (void)updateColorScheme;
-- (void)setBackgrndColor:(NSColor *)inColor;
-- (void)setForegrndColor:(NSColor *)inColor;
-- (NSColor *)backgrndColor;
-- (NSColor *)foregrndColor;
 - (void)updateWordCount:(BOOL)doIt;
 - (void)ensurePreviewIsVisible;
 - (void)resetModTimers:(NSNotification *)notification;

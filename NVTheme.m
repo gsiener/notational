@@ -67,18 +67,14 @@ static NSString *const SchemeKey = @"ColorScheme";
 	}
 }
 
-- (void)setScheme:(NVThemeScheme)newScheme notify:(BOOL)notify {
+- (void)setScheme:(NVThemeScheme)newScheme {
 	[defaults setInteger:newScheme forKey:SchemeKey];
 	[self applyScheme:newScheme];
-	if (notify) [[NSNotificationCenter defaultCenter] postNotificationName:NVThemeDidChangeNotification object:self];
-}
-
-- (void)setScheme:(NVThemeScheme)newScheme {
-	[self setScheme:newScheme notify:YES];
+	[[NSNotificationCenter defaultCenter] postNotificationName:NVThemeDidChangeNotification object:self];
 }
 
 - (void)customColorsDidChange {
-	if (self.scheme == NVThemeSchemeCustom) [self setScheme:NVThemeSchemeCustom notify:YES];
+	[self setScheme:NVThemeSchemeCustom];
 }
 
 @end

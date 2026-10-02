@@ -135,6 +135,7 @@ static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
         
         [nc addObserver:self selector:@selector(resetModTimers:) name:@"ModTimersShouldReset" object:nil];
         [nc addObserver:self selector:@selector(releaseTagEditor:) name:@"TagEditorShouldRelease" object:nil];
+        [nc addObserver:self selector:@selector(themeDidChange:) name:NVThemeDidChangeNotification object:nil];
         // Setup URL Handling
         NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
         [appleEventManager setEventHandler:self andSelector:@selector(handleGetURLEvent:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
@@ -182,7 +183,6 @@ static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
     
     ETClipView *newClipView = [[ETClipView alloc] initWithFrame:[[textScrollView contentView] frame]];
     [newClipView setDrawsBackground:NO];
-    //    [newClipView setBackgroundColor:[self backgrndColor]];
     [textScrollView setContentView:(ETClipView *)newClipView];
     [textScrollView setDocumentView:textView];
     
@@ -265,14 +265,7 @@ static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
 		[self setEmptyViewState:YES];
 		ModFlagger = 0;
         popped = 0;
-		userScheme = [[NSUserDefaults standardUserDefaults] integerForKey:@"ColorScheme"];
-		if (userScheme==0) {
-			[self setBWColorScheme:self];
-		}else if (userScheme==1) {
-			[self setLCColorScheme:self];
-		}else if (userScheme==2) {
-			[self setUserColorScheme:self];
-		}
+		[self themeDidChange:nil];
 		//this is necessary on 10.3; keep just in case
 		[splitView display];
         
@@ -492,6 +485,12 @@ terminateApp:
     if ((tag == NVMarkupMarkdown) || (tag == NVMarkupMultiMarkdown)) {
         // Allow only one Preview mode to be selected at every one time
         [menuItem setState:((tag == currentPreviewMode) ? NSControlStateValueOn : NSControlStateValueOff)];
+        return YES;
+    } else if (selector == @selector(setBWColorScheme:) || selector == @selector(setLCColorScheme:) || selector == @selector(setUserColorScheme:)) {
+        //the main and status-bar menus' Color Schemes items check the Theme's scheme
+        NVThemeScheme itemScheme = selector == @selector(setLCColorScheme:) ? NVThemeSchemeLowContrast :
+            selector == @selector(setUserColorScheme:) ? NVThemeSchemeCustom : NVThemeSchemeLight;
+        [menuItem setState:([[NVTheme currentTheme] scheme] == itemScheme) ? NSControlStateValueOn : NSControlStateValueOff];
         return YES;
     } else if (selector == @selector(printNote:) ||
                selector == @selector(deleteNote:) ||
@@ -731,7 +730,7 @@ terminateApp:
 	
 	[self updateNoteMenus];
     
-	[notesTableView setBackgroundColor:backgrndColor];
+	[notesTableView setBackgroundColor:[[NVTheme currentTheme] backgroundColor]];
 	[notesTableView setNeedsDisplay:YES];
 }
 
@@ -895,7 +894,7 @@ terminateApp:
 	} else if ([selectorString isEqualToString:SEL_STR(setForegroundTextColor:sender:)] ||
 			   [selectorString isEqualToString:SEL_STR(setBackgroundTextColor:sender:)]) {
 		//choosing a colour in Settings switches to the custom scheme
-		[self setUserColorScheme:self];
+		[[NVTheme currentTheme] customColorsDidChange];
 		
 	} else if ([selectorString isEqualToString:SEL_STR(setTableFontSize:sender:)] || [selectorString isEqualToString:SEL_STR(setTableColumnsShowPreview:sender:)]) {
 		
@@ -2080,12 +2079,12 @@ terminateApp:
             if (([window firstResponder]==notesTableView)||(isEditing&&([notesTableView editedRow]==rowIndex))) {//([notesTableView rowHeight]>30.0)||
                 [aCell setTextColor:[NSColor whiteColor]];
                 return;
-            }else if ([[foregrndColor colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]>0.5) {                    
+            }else if ([[[[NVTheme currentTheme] foregroundColor] colorUsingColorSpace:[NSColorSpace genericGrayColorSpace]] whiteComponent]>0.5) {
                 [aCell setTextColor:[NSColor colorWithCalibratedWhite:0.2 alpha:1.0]];
                 return;
             }
         }
-        [aCell setTextColor:foregrndColor];
+        [aCell setTextColor:[[NVTheme currentTheme] foregroundColor]];
     }
 }
 
@@ -2402,65 +2401,29 @@ terminateApp:
 #pragma mark color scheme methods
     
     - (IBAction)setBWColorScheme:(id)sender{
-        userScheme=0;
-        [self adoptThemeScheme:NVThemeSchemeLight];
-        NSMenu *mainM = [NSApp mainMenu];
-        NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
-        mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
-        viewM = [[statBarMenu itemWithTitle:@"Color Schemes"] submenu];
-        [[mainM itemAtIndex:0] setState:1];
-        [[mainM itemAtIndex:1] setState:0];
-        [[mainM itemAtIndex:2] setState:0];
-        
-        [[viewM  itemAtIndex:0] setState:1];
-        [[viewM  itemAtIndex:1] setState:0];
-        [[viewM  itemAtIndex:2] setState:0];
-        [self updateColorScheme];
+        [[NVTheme currentTheme] setScheme:NVThemeSchemeLight];
     }
     
     - (IBAction)setLCColorScheme:(id)sender{
-        userScheme=1;
-        [self adoptThemeScheme:NVThemeSchemeLowContrast];
-        NSMenu *mainM = [NSApp mainMenu];
-        NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
-        mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
-        viewM = [[statBarMenu itemWithTitle:@"Color Schemes"] submenu];
-        [[mainM itemAtIndex:0] setState:0];
-        [[mainM itemAtIndex:1] setState:1];
-        [[mainM itemAtIndex:2] setState:0];
-        
-        [[viewM  itemAtIndex:0] setState:0];
-        [[viewM  itemAtIndex:1] setState:1];
-        [[viewM  itemAtIndex:2] setState:0];
-        [self updateColorScheme];
+        [[NVTheme currentTheme] setScheme:NVThemeSchemeLowContrast];
     }
     
     - (IBAction)setUserColorScheme:(id)sender{
-        userScheme=2;
-        [self adoptThemeScheme:NVThemeSchemeCustom];
-        NSMenu *mainM = [NSApp mainMenu];
-        NSMenu *viewM = [[mainM itemWithTitle:@"View"] submenu];
-        mainM = [[viewM itemWithTitle:@"Color Schemes"] submenu];
-        viewM = [[statBarMenu itemWithTitle:@"Color Schemes"] submenu];
-        [[mainM itemAtIndex:0] setState:0];
-        [[mainM itemAtIndex:1] setState:0];
-        [[mainM itemAtIndex:2] setState:1];
-        
-        [[viewM  itemAtIndex:0] setState:0];
-        [[viewM  itemAtIndex:1] setState:0];
-        [[viewM  itemAtIndex:2] setState:1];
-        [self updateColorScheme];
+        [[NVTheme currentTheme] setScheme:NVThemeSchemeCustom];
     }
     
-- (void)updateColorScheme{
-    [mainView setBackgroundColor:backgrndColor];
-    [NotesTableHeaderCell setTxtColor:foregrndColor];
+//the Theme owns the colours (#5); this gives them to the views that don't ask it themselves
+- (void)themeDidChange:(NSNotification *)notification{
+    NVTheme *theme = [NVTheme currentTheme];
+    NSColor *foreground = [theme foregroundColor], *background = [theme backgroundColor];
+    [mainView setBackgroundColor:background];
+    [NotesTableHeaderCell setTxtColor:foreground];
     
-    [notesTableView setGridColor:foregrndColor];
-    [notesTableView setBackgroundColor:backgrndColor];
-    [notationController setForegroundTextColor:foregrndColor];
+    [notesTableView setGridColor:foreground];
+    [notesTableView setBackgroundColor:background];
+    [notationController setForegroundTextColor:foreground];
     
-    [textView setBackgroundColor:backgrndColor];
+    [textView setBackgroundColor:background];
     [textView updateTextColors];
     [self updateFieldAttributes];
     if (currentNote) {
@@ -2471,54 +2434,18 @@ terminateApp:
 }
 
 - (void)updateFieldAttributes{
-    if (!foregrndColor) {
-        foregrndColor = [self foregrndColor];
-    }
-    if (!backgrndColor) {
-        backgrndColor = [self backgrndColor];
-    }
-    if (fieldAttributes) {
-    }
-    fieldAttributes = [NSDictionary dictionaryWithObject:[textView _selectionColorForForegroundColor:foregrndColor backgroundColor:backgrndColor] forKey:NSBackgroundColorAttributeName];
+    NVTheme *theme = [NVTheme currentTheme];
+    fieldAttributes = [NSDictionary dictionaryWithObject:[textView _selectionColorForForegroundColor:[theme foregroundColor] backgroundColor:[theme backgroundColor]] forKey:NSBackgroundColorAttributeName];
     
     if (self.isEditing) {
         [theFieldEditor setDrawsBackground:NO];
-        [theFieldEditor setTextColor:foregrndColor];
+        [theFieldEditor setTextColor:[theme foregroundColor]];
         [theFieldEditor setSelectedTextAttributes:fieldAttributes];
-        [theFieldEditor setInsertionPointColor:foregrndColor];
+        [theFieldEditor setInsertionPointColor:[theme foregroundColor]];
         
     }
     
 }
-    
-    //the Theme owns the colours (#5); this keeps the copies the window code uses in step
-    - (void)adoptThemeScheme:(NVThemeScheme)scheme{
-        [[NVTheme currentTheme] setScheme:scheme];
-        [self setForegrndColor:[[NVTheme currentTheme] foregroundColor]];
-        [self setBackgrndColor:[[NVTheme currentTheme] backgroundColor]];
-    }
-    
-    - (void)setBackgrndColor:(NSColor *)inColor{
-        if (backgrndColor) {
-        }
-        backgrndColor = inColor;
-    }
-    
-    - (void)setForegrndColor:(NSColor *)inColor{
-        if (foregrndColor) {
-        }
-        foregrndColor = inColor;
-    }
-    
-    - (NSColor *)backgrndColor{
-        if (!backgrndColor) [self setBackgrndColor:[[NVTheme currentTheme] backgroundColor]];
-        return backgrndColor;
-    }
-    
-    - (NSColor *)foregrndColor{
-        if (!foregrndColor) [self setForegrndColor:[[NVTheme currentTheme] foregroundColor]];
-        return foregrndColor;
-    }
     
 #pragma mark control/opt key hold down to pop word count/preview window
     
@@ -2736,19 +2663,13 @@ terminateApp:
             if (!fieldAttributes) {
                 [self updateFieldAttributes];
             }else{
-                if (!foregrndColor) {
-                    foregrndColor = [self foregrndColor];
-                }
-                if (!backgrndColor) {
-                    backgrndColor = [self backgrndColor];
-                }
+                NSColor *foreground = [[NVTheme currentTheme] foregroundColor];
                 [theFieldEditor setDrawsBackground:NO];
-                // [theFieldEditor setBackgroundColor:backgrndColor];
-                if ([theFieldEditor textColor] != foregrndColor) {
-                    [theFieldEditor setTextColor:foregrndColor];
+                if ([theFieldEditor textColor] != foreground) {
+                    [theFieldEditor setTextColor:foreground];
                 }
                 [theFieldEditor setSelectedTextAttributes:fieldAttributes];
-                [theFieldEditor setInsertionPointColor:foregrndColor];
+                [theFieldEditor setInsertionPointColor:foreground];
                 
                 // [notesTableView setNeedsDisplay:YES];
             }

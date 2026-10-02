@@ -88,13 +88,20 @@ static CGFloat White(NSColor *color) {
 	NVTheme *theme = [self theme];
 	[theme setScheme:NVThemeSchemeLowContrast];
 	XCTAssertEqual(notifications, (NSUInteger)1);
-	//Settings colours only matter to the custom scheme
-	[theme customColorsDidChange];
-	XCTAssertEqual(notifications, (NSUInteger)1);
 	[theme setScheme:NVThemeSchemeCustom];
+	XCTAssertEqual(notifications, (NSUInteger)2);
+}
+
+- (void)testChoosingASettingsColourSwitchesToTheCustomScheme {
+	NVTheme *theme = [self theme];
+	[theme setScheme:NVThemeSchemeLowContrast];
 	custom = @[[NSColor greenColor], [NSColor yellowColor]];
+	theme = [self theme];
 	[theme customColorsDidChange];
-	XCTAssertEqual(notifications, (NSUInteger)3);
+	XCTAssertEqual(theme.scheme, NVThemeSchemeCustom);
+	XCTAssertEqualObjects(theme.foregroundColor, [NSColor greenColor]);
+	XCTAssertEqual([defaults integerForKey:@"ColorScheme"], (NSInteger)NVThemeSchemeCustom);
+	XCTAssertEqual(notifications, (NSUInteger)2);
 }
 
 @end

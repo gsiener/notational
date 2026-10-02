@@ -34,7 +34,8 @@ typedef enum {
 //switches and remembers the scheme; posts NVThemeDidChangeNotification
 - (void)setScheme:(NVThemeScheme)scheme;
 
-//the Settings colours changed; posts NVThemeDidChangeNotification if the custom scheme is on
+//the Settings colours changed: choosing one means using it, so this switches to the custom
+//scheme with the new colours; posts NVThemeDidChangeNotification
 - (void)customColorsDidChange;
 
 @end
