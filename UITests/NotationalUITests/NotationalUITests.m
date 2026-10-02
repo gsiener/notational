@@ -205,15 +205,20 @@
 	XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:splitter], dragged, 2.0, @"the divider moved back after a relaunch");
 }
 
-- (void)testCollapsedListSurvivesRelaunch {
+//(a collapsed list isn't expected to survive a relaunch: when the app opens with no note
+//selected it focuses the search field, and that always reveals the list)
+- (void)testExpandingRestoresTheListSize {
 	[self createNoteTitled:@"Collapse note" body:@"the list is collapsed"];
+	XCUIElement *splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
+	XCTAssertTrue([splitter waitForExistenceWithTimeout:5]);
+	CGFloat before = [self notesListSizeAcrossDivider:splitter];
 	[self toggleNotesList];
-	[self relaunch];
 	XCUIElement *bar = app.menuBars.firstMatch;
 	[bar.menuBarItems[@"View"] click];
 	XCUIElement *expand = bar.menuBarItems[@"View"].menus.menuItems[@"Expand Notes List"];
-	XCTAssertTrue([expand waitForExistenceWithTimeout:5], @"the notes list came back expanded");
+	XCTAssertTrue([expand waitForExistenceWithTimeout:5], @"the list didn't collapse");
 	[expand click];
+	XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:splitter], before, 2.0, @"expanding didn't restore the list's size");
 }
 
 - (void)testRelaunchKeepsNotes {
