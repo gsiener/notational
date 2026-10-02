@@ -310,7 +310,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	
 		//re-created at runtime to save space
 		[self initContentCacheCString];
-		cTitleFoundPtr = cTitle = titleString ? strdup([titleString lowercaseUTF8String]) : NULL;
+		cTitleFoundPtr = cTitle = strdup(titleString ? [titleString lowercaseUTF8String] : "");
 		cLabelsFoundPtr = cLabels = labelString ? strdup([labelString lowercaseUTF8String]) : NULL;
 		
 		dateCreatedString = [NSString relativeDateStringWithAbsoluteTime:createdDate];
@@ -362,8 +362,9 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 			return nil;
 		}
 
+		//the placeholder goes through the setter too, so the C title search and autocompletion use is never NULL
 		if (![self _setTitleString:aNoteTitle])
-		    titleString = NSLocalizedString(@"Untitled Note", @"Title of a nameless note");
+			[self _setTitleString:NSLocalizedString(@"Untitled Note", @"Title of a nameless note")];
 		
 		if (![self _setLabelString:aLabelString]) {
 			labelString = @"";

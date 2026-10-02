@@ -269,15 +269,19 @@ static NSMutableArray *KeptControllers;
 			  stored:@"Groceries\neggs" reloadedTitle:@"Groceries" reloadedBody:@"eggs"];
 }
 
-- (void)testImportedUntitledNoteHasNoSearchableTitle {
-	//HAZARD: the empty first line reaches -initWithNoteBody:title: as @"", which sets the
-	//"Untitled Note" placeholder without its C string. With search autocompletion on (the
-	//default), -updateTitlePrefixConnections then strncmp()s NULL as soon as the library holds
-	//another note: importing such a file into a non-empty library crashes. Not exercised here.
+- (void)testImportingAFileThatStartsBlankIntoALibraryDoesNotCrash {
+	//#33: the empty first line once reached -initWithNoteBody:title: as @"", leaving the note's
+	//C title NULL, and search autocompletion's prefix connections strncmp()ed it as soon as the
+	//library held another note
+	XCTAssertTrue([[GlobalPrefs defaultPrefs] autoCompleteSearches], @"the prefix connections run only with autocompletion on");
+	NoteObject *other = [self imported:ShortLine fileName:@"a"];
 	NoteObject *note = [self imported:LeadingBlanks fileName:@"e"];
+	XCTAssertEqual([[controller allNotesForTitleRuleTesting] count], (NSUInteger)2);
+	XCTAssertNotNil(other);
 	Ivar cTitle = class_getInstanceVariable([NoteObject class], "cTitle");
 	char *title = *(char **)((uint8_t *)(__bridge void *)note + ivar_getOffset(cTitle));
-	XCTAssertTrue(title == NULL);
+	XCTAssertTrue(title != NULL);
+	XCTAssertFalse(noteTitleIsAPrefixOfOtherNoteTitle(other, note));
 }
 
 #pragma mark File import, file name as title

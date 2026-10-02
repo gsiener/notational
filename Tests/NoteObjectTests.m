@@ -51,6 +51,16 @@
 	XCTAssertEqualObjects([[note contentString] string], @"new body");
 }
 
+- (void)testANoteWithNoTitleIsTitledUntitledForSearchToo {
+	//search and autocompletion compare C titles; an empty title once left the C title NULL (#33)
+	NoteObject *untitled = NVTestNote(@"", @"body", nil);
+	NoteObject *other = NVTestNote(@"Untitled Note and more", @"body", nil);
+	XCTAssertEqualObjects(titleOfNote(untitled), @"Untitled Note");
+	XCTAssertTrue(noteTitleIsAPrefixOfOtherNoteTitle(other, untitled));
+	XCTAssertFalse(noteTitleIsAPrefixOfOtherNoteTitle(untitled, other));
+	XCTAssertTrue(noteTitleHasPrefixOfUTF8String(untitled, "untitled", 8));
+}
+
 - (void)testRenamingTellsTheDelegate {
 	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
 	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"body") title:@"Title" delegate:delegate labels:nil];
