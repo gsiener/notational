@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notational — notes at the speed of typing</title>
+<meta name="description" content="Notational is a fast, keyboard-first notes app for the Mac. One field to search and create. A modern revival of nvALT, native on Apple Silicon, synced with Simplenote.">
+<meta property="og:title" content="Notational — notes at the speed of typing">
+<meta property="og:description" content="One field to search and create. A modern revival of nvALT, native on Apple Silicon.">
+<meta property="og:image" content="https://gsiener.github.io/notational/icon.png">
+<meta name="theme-color" content="#0d0c0b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2ede3" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+	--ink: #0d0c0b;
+	--ink-2: #1b1917;
+	--ink-3: #2a2723;
+	--paper: #f2ede3;
+	--paper-dim: #b9b2a5;
+	--muted: #8a8377;
+	--signal: #ff4f1f;
+	--signal-soft: rgba(255, 79, 31, 0.16);
+	--flare: #ffb02e;
+	--line: rgba(242, 237, 227, 0.12);
+	--bg: var(--ink);
+	--fg: var(--paper);
+	--card: var(--ink-2);
+	--window: #171513;
+	--window-bar: #221f1c;
+	--window-side: #13110f;
+	--select: #ff4f1f;
+	--select-fg: #0d0c0b;
+	--grain-opacity: 0.07;
+	color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme="dark"]) {
+		--bg: #f2ede3;
+		--fg: #15130f;
+		--card: #e8e1d4;
+		--muted: #6f685d;
+		--paper-dim: #4a443c;
+		--line: rgba(21, 19, 15, 0.14);
+		--window: #fbf8f2;
+		--window-bar: #ebe5da;
+		--window-side: #f4efe6;
+		--signal: #e8410f;
+		--signal-soft: rgba(232, 65, 15, 0.12);
+		--select-fg: #fff8f2;
+		--grain-opacity: 0.05;
+		color-scheme: light;
+	}
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: "Newsreader", Georgia, serif;
+	font-size: 19px;
+	line-height: 1.5;
+	overflow-x: hidden;
+}
+body::before {
+	/* film grain */
+	content: "";
+	position: fixed;
+	inset: -50%;
+	pointer-events: none;
+	z-index: 100;
+	opacity: var(--grain-opacity);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+a { color: inherit; }
+::selection { background: var(--signal); color: var(--select-fg); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 32px; } }
+
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+.display { font-family: "Anybody", "Arial Narrow", sans-serif; }
+
+/* ---------- nav ---------- */
+nav.top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 20px 0;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand img { width: 34px; height: 34px; }
+.brand span { font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 120%; letter-spacing: -0.01em; font-size: 20px; }
+nav.top .links { display: flex; gap: 22px; font-family: "JetBrains Mono", monospace; font-size: 13px; }
+nav.top .links a { text-decoration: none; color: var(--paper-dim); }
+nav.top .links a:hover { color: var(--signal); }
+@media (max-width: 560px) { nav.top .links a.hide-sm { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { position: relative; padding: 36px 0 40px; }
+.kicker {
+	display: inline-flex; align-items: center; gap: 10px;
+	font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+	color: var(--signal);
+}
+.kicker::before { content: ""; width: 28px; height: 2px; background: var(--signal); }
+h1.headline {
+	font-family: "Anybody", sans-serif;
+	font-weight: 900;
+	font-size: clamp(34px, 10.5vw, 140px);
+	line-height: 0.84;
+	letter-spacing: -0.035em;
+	margin: 18px 0 0;
+	text-transform: uppercase;
+}
+h1.headline .row { display: block; overflow: hidden; padding-bottom: 0.04em; white-space: nowrap; }
+h1.headline .row > span {
+	display: inline-block;
+	font-stretch: 150%;
+	animation: launch 1.1s cubic-bezier(.16, 1, .3, 1) both;
+}
+h1.headline .row:nth-child(2) > span { animation-delay: .12s; }
+h1.headline .row:nth-child(3) > span { animation-delay: .24s; }
+h1.headline .row:nth-child(4) > span { animation-delay: .36s; }
+h1.headline .burn { color: var(--signal); font-style: normal; }
+@keyframes launch {
+	from { transform: translateY(105%) skewX(-12deg); font-stretch: 50%; }
+	to { transform: none; font-stretch: 150%; }
+}
+@media (max-width: 560px) { h1.headline .row > span { font-stretch: 112%; } @keyframes launch { from { transform: translateY(105%); } to { transform: none; } } }
+
+.hero-grid { display: grid; gap: 28px; margin-top: 28px; align-items: end; }
+@media (min-width: 900px) { .hero-grid { grid-template-columns: 1fr 340px; } }
+.lede { font-size: clamp(20px, 2.3vw, 26px); line-height: 1.35; max-width: 32ch; margin: 0; animation: fade 1s .5s both; }
+.lede em { color: var(--signal); font-style: italic; }
+.cta-col { display: flex; flex-direction: column; gap: 12px; animation: fade 1s .65s both; }
+@keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.btn {
+	display: inline-flex; align-items: center; justify-content: space-between; gap: 16px;
+	padding: 18px 22px;
+	font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 125%; font-size: 18px; text-transform: uppercase; letter-spacing: 0.01em;
+	text-decoration: none;
+	border-radius: 2px;
+	transition: transform .2s cubic-bezier(.16, 1, .3, 1), box-shadow .2s, background .2s;
+}
+.btn.primary { background: var(--signal); color: #0d0c0b; box-shadow: 6px 6px 0 var(--fg); }
+.btn.primary:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--fg); }
+.btn.primary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--fg); }
+.btn.ghost { border: 1.5px solid var(--line); color: var(--fg); }
+.btn.ghost:hover { border-color: var(--signal); color: var(--signal); }
+.btn .arrow { font-family: "JetBrains Mono", monospace; font-weight: 600; transition: transform .2s; }
+.btn:hover .arrow { transform: translateX(4px); }
+.fine { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+/* speed streaks behind the hero */
+.streaks { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: -1; }
+.streaks i {
+	position: absolute; height: 1.5px; right: -40%; width: 40%;
+	background: linear-gradient(90deg, transparent, var(--signal));
+	opacity: .55;
+	animation: streak linear infinite;
+}
+@keyframes streak { from { transform: translateX(0); } to { transform: translateX(-360%); } }
+
+/* ---------- demo ---------- */
+.demo-section { padding: 30px 0 70px; position: relative; }
+.demo-label { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.demo-label h2 { margin: 0; font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 130%; font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; }
+.demo-label p { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--muted); }
+.demo-label kbd { font-family: inherit; color: var(--fg); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; }
+
+.window {
+	position: relative;
+	background: var(--window);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .55), 0 0 0 1px rgba(0,0,0,.2);
+	animation: fade 1s .8s both;
+}
+.window::after {
+	/* exhaust glow */
+	content: ""; position: absolute; left: 10%; right: 10%; bottom: -60px; height: 80px;
+	background: radial-gradient(ellipse at center, var(--signal-soft), transparent 70%);
+	filter: blur(20px); pointer-events: none;
+}
+.titlebar {
+	display: flex; align-items: center; gap: 12px;
+	padding: 10px 12px;
+	background: var(--window-bar);
+	border-bottom: 1px solid var(--line);
+}
+.lights { display: flex; gap: 7px; flex: none; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+.field {
+	flex: 1; display: flex; align-items: center; gap: 8px;
+	background: var(--window);
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	padding: 6px 10px;
+	transition: border-color .15s, box-shadow .15s;
+}
+.field:focus-within { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.field svg { flex: none; opacity: .55; }
+.field input {
+	flex: 1; min-width: 0;
+	border: 0; outline: 0; background: transparent; color: var(--fg);
+	font-family: "JetBrains Mono", monospace; font-size: 14px;
+	caret-color: var(--signal);
+}
+.field input::placeholder { color: var(--muted); }
+.field .hint { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 560px) { .field .hint { display: none; } }
+
+.panes { display: grid; grid-template-columns: 1fr; min-height: 380px; }
+@media (min-width: 760px) { .panes { grid-template-columns: minmax(250px, 36%) 1fr; } }
+.list { margin: 0; padding: 0; list-style: none; background: var(--window-side); border-right: 1px solid var(--line); max-height: 380px; overflow: auto; }
+@media (max-width: 759px) { .list { border-right: 0; border-bottom: 1px solid var(--line); max-height: 210px; } }
+.list li {
+	padding: 9px 14px;
+	border-bottom: 1px solid var(--line);
+	cursor: pointer;
+	font-family: "JetBrains Mono", monospace; font-size: 13px;
+	display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+	animation: rowIn .25s cubic-bezier(.16, 1, .3, 1) both;
+}
+@keyframes rowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.list li .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list li .d { color: var(--muted); font-size: 11px; }
+.list li .p { grid-column: 1 / -1; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list li.sel { background: var(--select); color: var(--select-fg); }
+.list li.sel .d, .list li.sel .p { color: var(--select-fg); opacity: .75; }
+.list mark { background: var(--signal-soft); color: inherit; border-radius: 2px; box-shadow: 0 0 0 1px var(--signal); }
+.list li.sel mark { background: rgba(0,0,0,.18); box-shadow: none; }
+.list .empty { cursor: default; display: block; color: var(--muted); padding: 22px 14px; line-height: 1.5; }
+.list .empty b { color: var(--signal); font-weight: 600; }
+
+.editor { padding: 22px 26px; font-family: "JetBrains Mono", monospace; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; overflow: auto; max-height: 380px; position: relative; }
+.editor .title { font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 115%; font-size: 22px; line-height: 1.15; margin-bottom: 12px; white-space: normal; }
+.editor .body { color: var(--paper-dim); }
+.editor .tag { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; margin-right: 6px; color: var(--muted); }
+.editor .new { color: var(--signal); }
+.editor .caret { display: inline-block; width: 8px; height: 1.1em; vertical-align: text-bottom; background: var(--signal); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.toast {
+	position: absolute; right: 16px; bottom: 16px;
+	font-family: "JetBrains Mono", monospace; font-size: 12px;
+	background: var(--signal); color: #0d0c0b; padding: 6px 10px; border-radius: 3px;
+	opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: none; }
+
+/* ---------- marquee ---------- */
+.marquee {
+	border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+	overflow: hidden; white-space: nowrap; padding: 16px 0;
+	font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 140%; text-transform: uppercase;
+	font-size: clamp(22px, 3.4vw, 40px); letter-spacing: -0.01em;
+}
+.marquee .track { display: inline-flex; gap: 0.9em; animation: marquee 32s linear infinite; padding-right: 0.9em; }
+.marquee .track span:nth-child(even) { color: var(--signal); }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ---------- features ---------- */
+section.block { padding: 90px 0; }
+.section-head { display: grid; gap: 14px; margin-bottom: 44px; }
+@media (min-width: 900px) { .section-head { grid-template-columns: 300px 1fr; align-items: end; } }
+.section-head .num { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .14em; color: var(--signal); text-transform: uppercase; }
+.section-head h2 {
+	margin: 0; font-family: "Anybody", sans-serif; font-weight: 900; font-stretch: 130%;
+	font-size: clamp(34px, 6vw, 72px); line-height: 0.92; letter-spacing: -0.03em; text-transform: uppercase;
+}
+.features { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+@media (min-width: 720px) { .features { grid-template-columns: repeat(6, 1fr); } }
+.feature { background: var(--bg); padding: 30px 26px 34px; position: relative; overflow: hidden; transition: background .25s; }
+.feature:hover { background: var(--card); }
+.feature::before {
+	content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 0; background: var(--signal);
+	transition: width .45s cubic-bezier(.16, 1, .3, 1);
+}
+.feature:hover::before { width: 100%; }
+@media (min-width: 720px) {
+	.feature { grid-column: span 2; }
+	.feature.wide { grid-column: span 4; }
+	.feature.half { grid-column: span 3; }
+}
+.feature .k { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+.feature h3 { margin: 18px 0 10px; font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 118%; font-size: 26px; line-height: 1.05; letter-spacing: -0.01em; }
+.feature p { margin: 0; color: var(--paper-dim); font-size: 17.5px; }
+.feature .big {
+	font-family: "Anybody", sans-serif; font-weight: 900; font-stretch: 150%;
+	font-size: clamp(56px, 8vw, 110px); line-height: .9; letter-spacing: -0.04em; color: var(--signal); margin-top: 14px;
+}
+.keys { display: flex; gap: 6px; margin-top: 18px; }
+.keys kbd {
+	font-family: "JetBrains Mono", monospace; font-size: 18px; min-width: 46px; height: 46px;
+	display: inline-flex; align-items: center; justify-content: center;
+	border: 1.5px solid var(--line); border-bottom-width: 4px; border-radius: 8px; background: var(--card);
+	transition: transform .1s, border-color .1s;
+}
+.feature:hover .keys kbd { border-color: var(--signal); }
+.keys kbd.down { transform: translateY(3px); border-bottom-width: 1.5px; border-color: var(--signal); color: var(--signal); }
+
+/* ---------- native stats ---------- */
+.native { background: var(--signal); color: #0d0c0b; position: relative; overflow: hidden; }
+.native .section-head .num { color: #0d0c0b; opacity: .7; }
+.native::selection, .native ::selection { background: #0d0c0b; color: var(--signal); }
+.stats { display: grid; gap: 34px 24px; }
+@media (min-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .stats { grid-template-columns: 1.5fr .7fr 1fr 1.1fr; } }
+.stat .v { font-family: "Anybody", sans-serif; font-weight: 900; font-stretch: 115%; font-size: clamp(52px, 5vw, 76px); white-space: nowrap; line-height: .9; letter-spacing: -0.04em; }
+.stat .v small { font-size: .38em; font-stretch: 120%; letter-spacing: 0; margin-left: 4px; }
+.stat .l { font-family: "JetBrains Mono", monospace; font-size: 13px; margin-top: 10px; max-width: 26ch; line-height: 1.5; }
+.native .rocket { position: absolute; right: -60px; top: -40px; width: 380px; opacity: .14; transform: rotate(18deg); pointer-events: none; filter: grayscale(1) contrast(1.4); }
+@media (max-width: 720px) { .native .rocket { width: 240px; right: -70px; } }
+
+/* ---------- lineage ---------- */
+.lineage { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.gen { display: grid; grid-template-columns: 52px 1fr; gap: 6px 20px; padding: 26px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+@media (min-width: 900px) { .gen { grid-template-columns: 80px 380px 1fr; } }
+.gen .i { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--muted); }
+.gen h3 { margin: 0; font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 125%; font-size: clamp(28px, 4vw, 44px); line-height: 1; letter-spacing: -0.02em; }
+.gen p { margin: 0; color: var(--paper-dim); grid-column: 2; }
+@media (min-width: 900px) { .gen p { grid-column: 3; } }
+.gen.now h3 { color: var(--signal); }
+.gen h3 a { text-decoration: none; }
+.gen h3 a:hover { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+
+/* ---------- install ---------- */
+.install { display: grid; gap: 28px; }
+@media (min-width: 900px) { .install { grid-template-columns: 1fr 1fr; } }
+.code {
+	background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 20px 22px; position: relative;
+	font-family: "JetBrains Mono", monospace; font-size: 13.5px; line-height: 1.75; overflow-x: auto;
+	white-space: pre; padding-top: 44px;
+}
+.code .c { color: var(--muted); }
+.code .p { color: var(--signal); user-select: none; }
+.copy {
+	position: absolute; top: 10px; right: 10px;
+	font-family: "JetBrains Mono", monospace; font-size: 11px;
+	background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; cursor: pointer;
+}
+.copy:hover { color: var(--signal); border-color: var(--signal); }
+.install p { margin: 0 0 14px; color: var(--paper-dim); }
+.install h3 { margin: 0 0 12px; font-family: "Anybody", sans-serif; font-weight: 800; font-stretch: 120%; font-size: 24px; }
+
+/* ---------- footer ---------- */
+footer { padding: 70px 0 50px; border-top: 1px solid var(--line); }
+.sign {
+	font-family: "Anybody", sans-serif; font-weight: 900; font-stretch: 150%; text-transform: uppercase;
+	font-size: clamp(48px, 13vw, 190px); line-height: .82; letter-spacing: -0.045em;
+	color: transparent; -webkit-text-stroke: 1.5px var(--fg);
+	margin: 0 0 40px; user-select: none;
+}
+.sign span { color: var(--signal); -webkit-text-stroke: 0; }
+.foot { display: flex; flex-wrap: wrap; gap: 14px 30px; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--muted); }
+.foot a { color: var(--paper-dim); }
+
+/* reveal on scroll */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(.16, 1, .3, 1), transform .8s cubic-bezier(.16, 1, .3, 1); }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { animation: none !important; transition: none !important; }
+	.reveal { opacity: 1; transform: none; }
+	.streaks { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+	<nav class="top">
+		<a class="brand" href="#"><img src="icon.png" alt="" width="34" height="34"><span>Notational</span></a>
+		<div class="links">
+			<a class="hide-sm" href="#features">Features</a>
+			<a class="hide-sm" href="#install">Install</a>
+			<a href="https://github.com/gsiener/notational">GitHub ↗</a>
+		</div>
+	</nav>
+
+	<header class="hero">
+		<div class="streaks" aria-hidden="true"></div>
+		<div class="kicker">Notes for the Mac · native on Apple Silicon</div>
+		<h1 class="headline">
+			<span class="row"><span>Type to</span></span>
+			<span class="row"><span>find.</span></span>
+			<span class="row"><span>Enter to</span></span>
+			<span class="row"><span class="burn">create.</span></span>
+		</h1>
+		<div class="hero-grid">
+			<p class="lede">One field. No folders, no save button, no “new note” dialog. Start typing and your notes narrow to what you mean, and if it isn’t there yet, press Return and <em>it is</em>.</p>
+			<div class="cta-col">
+				<a class="btn primary" href="#install">Get Notational <span class="arrow">→</span></a>
+				<a class="btn ghost" href="https://github.com/gsiener/notational">View the source <span class="arrow">↗</span></a>
+				<p class="fine">Free &amp; open source · BSD licence · macOS 12+</p>
+			</div>
+		</div>
+	</header>
+</div>
+
+<section class="demo-section">
+	<div class="wrap">
+		<div class="demo-label">
+			<h2>Try it right here</h2>
+			<p>Just start typing · <kbd>↑</kbd><kbd>↓</kbd> to move · <kbd>Return</kbd> to create</p>
+		</div>
+		<div class="window" id="demo">
+			<div class="titlebar">
+				<div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+				<label class="field">
+					<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 10.5 15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+					<input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Search or Create" aria-label="Search or create a note">
+					<span class="hint" id="hint"></span>
+				</label>
+			</div>
+			<div class="panes">
+				<ul class="list" id="list" role="listbox" aria-label="Notes"></ul>
+				<div class="editor" id="editor" aria-live="polite"></div>
+			</div>
+			<div class="toast" id="toast">Note created</div>
+		</div>
+	</div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+	<div class="track">
+		<span>Search is create</span><span>✳</span><span>No save button</span><span>✳</span><span>One hotkey away</span><span>✳</span><span>Markdown preview</span><span>✳</span><span>Simplenote sync</span><span>✳</span><span>Native arm64</span><span>✳</span>
+		<span>Search is create</span><span>✳</span><span>No save button</span><span>✳</span><span>One hotkey away</span><span>✳</span><span>Markdown preview</span><span>✳</span><span>Simplenote sync</span><span>✳</span><span>Native arm64</span><span>✳</span>
+	</div>
+</div>
+
+<section class="block" id="features">
+	<div class="wrap">
+		<div class="section-head reveal">
+			<div class="num">01 — What it does</div>
+			<h2>Fewer steps between<br>thought and note.</h2>
+		</div>
+		<div class="features">
+			<article class="feature wide reveal">
+				<div class="k"><span>Search</span><span>every keystroke</span></div>
+				<h3>Instant, incremental search</h3>
+				<p>Every note filters as you type: titles, bodies and tags, thousands of notes, no waiting. The best match is already selected, so reading is one keystroke away and writing is zero.</p>
+			</article>
+			<article class="feature reveal">
+				<div class="k"><span>Hotkey</span><span>anywhere</span></div>
+				<h3>Summon it from anywhere</h3>
+				<p>Pick a global shortcut and Notational drops in over whatever you’re doing.</p>
+				<div class="keys" id="keys"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>L</kbd></div>
+			</article>
+			<article class="feature reveal">
+				<div class="k"><span>Markdown</span><span>live</span></div>
+				<h3>Write plain, read pretty</h3>
+				<p>Markdown and MultiMarkdown with a live preview window, plus TaskPaper lists. Save any note as HTML.</p>
+			</article>
+			<article class="feature reveal">
+				<div class="k"><span>Sync</span><span>Simplenote</span></div>
+				<h3>Your phone, too</h3>
+				<p>Sign in with an emailed code and your notes sync with Simplenote, with a three-way merge when you edit on two devices at once.</p>
+			</article>
+			<article class="feature reveal">
+				<div class="k"><span>Menu bar</span><span>optional</span></div>
+				<h3>Out of the way</h3>
+				<p>Run it from the menu bar with no Dock icon. It’s there when you call it and gone when you don’t.</p>
+			</article>
+			<article class="feature half reveal">
+				<div class="k"><span>Local first</span><span>offline</span></div>
+				<h3>Works without an account</h3>
+				<p>Notes live in a local database on your Mac and work offline. Sync is optional. Export to plain text, rich text, HTML or Word whenever you like.</p>
+			</article>
+			<article class="feature half reveal">
+				<div class="k"><span>Coming from nvALT?</span><span>one-time</span></div>
+				<h3>Bring everything</h3>
+				<p>On first launch it imports your nvALT notes and settings once, and never touches the old files.</p>
+			</article>
+		</div>
+	</div>
+</section>
+
+<section class="block native">
+	<img class="rocket" src="icon.png" alt="" aria-hidden="true">
+	<div class="wrap">
+		<div class="section-head reveal">
+			<div class="num">02 — Under the hood</div>
+			<h2>Rebuilt for<br>Apple Silicon.</h2>
+		</div>
+		<div class="stats">
+			<div class="stat reveal"><div class="v">arm64</div><div class="l">Native on M-series Macs. No Rosetta, no Intel slice.</div></div>
+			<div class="stat reveal"><div class="v">0</div><div class="l">Third-party libraries, and no Perl, Python or Ruby. Just what macOS ships.</div></div>
+			<div class="stat reveal"><div class="v">4<small>MB</small></div><div class="l">The whole app, Markdown renderer included.</div></div>
+			<div class="stat reveal"><div class="v">0.13<small>s</small></div><div class="l">To load a library of 2,000+ notes at launch.</div></div>
+		</div>
+	</div>
+</section>
+
+<section class="block">
+	<div class="wrap">
+		<div class="section-head reveal">
+			<div class="num">03 — Lineage</div>
+			<h2>Twenty years<br>of fast notes.</h2>
+		</div>
+		<div class="lineage">
+			<div class="gen reveal"><span class="i">I.</span><h3><a href="https://notational.net">Notational Velocity</a></h3><p>Zachary Schneirov’s original: the idea that searching and creating should be the same act.</p></div>
+			<div class="gen reveal"><span class="i">II.</span><h3><a href="https://brettterpstra.com/projects/nvalt/">nvALT</a></h3><p>Brett Terpstra and David Halter’s fork added Markdown preview and the features a generation of writers lived in.</p></div>
+			<div class="gen now reveal"><span class="i">III.</span><h3>Notational</h3><p>A modern revival: native on Apple Silicon, Simplenote sync rebuilt, decades of legacy code removed, and tested on every commit.</p></div>
+		</div>
+	</div>
+</section>
+
+<section class="block" id="install" style="padding-top: 20px">
+	<div class="wrap">
+		<div class="section-head reveal">
+			<div class="num">04 — Install</div>
+			<h2>Get it running.</h2>
+		</div>
+		<div class="install">
+			<div class="reveal">
+				<h3>Build from source</h3>
+				<p>All you need is Xcode. The build compiles MultiMarkdown too, and leaves the app in <span class="mono">build/</span>.</p>
+				<div class="code" id="build"><button class="copy" data-copy="build">Copy</button><span class="p">$ </span>git clone --recursive https://github.com/gsiener/notational
+<span class="p">$ </span>cd notational
+<span class="p">$ </span>scripts/install.sh   <span class="c"># builds and copies it to ~/Applications</span></div>
+			</div>
+			<div class="reveal">
+				<h3>First launch</h3>
+				<p>Builds you make yourself aren’t notarised, so macOS may say it can’t check the app. Right-click Notational, choose <b>Open</b>, then confirm. You only need to do this once.</p>
+				<p>Prebuilt downloads will appear on the <a href="https://github.com/gsiener/notational/releases">releases page</a>.</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<footer>
+	<div class="wrap">
+		<p class="sign" aria-hidden="true">Just <span>type.</span></p>
+		<div class="foot">
+			<span>Notational · BSD 3-Clause · <a href="https://github.com/gsiener/notational">github.com/gsiener/notational</a></span>
+			<span>Not affiliated with Simplenote or Automattic.</span>
+		</div>
+	</div>
+</footer>
+
+<script>
+(function () {
+	"use strict";
+	var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+	/* ---------- speed streaks ---------- */
+	if (!reduce) {
+		var streaks = document.querySelector(".streaks");
+		for (var s = 0; s < 9; s++) {
+			var i = document.createElement("i");
+			i.style.top = (8 + Math.random() * 84) + "%";
+			i.style.animationDuration = (2.2 + Math.random() * 3.2) + "s";
+			i.style.animationDelay = (-Math.random() * 5) + "s";
+			i.style.width = (18 + Math.random() * 30) + "%";
+			streaks.appendChild(i);
+		}
+	}
+
+	/* ---------- demo ---------- */
+	var notes = [
+		{ t: "Weeknight pasta", d: "Today", tags: ["recipes"], b: "Garlic, chili flakes, a lot of olive oil.\nSave a cup of the pasta water before draining.\nLemon zest at the end — don't skip it." },
+		{ t: "Lisbon trip", d: "Yesterday", tags: ["travel"], b: "Flight TP 202, Thu 9:40am, seat 14A\nHotel near Príncipe Real, check-in after 3\n- tram 28 early, before the crowds\n- pastéis at Manteigaria" },
+		{ t: "1:1 with Sam", d: "Mon", tags: ["work"], b: "- launch checklist: who owns the release notes?\n- move the design review to Thursday\n- ask about the hiring plan" },
+		{ t: "Books to read", d: "Sep 28", tags: ["lists"], b: "The Dispossessed — Le Guin\nThe Mezzanine — Baker\nThinking in Systems — Meadows" },
+		{ t: "Wi-Fi at the cabin", d: "Sep 20", tags: [], b: "Network: pinecone-5g\nThe router is behind the bookshelf. Unplug it for ten seconds if it drops." },
+		{ t: "Gift ideas", d: "Sep 14", tags: ["lists"], b: "Mom: the good olive oil from the deli\nAlex: film camera strap\nJo: that ceramics class" },
+		{ t: "Landing page copy", d: "Sep 9", tags: ["work"], b: "Headline: Type to find. Enter to create.\nKeep it short. Show, don't tell.\nThe demo is the pitch." },
+		{ t: "Running log", d: "Aug 30", tags: ["health"], b: "Tue 5k easy, 27:10\nThu intervals 6×400\nSat long run 12k by the river" },
+		{ t: "Apartment checklist", d: "Aug 22", tags: ["home"], b: "- measure the hallway for the bookshelf\n- ask about bike storage\n- photo of the meter readings on move-in day" }
+	];
+	var q = document.getElementById("q"), list = document.getElementById("list"), editor = document.getElementById("editor"),
+		hint = document.getElementById("hint"), toast = document.getElementById("toast");
+	var shown = [], sel = 0, userDriven = false, created = null;
+
+	function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+	function words(s) { return s.toLowerCase().split(/\s+/).filter(Boolean); }
+	function hay(n) { return (n.t + " " + n.b + " " + n.tags.join(" ")).toLowerCase(); }
+	function highlight(text, ws) {
+		var out = esc(text);
+		ws.forEach(function (w) {
+			var re = new RegExp("(" + esc(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+			out = out.replace(re, "<mark>$1</mark>");
+		});
+		return out;
+	}
+
+	function render(keepSel) {
+		var text = q.value, ws = words(text);
+		shown = notes.filter(function (n) { var h = hay(n); return ws.every(function (w) { return h.indexOf(w) !== -1; }); });
+		var exact = shown.findIndex ? shown.findIndex(function (n) { return n.t.toLowerCase() === text.trim().toLowerCase(); }) : -1;
+		if (!keepSel) sel = exact > 0 ? exact : 0;
+		if (sel >= shown.length) sel = shown.length - 1;
+
+		list.innerHTML = "";
+		if (!shown.length) {
+			var li = document.createElement("li");
+			li.className = "empty";
+			li.innerHTML = "No notes match. Press <b>Return</b> to create<br><b>“" + esc(text.trim()) + "”</b>.";
+			list.appendChild(li);
+		}
+		shown.forEach(function (n, idx) {
+			var li = document.createElement("li");
+			li.setAttribute("role", "option");
+			if (idx === sel) { li.className = "sel"; li.setAttribute("aria-selected", "true"); }
+			li.style.animationDelay = Math.min(idx * 18, 160) + "ms";
+			li.innerHTML = '<span class="t">' + highlight(n.t, ws) + '</span><span class="d">' + n.d + '</span><span class="p">' + highlight(n.b.split("\n")[0], ws) + "</span>";
+			li.addEventListener("mousedown", function (e) { e.preventDefault(); takeOver(); sel = idx; render(true); q.focus(); });
+			list.appendChild(li);
+		});
+		var selRow = list.querySelector(".sel");
+		if (selRow && selRow.scrollIntoView && userDriven) selRow.scrollIntoView({ block: "nearest" });
+
+		var n = shown[sel];
+		if (n) {
+			editor.innerHTML = '<div class="title">' + esc(n.t) + "</div>" +
+				(n.tags.length ? '<div style="margin-bottom:12px">' + n.tags.map(function (t) { return '<span class="tag">' + esc(t) + "</span>"; }).join("") + "</div>" : "") +
+				'<div class="body' + (n === created ? " new" : "") + '">' + esc(n.b) + (n === created ? '<span class="caret"></span>' : "") + "</div>";
+		} else {
+			editor.innerHTML = '<div class="title" style="opacity:.35">' + esc(text.trim() || "Untitled") + '</div><div class="body" style="opacity:.5">Press Return and this becomes a note.<span class="caret"></span></div>';
+		}
+		hint.textContent = !text ? notes.length + " notes" : shown.length ? shown.length + " of " + notes.length : "↩ create";
+	}
+
+	function create() {
+		var title = q.value.trim();
+		if (!title) return;
+		var n = { t: title, d: "Just now", tags: [], b: "" };
+		notes.unshift(n);
+		created = n;
+		render();
+		sel = shown.indexOf(n); render(true);
+		toast.textContent = "Created “" + title + "”";
+		toast.classList.add("show");
+		setTimeout(function () { toast.classList.remove("show"); }, 1600);
+	}
+
+	q.addEventListener("input", function () { takeOver(); created = null; render(); });
+	q.addEventListener("keydown", function (e) {
+		if (e.key === "ArrowDown") { e.preventDefault(); takeOver(); if (sel < shown.length - 1) { sel++; render(true); } }
+		else if (e.key === "ArrowUp") { e.preventDefault(); takeOver(); if (sel > 0) { sel--; render(true); } }
+		else if (e.key === "Enter") {
+			e.preventDefault(); takeOver();
+			//Return opens an exact title match, otherwise creates the note
+			var title = q.value.trim().toLowerCase();
+			if (title && !notes.some(function (n) { return n.t.toLowerCase() === title; })) create();
+		}
+		else if (e.key === "Escape") { q.value = ""; created = null; render(); }
+	});
+
+	/* like the app: start typing anywhere and it goes into the search field */
+	document.addEventListener("keydown", function (e) {
+		if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1 || e.key === " ") return;
+		var tag = document.activeElement && document.activeElement.tagName;
+		if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+		takeOver();
+		q.focus();
+		var demo = document.getElementById("demo"), rect = demo.getBoundingClientRect();
+		if (rect.top < 0 || rect.bottom > window.innerHeight) demo.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+	});
+
+	/* ---------- autoplay until someone takes over ---------- */
+	var timers = [];
+	function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+	function takeOver() {
+		if (userDriven) return;
+		userDriven = true;
+		timers.forEach(clearTimeout);
+		timers = [];
+		if (autoNote) { notes.splice(notes.indexOf(autoNote), 1); autoNote = null; created = null; }
+	}
+	var autoNote = null;
+	function typeInto(text, done) {
+		var k = 0;
+		(function step() {
+			if (userDriven) return;
+			q.value = text.slice(0, ++k);
+			render();
+			if (k < text.length) later(step, 70 + Math.random() * 70); else later(done, 1300);
+		})();
+	}
+	function clearField(done) {
+		(function step() {
+			if (userDriven) return;
+			q.value = q.value.slice(0, -1);
+			created = null;
+			render();
+			if (q.value) later(step, 28); else later(done, 500);
+		})();
+	}
+	var script = ["pasta", "lisbon", "olive oil", "Call the plumber"];
+	function play(idx) {
+		if (userDriven) return;
+		var text = script[idx % script.length];
+		typeInto(text, function () {
+			if (idx % script.length === script.length - 1) {
+				create();
+				autoNote = created;
+				later(function () {
+					clearField(function () {
+						notes.splice(notes.indexOf(autoNote), 1); autoNote = null; created = null; render();
+						later(function () { play(idx + 1); }, 400);
+					});
+				}, 1600);
+			} else {
+				later(function () { clearField(function () { play(idx + 1); }); }, 300);
+			}
+		});
+	}
+	render();
+	if (!reduce && "IntersectionObserver" in window) {
+		var started = false;
+		new IntersectionObserver(function (entries, obs) {
+			if (entries[0].isIntersecting && !started) { started = true; obs.disconnect(); later(function () { play(0); }, 900); }
+		}, { threshold: 0.4 }).observe(document.getElementById("demo"));
+	}
+
+	/* ---------- hotkey keys press themselves ---------- */
+	if (!reduce) {
+		var kbds = document.querySelectorAll("#keys kbd");
+		setInterval(function () {
+			kbds.forEach(function (k, n) { setTimeout(function () { k.classList.add("down"); }, n * 140); });
+			setTimeout(function () { kbds.forEach(function (k) { k.classList.remove("down"); }); }, 900);
+		}, 3200);
+	}
+
+	/* ---------- reveal on scroll ---------- */
+	var reveals = document.querySelectorAll(".reveal");
+	if ("IntersectionObserver" in window && !reduce) {
+		var io = new IntersectionObserver(function (entries) {
+			entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+		}, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+		reveals.forEach(function (el, n) { el.style.transitionDelay = (n % 4) * 70 + "ms"; io.observe(el); });
+	} else {
+		reveals.forEach(function (el) { el.classList.add("in"); });
+	}
+
+	/* ---------- copy ---------- */
+	document.querySelectorAll(".copy").forEach(function (b) {
+		b.addEventListener("click", function () {
+			var src = document.getElementById(b.getAttribute("data-copy")).cloneNode(true);
+			src.querySelectorAll(".copy, .p, .c").forEach(function (x) { x.remove(); });
+			var text = src.textContent.replace(/[ \t]+$/gm, "").trim();
+			(navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () {
+				b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1400);
+			}, function () { b.textContent = "Select & copy"; });
+		});
+	});
+})();
+</script>
+</body>
+</html>
