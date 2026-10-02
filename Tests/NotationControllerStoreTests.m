@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NotationController.h"
 #import "NVNotesStore.h"
 #import "NVSyncEngine.h"
@@ -23,8 +24,7 @@
 - (NSArray *)allNotesForTesting { return allNotes; }
 @end
 
-@interface NotationControllerStoreTests : XCTestCase {
-	NSString *directory;
+@interface NotationControllerStoreTests : NVTestCase {
 	NVFakeSimplenoteService *server;
 	NVNotesStore *store;
 	NVSyncEngine *engine;
@@ -36,9 +36,8 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
 	server = [[NVFakeSimplenoteService alloc] init];
-	store = [NVNotesStore storeAtPath:[directory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
+	store = [NVNotesStore storeAtPath:[self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
 	engine = [[NVSyncEngine alloc] initWithStore:store service:server];
 }
 
@@ -47,7 +46,6 @@
 	[NSObject cancelPreviousPerformRequestsWithTarget:controller];
 	[controller setSyncEngine:nil];
 	[store close];
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
 	[super tearDown];
 }
 

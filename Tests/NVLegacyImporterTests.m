@@ -4,6 +4,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVLegacyImporter.h"
 #import "NVNoteRecord.h"
 #import "FrozenNotation.h"
@@ -11,8 +12,8 @@
 #import "NoteObject.h"
 #import "WALController.h"
 
-@interface NVLegacyImporterTests : XCTestCase {
-	NSString *directory, *databasePath, *journalDirectory;
+@interface NVLegacyImporterTests : NVTestCase {
+	NSString *databasePath, *journalDirectory;
 }
 @end
 
@@ -20,20 +21,9 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
-	databasePath = [directory stringByAppendingPathComponent:@"Notes & Settings"];
-	journalDirectory = [directory stringByAppendingPathComponent:@"Caches"];
+	databasePath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes & Settings"];
+	journalDirectory = [self.temporaryDirectory stringByAppendingPathComponent:@"Caches"];
 	[[NSFileManager defaultManager] createDirectoryAtPath:journalDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
-}
-
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[super tearDown];
-}
-
-- (NoteObject *)note:(NSString *)title body:(NSString *)body labels:(NSString *)labels {
-	NSAttributedString *text = [[NSAttributedString alloc] initWithString:body];
-	return [[NoteObject alloc] initWithNoteBody:text title:title delegate:nil labels:labels];
 }
 
 - (void)markSynced:(NoteObject *)note dirty:(BOOL)dirty {
@@ -57,7 +47,7 @@
 }
 
 - (void)testSyncedNotesAreNotImported {
-	NoteObject *a = [self note:@"Synced" body:@"fine" labels:@""];
+	NoteObject *a = NVTestNote(@"Synced", @"fine", @"");
 	[self markSynced:a dirty:NO];
 	[self writeDatabase:[NSArray arrayWithObject:a] prefs:[[NotationPrefs alloc] init]];
 
@@ -69,10 +59,10 @@
 }
 
 - (void)testNeverSyncedAndDirtyNotesAreRecoveredAsNewTaggedNotes {
-	NoteObject *never = [self note:@"Offline idea" body:@"written on a plane" labels:@"ideas travel"];
-	NoteObject *dirty = [self note:@"Edited" body:@"edited but not pushed" labels:@""];
+	NoteObject *never = NVTestNote(@"Offline idea", @"written on a plane", @"ideas travel");
+	NoteObject *dirty = NVTestNote(@"Edited", @"edited but not pushed", @"");
 	[self markSynced:dirty dirty:YES];
-	NoteObject *clean = [self note:@"Clean" body:@"in sync" labels:@""];
+	NoteObject *clean = NVTestNote(@"Clean", @"in sync", @"");
 	[self markSynced:clean dirty:NO];
 	[self writeDatabase:[NSArray arrayWithObjects:never, dirty, clean, nil] prefs:[[NotationPrefs alloc] init]];
 
@@ -92,7 +82,7 @@
 }
 
 - (void)testRecoveredTagsAreSplitAsTheTagUISplitsThem {
-	NoteObject *note = [self note:@"Tagged" body:@"with semicolons" labels:@"ideas;travel\tlater"];
+	NoteObject *note = NVTestNote(@"Tagged", @"with semicolons", @"ideas;travel\tlater");
 	[self writeDatabase:[NSArray arrayWithObject:note] prefs:[[NotationPrefs alloc] init]];
 
 	NVLegacyImporter *importer = [self importer];
@@ -103,7 +93,7 @@
 }
 
 - (void)testJournalChangesNewerThanTheDatabaseCount {
-	NoteObject *note = [self note:@"Journal" body:@"v1" labels:@""];
+	NoteObject *note = NVTestNote(@"Journal", @"v1", @"");
 	[self markSynced:note dirty:NO];
 	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[self writeDatabase:[NSArray arrayWithObject:note] prefs:prefs];
@@ -131,7 +121,7 @@
 	NotationPrefs *prefs = [[NotationPrefs alloc] init];
 	[prefs setDoesEncryption:YES];
 	[prefs setPassphraseData:[@"secret" dataUsingEncoding:NSUTF8StringEncoding] withIterations:1000];
-	[self writeDatabase:[NSArray arrayWithObject:[self note:@"Locked" body:@"x" labels:@""]] prefs:prefs];
+	[self writeDatabase:[NSArray arrayWithObject:NVTestNote(@"Locked", @"x", @"")] prefs:prefs];
 	XCTAssertEqual([[self importer] read], NVLegacyImportEncrypted);
 }
 

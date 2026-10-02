@@ -4,31 +4,19 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "AlienNoteImporter.h"
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
 #import "NVNoteRecord.h"
 
-@interface AlienNoteImporterTests : XCTestCase {
-	NSString *directory;
-}
+@interface AlienNoteImporterTests : NVTestCase
 @end
 
 @implementation AlienNoteImporterTests
 
-- (void)setUp {
-	[super setUp];
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
-	[[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
-}
-
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[super tearDown];
-}
-
 - (NSString *)importedContentOfFile:(NSString *)name text:(NSString *)text {
-	NSString *path = [directory stringByAppendingPathComponent:name];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:name];
 	XCTAssertTrue([text writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
 	AlienNoteImporter *importer = [[AlienNoteImporter alloc] initWithStoragePath:path];
 	NoteObject *note = [importer noteWithFile:path];

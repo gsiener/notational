@@ -15,6 +15,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "FrozenNotation.h"
 #import "NotationPrefs.h"
 #import "NVArchiving.h"
@@ -27,7 +28,7 @@
 #import "NVNoteRecord.h"
 #import "NotationController.h"
 
-@interface RealDatabaseCompatibilityTests : XCTestCase
+@interface RealDatabaseCompatibilityTests : NVTestCase
 @end
 
 @implementation RealDatabaseCompatibilityTests
@@ -152,8 +153,7 @@
 	NSArray *notes = [frozen unpackedNotesWithPrefs:prefs returningError:&err];
 	XCTAssertGreaterThan([notes count], (NSUInteger)0);
 
-	NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
-	NSString *storePath = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
+	NSString *storePath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
 	NVNotesStore *store = [NVNotesStore storeAtPath:storePath error:NULL];
 	XCTAssertNotNil(store);
 	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
@@ -198,7 +198,6 @@
 		  [[sortedController objectAtIndex:2] doubleValue] * 1000.0, [[sortedController firstObject] doubleValue] * 1000.0,
 		  [[sortedController lastObject] doubleValue] * 1000.0);
 	XCTAssertEqual(loaded, [notes count]);
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
 }
 
 @end

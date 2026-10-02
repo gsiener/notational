@@ -5,6 +5,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVMarkupRenderer.h"
 #import "NVTaskPaperMarkdown.h"
 
@@ -32,14 +33,11 @@
 }
 @end
 
-@interface NVMarkupRendererTests : XCTestCase {
+@interface NVMarkupRendererTests : NVTestCase {
 	FakeMarkupTool *markdown, *taskPaper;
 	NVMarkupRenderer *renderer;
-	NSString *folder;
 }
 @end
-
-static NSString *RepoPath(void);
 
 @implementation NVMarkupRendererTests
 
@@ -48,12 +46,6 @@ static NSString *RepoPath(void);
 	markdown = [FakeMarkupTool toolWithPrefix:@"md:"];
 	taskPaper = [FakeMarkupTool toolWithPrefix:@"tp:"];
 	renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:markdown taskPaperTool:taskPaper];
-	folder = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
-}
-
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:folder error:NULL];
-	[super tearDown];
 }
 
 #pragma mark Converting
@@ -110,7 +102,7 @@ static NSString *RepoPath(void);
 #pragma mark The preview template
 
 - (NSString *)write:(NSString *)contents to:(NSString *)name inFolder:(NSString *)subfolder modified:(NSTimeInterval)secondsAgo {
-	NSString *dir = [folder stringByAppendingPathComponent:subfolder];
+	NSString *dir = [self.temporaryDirectory stringByAppendingPathComponent:subfolder];
 	[[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
 	NSString *path = [dir stringByAppendingPathComponent:name];
 	XCTAssertTrue([contents writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
@@ -119,8 +111,8 @@ static NSString *RepoPath(void);
 }
 
 - (void)useTemplateFolders {
-	[renderer setCustomTemplateFolder:[folder stringByAppendingPathComponent:@"custom"]];
-	[renderer setBundledTemplateFolder:[folder stringByAppendingPathComponent:@"bundled"]];
+	[renderer setCustomTemplateFolder:[self.temporaryDirectory stringByAppendingPathComponent:@"custom"]];
+	[renderer setBundledTemplateFolder:[self.temporaryDirectory stringByAppendingPathComponent:@"bundled"]];
 	[self write:@"bundled {%content%} <style>{%style%}</style>" to:@"template.html" inFolder:@"bundled" modified:100];
 	[self write:@"b{}" to:@"custom.css" inFolder:@"bundled" modified:100];
 }
@@ -163,8 +155,8 @@ static NSString *RepoPath(void);
 #pragma mark Updating a page in place
 
 - (void)testTheAppTemplateHasAContentElement {
-	[renderer setCustomTemplateFolder:[folder stringByAppendingPathComponent:@"custom"]];
-	[renderer setBundledTemplateFolder:RepoPath()];
+	[renderer setCustomTemplateFolder:[self.temporaryDirectory stringByAppendingPathComponent:@"custom"]];
+	[renderer setBundledTemplateFolder:NVTestRepoPath()];
 	NSString *elementID = nil;
 	NSString *inner = [renderer contentElementHTMLForHTML:@"<p>x</p>" title:@"T" elementID:&elementID];
 	XCTAssertEqualObjects(elementID, @"contentdiv");
@@ -244,15 +236,13 @@ static NSString *RepoPath(void);
 
 #pragma mark Golden files (the real tools)
 
-static NSString *RepoPath(void) {
-	return [[[NSString stringWithUTF8String:__FILE__] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
-}
+static NSString *const ArchivedMultiMarkdown = @"build/Notational.xcarchive/Products/Applications/Notational.app/Contents/Resources/multimarkdown";
 
 //the multimarkdown binary is built with the app; these run once the app has been built (CI builds it first)
 static NSString *MultiMarkdownPath(void) {
 	NSString *path = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_MULTIMARKDOWN"];
 	if ([path length]) return path;
-	path = [RepoPath() stringByAppendingPathComponent:@"build/Notational.xcarchive/Products/Applications/Notational.app/Contents/Resources/multimarkdown"];
+	path = [NVTestRepoPath() stringByAppendingPathComponent:ArchivedMultiMarkdown];
 	return [[NSFileManager defaultManager] isExecutableFileAtPath:path] ? path : nil;
 }
 
@@ -263,7 +253,7 @@ static NSString *MultiMarkdownPath(void) {
 }
 
 - (void)assertFixture:(NSString *)name {
-	NSString *fixtures = [RepoPath() stringByAppendingPathComponent:@"Tests/Fixtures/Markup"];
+	NSString *fixtures = NVTestFixturesPath(@"Markup");
 	NSString *text = [NSString stringWithContentsOfFile:[fixtures stringByAppendingPathComponent:[name stringByAppendingPathExtension:@"txt"]] encoding:NSUTF8StringEncoding error:NULL];
 	NSString *expected = [NSString stringWithContentsOfFile:[fixtures stringByAppendingPathComponent:[name stringByAppendingPathExtension:@"html"]] encoding:NSUTF8StringEncoding error:NULL];
 	XCTAssertNotNil(text);

@@ -15,22 +15,16 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVSimplenoteHTTPService.h"
 #import "NVSyncEngine.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
 
-@interface RealSimplenoteSyncTests : XCTestCase {
-	NSString *directory;
-}
+@interface RealSimplenoteSyncTests : NVTestCase
 @end
 
 @implementation RealSimplenoteSyncTests
-
-- (void)tearDown {
-	if (directory) [[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[super tearDown];
-}
 
 - (void)testFullSyncPushAndServerMergeAgainstRealAccount {
 	NSDictionary *env = [[NSProcessInfo processInfo] environment];
@@ -39,8 +33,7 @@
 		XCTSkip(@"set TEST_RUNNER_NV_SIMPLENOTE_TOKEN and TEST_RUNNER_NV_SIMPLENOTE_TEST_NOTE");
 	}
 
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
-	NVNotesStore *store = [NVNotesStore storeAtPath:[directory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
+	NVNotesStore *store = [NVNotesStore storeAtPath:[self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"] error:NULL];
 	NVSimplenoteHTTPService *service = [[NVSimplenoteHTTPService alloc] initWithToken:token clientID:@"nvalt-e2e-test"];
 	NVSyncEngine *engine = [[NVSyncEngine alloc] initWithStore:store service:service];
 	[engine setDelegateQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];

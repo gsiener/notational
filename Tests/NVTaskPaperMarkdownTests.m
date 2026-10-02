@@ -6,6 +6,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVTaskPaperMarkdown.h"
 
 static NSString *const StyleHeader = @"<style>.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}</style>\n";
@@ -15,12 +16,8 @@ static NSString *const StyleHeader = @"<style>.tag strong {font-weight:normal;co
 
 @implementation NVTaskPaperMarkdownTests
 
-- (NSString *)fixturesPath {
-	return [[[[NSString stringWithUTF8String:__FILE__] stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"Fixtures"] stringByAppendingPathComponent:@"TaskPaper"];
-}
-
 - (void)testFixturesMatchTheRubyScriptOutput {
-	NSString *dir = [self fixturesPath];
+	NSString *dir = NVTestFixturesPath(@"TaskPaper");
 	NSUInteger count = 0;
 	for (NSString *file in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dir error:NULL]) {
 		if (![[file pathExtension] isEqualToString:@"txt"]) continue;

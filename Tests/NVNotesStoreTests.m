@@ -4,11 +4,11 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
 
-@interface NVNotesStoreTests : XCTestCase {
-	NSString *directory;
+@interface NVNotesStoreTests : NVTestCase {
 	NSString *path;
 }
 @end
@@ -17,13 +17,7 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
-	path = [directory stringByAppendingPathComponent:@"Notes.sqlite"];
-}
-
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[super tearDown];
+	path = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
 }
 
 - (NVNotesStore *)openStore {
@@ -288,7 +282,6 @@
 }
 
 - (void)testUnreadableFileIsMovedAsideNotDeleted {
-	[[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
 	NSData *garbage = [@"this is not a sqlite database, it's a lovely note someone might want back" dataUsingEncoding:NSUTF8StringEncoding];
 	[garbage writeToFile:path atomically:YES];
 

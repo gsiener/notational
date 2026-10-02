@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NVSyncEngine.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
@@ -183,8 +184,7 @@
 }
 @end
 
-@interface NVSyncEngineTests : XCTestCase {
-	NSString *directory;
+@interface NVSyncEngineTests : NVTestCase {
 	NVFakeSimplenoteService *server;
 }
 @end
@@ -193,17 +193,11 @@
 
 - (void)setUp {
 	[super setUp];
-	directory = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
 	server = [[NVFakeSimplenoteService alloc] init];
 }
 
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
-	[super tearDown];
-}
-
 - (NVTestMachine *)machine:(NSString *)name {
-	return [[NVTestMachine alloc] initAtPath:[directory stringByAppendingPathComponent:[name stringByAppendingString:@".sqlite"]]
+	return [[NVTestMachine alloc] initAtPath:[self.temporaryDirectory stringByAppendingPathComponent:[name stringByAppendingString:@".sqlite"]]
 									   server:server];
 }
 

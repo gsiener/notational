@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import <WebKit/WebKit.h>
 #import "PreviewController.h"
 #import "NVMarkupRenderer.h"
@@ -24,8 +25,7 @@
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { [_loaded fulfill]; }
 @end
 
-@interface PreviewPageTests : XCTestCase {
-	NSString *folder;
+@interface PreviewPageTests : NVTestCase {
 	WKWebView *webView;
 	PreviewPageLoadWaiter *waiter;
 	NVMarkupRenderer *renderer;
@@ -36,28 +36,25 @@
 
 - (void)setUp {
 	[super setUp];
-	folder = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
-	[[NSFileManager defaultManager] createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:NULL];
 	WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
 	[[configuration userContentController] addUserScript:[PreviewController scriptWatchingScript]];
 	webView = [[WKWebView alloc] initWithFrame:NSMakeRect(0, 0, 400, 300) configuration:configuration];
 	waiter = [[PreviewPageLoadWaiter alloc] init];
 	[webView setNavigationDelegate:waiter];
 	renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:nil taskPaperTool:nil];
-	//the app's own template and style; the support folder has no jquery.js, as in the app
-	[renderer setBundledTemplateFolder:[[[NSString stringWithUTF8String:__FILE__] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent]];
-	[renderer setCustomTemplateFolder:folder];
+	//the app's own template and style; the support self.temporaryDirectory has no jquery.js, as in the app
+	[renderer setBundledTemplateFolder:NVTestRepoPath()];
+	[renderer setCustomTemplateFolder:self.temporaryDirectory];
 }
 
 - (void)tearDown {
 	[webView setNavigationDelegate:nil];
 	webView = nil;
-	[[NSFileManager defaultManager] removeItemAtPath:folder error:NULL];
 	[super tearDown];
 }
 
 - (void)load:(NSString *)page {
-	NSURL *url = [NSURL fileURLWithPath:[folder stringByAppendingPathComponent:@"preview.html"]];
+	NSURL *url = [NSURL fileURLWithPath:[self.temporaryDirectory stringByAppendingPathComponent:@"preview.html"]];
 	XCTAssertTrue([page writeToURL:url atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
 	[waiter setLoaded:[self expectationWithDescription:@"page loaded"]];
 	[webView loadFileURL:url allowingReadAccessToURL:[NSURL fileURLWithPath:@"/"]];
@@ -89,36 +86,36 @@
 }
 
 - (void)testATemplateWhoseScriptsRanIsLoadedAgain {
-	[renderer setBundledTemplateFolder:folder];
+	[renderer setBundledTemplateFolder:self.temporaryDirectory];
 	[@"<html><body><div id=\"c\">{%content%}</div><script>document.title = 'ran';</script></body></html>"
-	 writeToFile:[folder stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	 writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[self load:[renderer pageForHTML:@"<p>one</p>" title:@"Note"]];
 	XCTAssertEqualObjects([self evaluate:[PreviewController scriptReplacingContentOfElement:@"c" withHTML:@"<p>two</p>"]], @NO);
 	XCTAssertEqualObjects([self evaluate:@"document.getElementById('c').innerHTML"], @"<p>one</p>");
 }
 
 - (void)testATemplateWhoseScriptsFailedIsUpdatedInPlace {
-	[renderer setBundledTemplateFolder:folder];
+	[renderer setBundledTemplateFolder:self.temporaryDirectory];
 	[@"<html><body><div id=\"c\">{%content%}</div><script src=\"missing.js\"></script><script>missing();</script></body></html>"
-	 writeToFile:[folder stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	 writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[self load:[renderer pageForHTML:@"<p>one</p>" title:@"Note"]];
 	XCTAssertEqualObjects([self evaluate:[PreviewController scriptReplacingContentOfElement:@"c" withHTML:@"<p>two</p>"]], @YES);
 }
 
 - (void)testATemplateWithAScriptFileThatLoadedIsLoadedAgain {
-	[renderer setBundledTemplateFolder:folder];
-	[@"window.fromFile = 1;" writeToFile:[folder stringByAppendingPathComponent:@"present.js"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	[renderer setBundledTemplateFolder:self.temporaryDirectory];
+	[@"window.fromFile = 1;" writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"present.js"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[@"<html><body><div id=\"c\">{%content%}</div><script src=\"present.js\"></script><script>missing();</script></body></html>"
-	 writeToFile:[folder stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	 writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[self load:[renderer pageForHTML:@"<p>one</p>" title:@"Note"]];
 	XCTAssertEqualObjects([self evaluate:@"String(window.fromFile)"], @"1");
 	XCTAssertEqualObjects([self evaluate:[PreviewController scriptReplacingContentOfElement:@"c" withHTML:@"<p>two</p>"]], @NO);
 }
 
 - (void)testATemplateWithoutScriptsIsUpdatedInPlace {
-	[renderer setBundledTemplateFolder:folder];
+	[renderer setBundledTemplateFolder:self.temporaryDirectory];
 	[@"<html><body><div id=\"c\">{%content%}</div><img src=\"missing.png\"></body></html>"
-	 writeToFile:[folder stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	 writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[self load:[renderer pageForHTML:@"<p>one</p>" title:@"Note"]];
 	XCTAssertEqualObjects([self evaluate:[PreviewController scriptReplacingContentOfElement:@"c" withHTML:@"<p>two</p>"]], @YES);
 	XCTAssertEqualObjects([self evaluate:@"document.getElementById('c').innerHTML"], @"<p>two</p>");

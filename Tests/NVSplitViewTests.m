@@ -6,7 +6,9 @@
 #import <XCTest/XCTest.h>
 #import "NVSplitView.h"
 
-@interface NVSplitViewTests : XCTestCase
+@interface NVSplitViewTests : XCTestCase {
+	NSMutableArray *suiteNames;
+}
 @end
 
 @implementation NVSplitViewTests
@@ -57,8 +59,17 @@
 	XCTAssertEqualObjects([NVSplitView defaultsKeyForAutosaveName:@"x"], @"NSSplitView Subview Frames x");
 }
 
+- (void)tearDown {
+	for (NSString *suite in suiteNames) [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:suite];
+	suiteNames = nil;
+	[super tearDown];
+}
+
 - (NSUserDefaults *)freshDefaults {
-	return [[NSUserDefaults alloc] initWithSuiteName:[@"NVSplitViewTests-" stringByAppendingString:[[NSUUID UUID] UUIDString]]];
+	NSString *suite = [@"NVSplitViewTests-" stringByAppendingString:[[NSUUID UUID] UUIDString]];
+	if (!suiteNames) suiteNames = [[NSMutableArray alloc] init];
+	[suiteNames addObject:suite];
+	return [[NSUserDefaults alloc] initWithSuiteName:suite];
 }
 
 - (void)testMigrationWritesTheNewKeyOnce {

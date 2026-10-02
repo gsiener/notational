@@ -5,6 +5,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
 #import "NVNoteRecord.h"
@@ -33,22 +34,18 @@
 - (NSImage *)labelImageForWord:(NSString *)word highlighted:(BOOL)highlighted { return nil; }
 @end
 
-@interface NoteObjectTests : XCTestCase
+@interface NoteObjectTests : NVTestCase
 @end
 
 @implementation NoteObjectTests
 
-static NSAttributedString *Body(NSString *text) {
-	return [[NSAttributedString alloc] initWithString:text];
-}
-
 - (void)testANoteWorksWithoutAController {
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body text") title:@"Title" delegate:nil labels:@"work home"];
+	NoteObject *note = NVTestNote(@"Title", @"body text", @"work home");
 	XCTAssertEqualObjects(titleOfNote(note), @"Title");
 	XCTAssertEqualObjects([[note contentString] string], @"body text");
 	[note setTitleString:@"New title"];
 	[note setLabelString:@"home"];
-	[note setContentString:Body(@"new body")];
+	[note setContentString:NVTestBody(@"new body")];
 	XCTAssertEqualObjects(titleOfNote(note), @"New title");
 	XCTAssertEqualObjects(labelsOfNote(note), @"home");
 	XCTAssertEqualObjects([[note contentString] string], @"new body");
@@ -56,7 +53,7 @@ static NSAttributedString *Body(NSString *text) {
 
 - (void)testRenamingTellsTheDelegate {
 	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:delegate labels:nil];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"body") title:@"Title" delegate:delegate labels:nil];
 	[delegate.events removeAllObjects];
 	[note setTitleString:@"Renamed"];
 	XCTAssertTrue([delegate.events containsObject:@"changed Title"], @"%@", delegate.events);
@@ -64,7 +61,7 @@ static NSAttributedString *Body(NSString *text) {
 
 - (void)testRelabelingReportsTheLabelSets {
 	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:delegate labels:@"old"];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"body") title:@"Title" delegate:delegate labels:@"old"];
 	[delegate.events removeAllObjects];
 	[note setLabelString:@"new"];
 	XCTAssertTrue([delegate.events containsObject:@"removed labels"], @"%@", delegate.events);
@@ -73,12 +70,11 @@ static NSAttributedString *Body(NSString *text) {
 
 - (void)testExternalEditsAskTheDelegateToRefresh {
 	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:delegate labels:nil];
-	NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"body") title:@"Title" delegate:delegate labels:nil];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"external.txt"];
 	[@"edited in another app" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[delegate.events removeAllObjects];
 	[note odbEditor:nil didModifyFile:path newFileLocation:nil context:nil];
-	[[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 	XCTAssertEqualObjects([[note contentString] string], @"edited in another app");
 	XCTAssertTrue([delegate.events containsObject:@"contents"], @"%@", delegate.events);
 	XCTAssertTrue([delegate.events containsObject:@"write"], @"%@", delegate.events);
@@ -114,7 +110,7 @@ static NVNoteRecord *Record(NSString *content, NSArray *tags) {
 	XCTAssertTrue(noteContainsUTF8String(note, &context));
 
 	//an edit by the user is still written
-	[note setContentString:Body(@"typed here")];
+	[note setContentString:NVTestBody(@"typed here")];
 	XCTAssertTrue([delegate.events containsObject:@"write"], @"%@", delegate.events);
 }
 
@@ -127,14 +123,14 @@ static NVNoteRecord *Record(NSString *content, NSArray *tags) {
 }
 
 - (void)testRecordTagsAreSplitAsTheTagUISplitsThem {
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:nil labels:@"work;home\tideas, later work"];
+	NoteObject *note = NVTestNote(@"Title", @"body", @"work;home\tideas, later work");
 	NSArray *expected = @[@"work", @"home", @"ideas", @"later"];
 	XCTAssertEqualObjects([note orderedLabelTitles], expected);
 	XCTAssertEqualObjects([[note noteRecordRepresentation] tags], expected);
 }
 
 - (void)testARecordWithoutLabelsHasNoTags {
-	NoteObject *note = [[NoteObject alloc] initWithNoteBody:Body(@"body") title:@"Title" delegate:nil labels:nil];
+	NoteObject *note = NVTestNote(@"Title", @"body", nil);
 	XCTAssertEqualObjects([[note noteRecordRepresentation] tags], [NSArray array]);
 }
 
@@ -154,7 +150,7 @@ static NVNoteRecord *Record(NSString *content, NSArray *tags) {
 
 - (void)testAnEditBeforeTheBodyIsShownKeepsTheEditorsAttributes {
 	NoteObject *note = [[NoteObject alloc] initWithNoteRecord:Record(@"Title\nhttps://example.com", @[]) delegate:nil];
-	[note setContentString:Body(@"https://example.com typed")];
+	[note setContentString:NVTestBody(@"https://example.com typed")];
 	XCTAssertNil([[note contentString] attribute:NSLinkAttributeName atIndex:0 effectiveRange:NULL]);
 }
 

@@ -38,12 +38,8 @@
 }
 
 - (void)tearDown {
-	NSArray *keys = CFBridgingRelease(CFPreferencesCopyKeyList((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
-	for (NSString *key in keys) CFPreferencesSetValue((__bridge CFStringRef)key, NULL, (__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	CFPreferencesSynchronize((__bridge CFStringRef)sourceDomain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	keys = CFBridgingRelease(CFPreferencesCopyKeyList((__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost));
-	for (NSString *key in keys) CFPreferencesSetValue((__bridge CFStringRef)key, NULL, (__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-	CFPreferencesSynchronize((__bridge CFStringRef)targetSuite, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+	[[NSUserDefaults standardUserDefaults] removePersistentDomainForName:sourceDomain];
+	[[NSUserDefaults standardUserDefaults] removePersistentDomainForName:targetSuite];
 	[super tearDown];
 }
 

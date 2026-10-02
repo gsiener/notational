@@ -11,6 +11,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "NVTestSupport.h"
 #import "FrozenNotation.h"
 #import "NotationPrefs.h"
 #import "NVArchiving.h"
@@ -19,37 +20,18 @@
 #import "WALController.h"
 #import "NSData_transformations.h"
 
-@interface NotesDatabaseTests : XCTestCase {
-	NSString *tempDirectory;
-}
+@interface NotesDatabaseTests : NVTestCase
 @end
 
 @implementation NotesDatabaseTests
 
-- (void)setUp {
-	[super setUp];
-	tempDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:
-					  [[NSProcessInfo processInfo] globallyUniqueString]];
-	[[NSFileManager defaultManager] createDirectoryAtPath:tempDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
-}
-
-- (void)tearDown {
-	[[NSFileManager defaultManager] removeItemAtPath:tempDirectory error:NULL];
-	[super tearDown];
-}
-
 #pragma mark Helpers
-
-- (NoteObject *)noteWithTitle:(NSString *)title body:(NSString *)body {
-	NSAttributedString *bodyText = [[NSAttributedString alloc] initWithString:body];
-	return [[NoteObject alloc] initWithNoteBody:bodyText title:title delegate:nil labels:@""];
-}
 
 - (NSMutableArray *)sampleNotes {
 	return [NSMutableArray arrayWithObjects:
-			[self noteWithTitle:@"Groceries" body:@"eggs\nmilk\ncoffee"],
-			[self noteWithTitle:@"Ünïcødé ✓" body:@"emoji 🗒️ and accents àéîõü"],
-			[self noteWithTitle:@"Empty body" body:@""],
+			NVTestNote(@"Groceries", @"eggs\nmilk\ncoffee", @""),
+			NVTestNote(@"Ünïcødé ✓", @"emoji 🗒️ and accents àéîõü", @""),
+			NVTestNote(@"Empty body", @"", @""),
 			nil];
 }
 
@@ -118,7 +100,7 @@
 
 - (void)testEncryptedDatabaseBytesDoNotContainPlaintext {
 	NotationPrefs *prefs = [self encryptedPrefsWithPassphrase:@"secret"];
-	NSMutableArray *notes = [NSMutableArray arrayWithObject:[self noteWithTitle:@"Diary" body:@"PLAINTEXT-CANARY-PLAINTEXT-CANARY"]];
+	NSMutableArray *notes = [NSMutableArray arrayWithObject:NVTestNote(@"Diary", @"PLAINTEXT-CANARY-PLAINTEXT-CANARY", @"")];
 	NSData *databaseBytes = [FrozenNotation frozenDataWithExistingNotes:notes deletedNotes:[NSMutableSet set] prefs:prefs];
 	NSData *canary = [@"PLAINTEXT-CANARY" dataUsingEncoding:NSUTF8StringEncoding];
 	XCTAssertEqual([databaseBytes rangeOfData:canary options:0 range:NSMakeRange(0, [databaseBytes length])].location, (NSUInteger)NSNotFound);
@@ -144,7 +126,7 @@
 	NSData *key = [self journalKey];
 	NSMutableArray *notes = [self sampleNotes];
 
-	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertNotNil(writer);
 	for (NoteObject *note in notes)
 		XCTAssertTrue([writer writeNoteObject:note]);
@@ -153,10 +135,10 @@
 	writer = nil;
 
 	//a leftover journal blocks a new writer, which is how launch detects a crash
-	WALStorageController *blocked = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALStorageController *blocked = [[WALStorageController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertNil(blocked);
 
-	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertNotNil(recovery);
 	NSDictionary *recovered = [recovery recoveredNotes];
 	XCTAssertEqual([recovered count], [notes count]);
@@ -169,9 +151,9 @@
 
 - (void)testJournalKeepsNewestRevisionOfANote {
 	NSData *key = [self journalKey];
-	NoteObject *note = [self noteWithTitle:@"Draft" body:@"version 1"];
+	NoteObject *note = NVTestNote(@"Draft", @"version 1", @"");
 
-	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	[note setContentString:[[NSAttributedString alloc] initWithString:@"version 2"]];
 	[note incrementLSN];
@@ -179,7 +161,7 @@
 	XCTAssertTrue([writer synchronize]);
 	writer = nil; //release the journal writer
 
-	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	NSArray *recovered = [[recovery recoveredNotes] allValues];
 	XCTAssertEqual([recovered count], (NSUInteger)1);
 	XCTAssertEqualObjects([[[recovered lastObject] contentString] string], @"version 2");
@@ -188,16 +170,16 @@
 
 - (void)testJournalRecordsRemovals {
 	NSData *key = [self journalKey];
-	NoteObject *note = [self noteWithTitle:@"Doomed" body:@"bye"];
+	NoteObject *note = NVTestNote(@"Doomed", @"bye", @"");
 
-	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	[note incrementLSN];
 	XCTAssertTrue([writer writeRemovalForNote:note]);
 	XCTAssertTrue([writer synchronize]);
 	writer = nil; //release the journal writer
 
-	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:key];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:key];
 	NSArray *recovered = [[recovery recoveredNotes] allValues];
 	XCTAssertEqual([recovered count], (NSUInteger)1);
 	XCTAssertTrue([[recovered lastObject] isKindOfClass:[DeletedNoteObject class]]);
@@ -205,14 +187,14 @@
 }
 
 - (void)testJournalWithWrongKeyRecoversNothing {
-	NoteObject *note = [self noteWithTitle:@"Private" body:@"text"];
-	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:[self journalKey]];
+	NoteObject *note = NVTestNote(@"Private", @"text", @"");
+	WALStorageController *writer = [[WALStorageController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:[self journalKey]];
 	XCTAssertTrue([writer writeNoteObject:note]);
 	XCTAssertTrue([writer synchronize]);
 	writer = nil; //release the journal writer
 
 	NSData *otherKey = [[self encryptedPrefsWithPassphrase:@"someone else"] WALSessionKey];
-	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[tempDirectory fileSystemRepresentation] encryptionKey:otherKey];
+	WALRecoveryController *recovery = [[WALRecoveryController alloc] initWithParentFSRep:[self.temporaryDirectory fileSystemRepresentation] encryptionKey:otherKey];
 	XCTAssertEqual([[recovery recoveredNotes] count], (NSUInteger)0);
 	[recovery destroyLogFile];
 }
