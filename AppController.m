@@ -33,10 +33,8 @@
 #import "EmptyView.h"
 #import "DualField.h"
 #import "TitlebarButton.h"
-#import "RBSplitView/RBSplitView.h"
 #import "BookmarksController.h"
 #import "MultiplePageView.h"
-#import "LinearDividerShader.h"
 #import "SecureTextEntryManager.h"
 #import "TagEditingManager.h"
 #import "NotesTableHeaderCell.h"
@@ -60,6 +58,8 @@
 
 #define kSplitViewExpandedDividerThickness 8.0f
 #define kSplitViewCollapsedDividerThickness 5.0f
+#define kNotesListMinDimension 80.0f
+#define kNotesListMaxDimension 600.0f
 
 //#define NSTextViewChangedNotification @"TextViewHasChangedContents"
 //#define kDefaultMarkupPreviewMode @"markupPreviewMode"
@@ -148,9 +148,6 @@ BOOL splitViewAwoke;
         NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
         [appleEventManager setEventHandler:self andSelector:@selector(handleGetURLEvent:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
         
-        //	dividerShader = [[LinearDividerShader alloc] initWithStartColor:[NSColor colorWithCalibratedWhite:0.988 alpha:1.0]
-        //														   endColor:[NSColor colorWithCalibratedWhite:0.875 alpha:1.0]];
-        dividerShader = [[LinearDividerShader alloc] initWithBaseColors:self];
         isCreatingANote = isFilteringFromTyping = typedStringIsCached = NO;
         typedString = @"";
         self.isEditing=NO;
@@ -168,36 +165,27 @@ BOOL splitViewAwoke;
 	[NSApp setDelegate:self];
 	[window setDelegate:self];
     
-    //ElasticThreads>> set up the rbsplitview programatically to remove dependency on IBPlugin
-    splitView = [[RBSplitView alloc] initWithFrame:[mainView frame] andSubviews:2];
-    [splitView setAutosaveName:@"centralSplitView" recursively:NO];
+    //the split view is made in code, so the nib needs no plugin for it
+    splitView = [[NVSplitView alloc] initWithFrame:[mainView frame]];
+    [splitView setVertical:YES];
+    [splitView setDividerStyle:NSSplitViewDividerStyleThin];
     [splitView setDelegate:self];
-//here
-    NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(1.0,1.0)];
-    [image lockFocus];
-    [[NSColor clearColor] set];
-    NSRectFill(NSMakeRect(0.0,0.0,1.0,1.0));
-    [image unlockFocus];
-//    [image setFlipped:YES];
-    [splitView setDivider:image];
-    
-//    [splitView setDividerThickness:kSplitViewExpandedDividerThickness];
     [splitView setAutoresizesSubviews:YES];
     [splitView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [mainView addSubview:splitView];
-    //[mainView setNextResponder:field];//<<--
     [splitView setNextKeyView:notesTableView];
-    notesSubview = [splitView subviewAtPosition:0];
-	[notesSubview setMinDimension: 80.0
-                  andMaxDimension:600.0];
-    [notesSubview setCanCollapse:YES];
+    NSRect splitBounds = [splitView bounds];
+    CGFloat initialListWidth = MIN(200.0, NSWidth(splitBounds) / 2.0);
+    notesSubview = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, initialListWidth, NSHeight(splitBounds))];
+    splitSubview = [[NSView alloc] initWithFrame:NSMakeRect(initialListWidth + kSplitViewExpandedDividerThickness, 0,
+                                                            MAX(NSWidth(splitBounds) - initialListWidth - kSplitViewExpandedDividerThickness, 1.0),
+                                                            NSHeight(splitBounds))];
+    [splitView addSubview:notesSubview];
+    [splitView addSubview:splitSubview];
     [notesSubview setAutoresizesSubviews:YES];
     [notesSubview addSubview:notesScrollView];
-    splitSubview = [splitView subviewAtPosition:1];
-    [notesScrollView setFrame:[notesSubview frame]];
+    [notesScrollView setFrame:[notesSubview bounds]];
     [notesScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [splitSubview setMinDimension:1 andMaxDimension:0];
-    [splitSubview setCanCollapse:NO];
     [splitSubview setAutoresizesSubviews:YES];
     [splitSubview addSubview:textScrollView];
     
@@ -207,8 +195,8 @@ BOOL splitViewAwoke;
     [textScrollView setContentView:(ETClipView *)newClipView];
     [textScrollView setDocumentView:textView];
     
-    [textScrollView setFrame:[splitSubview frame]];
-    //    [textScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+    [textScrollView setFrame:[splitSubview bounds]];
+    [textScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     
     [splitView adjustSubviews];
     [splitView needsDisplay];
@@ -257,25 +245,26 @@ BOOL splitViewAwoke;
 	if (!awakenedViews) {
 		//NSLog(@"all (hopefully relevant) views awakend!");
 		[self _configureDividerForCurrentLayout];
-		[splitView restoreState:YES];
-		if ([notesSubview dimension]<200.0) {
+		[self restoreSplitViewState];
+		if ([self notesListDimension]<200.0) {
 			if ([splitView isVertical]) {   ///vertical means "Horiz layout"/notes list is to the left of the note body
-				if (([splitView frame].size.width < 600.0) && ([splitView frame].size.width - 400 > [notesSubview dimension])) {
-					[notesSubview setDimension:[splitView frame].size.width-400.0];
+				if (([splitView frame].size.width < 600.0) && ([splitView frame].size.width - 400 > [self notesListDimension])) {
+					[self setNotesListDimension:[splitView frame].size.width-400.0];
 				}else if ([splitView frame].size.width >= 600.0) {
-					[notesSubview setDimension:200.0];
+					[self setNotesListDimension:200.0];
 				}
 			}else{
-				if (([splitView frame].size.height < 600.0) && ([splitView frame].size.height - 400 > [notesSubview dimension])) {
-					[notesSubview setDimension:[splitView frame].size.height-450.0];
+				if (([splitView frame].size.height < 600.0) && ([splitView frame].size.height - 400 > [self notesListDimension])) {
+					[self setNotesListDimension:[splitView frame].size.height-450.0];
 				}else if ([splitView frame].size.height >= 600.0){
-					[notesSubview setDimension:150.0];
+					[self setNotesListDimension:150.0];
 				}
 			}
 		}
 		[splitView adjustSubviews];
 		[splitSubview addSubview:editorStatusView positioned:NSWindowAbove relativeTo:splitSubview];
 		[editorStatusView setFrame:[textScrollView frame]];
+		[editorStatusView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
 		
 		[notesTableView restoreColumns];
 		
@@ -552,7 +541,7 @@ terminateApp:
 		return (numberSelected == 1);
 		
 	} else if (selector == @selector(toggleCollapse:)) {
-        if ([notesSubview isCollapsed]) {
+        if ([self notesListIsCollapsed]) {
             [menuItem setTitle:NSLocalizedString(@"Expand Notes List",@"menu item title for expanding notes list")];
         }else{
             
@@ -637,28 +626,115 @@ terminateApp:
     
 }
 
+#pragma mark notes list and divider
+
+- (BOOL)notesListIsCollapsed {
+    return [splitView isSubviewCollapsed:notesSubview];
+}
+
+//the notes list's width (side-by-side layout) or height (stacked); a collapsed list gives the
+//size it will have when expanded
+- (CGFloat)notesListDimension {
+    NSRect frame = [notesSubview frame];
+    CGFloat current = [splitView isVertical] ? NSWidth(frame) : NSHeight(frame);
+    if ([self notesListIsCollapsed]) {
+        return lastNotesDimension > 0.0 ? lastNotesDimension : current;
+    }
+    return current;
+}
+
+//moves the divider so the list has this size (within its limits)
+- (void)setNotesListDimension:(CGFloat)dimension {
+    dimension = MAX(dimension, kNotesListMinDimension);
+    if ([self notesListIsCollapsed]) {
+        lastNotesDimension = dimension;
+        return;
+    }
+    [splitView setPosition:dimension ofDividerAtIndex:0];
+    lastNotesDimension = [self notesListDimension];
+}
+
+//sets the list's frame outright, e.g. right after the layout changed and the old size is meaningless
+- (void)forceNotesListDimension:(CGFloat)dimension {
+    NSRect frame = [notesSubview frame];
+    if ([splitView isVertical]) {
+        frame.size.width = dimension;
+    } else {
+        frame.size.height = dimension;
+    }
+    [notesSubview setFrame:frame];
+}
+
+- (NSString *)splitViewAutosaveNameForCurrentLayout {
+    //a saved position is for one layout; the other layout keeps its own
+    return [splitView isVertical] ? @"centralSplitView V" : @"centralSplitView H";
+}
+
+//restores the divider position (and whether the list was collapsed) saved under the layout's
+//autosave name, first converting what the old RBSplitView saved if that's all there is
+- (void)restoreSplitViewState {
+    NSString *name = [self splitViewAutosaveNameForCurrentLayout];
+    [NVSplitView migrateLegacyStateNamed:@"centralSplitView"
+                          toAutosaveName:name
+                                vertical:[splitView isVertical]
+                                    size:[splitView frame].size
+                        dividerThickness:kSplitViewExpandedDividerThickness
+                                defaults:[NSUserDefaults standardUserDefaults]];
+    splitViewIsRestoring = YES;   //a collapsed list is restored even though no note is open yet
+    [splitView setAutosaveName:name];
+    splitViewIsRestoring = NO;
+    notesWasCollapsed = [self notesListIsCollapsed];
+    if (notesWasCollapsed) {
+        [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
+        NSRect frame = [notesSubview frame];
+        CGFloat size = [splitView isVertical] ? NSWidth(frame) : NSHeight(frame);
+        if (size >= kNotesListMinDimension) lastNotesDimension = size;
+    } else {
+        lastNotesDimension = [self notesListDimension];
+    }
+    [splitView adjustSubviews];
+}
+
+//the list was collapsed or expanded, by the menu, a double click on the divider, or dragging it
+- (void)notesListCollapsedStateMayHaveChanged {
+    BOOL collapsed = [self notesListIsCollapsed];
+    if (collapsed == notesWasCollapsed) {
+        if (!collapsed && !splitViewIsChangingLayout) lastNotesDimension = [self notesListDimension];
+        return;
+    }
+    notesWasCollapsed = collapsed;
+    if (splitViewIsChangingLayout) return;
+    if (collapsed) {
+        [self setDualFieldIsVisible:NO];
+        [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
+        [window makeFirstResponder:textView];
+    } else {
+        [self setDualFieldIsVisible:YES];
+        [splitView setCustomDividerThickness:kSplitViewExpandedDividerThickness];
+        lastNotesDimension = [self notesListDimension];
+    }
+    [mainView setNeedsDisplay:YES];
+}
+
 - (void)_configureDividerForCurrentLayout {
     splitViewIsChangingLayout=YES;
     self.isEditing = NO;
 	BOOL horiz = [prefsController horizontalLayout];
-	if ([notesSubview isCollapsed]) {
-		[notesSubview expand];
-		[splitView setVertical:horiz];
-        [splitView setDividerThickness:kSplitViewCollapsedDividerThickness];
-		[notesSubview collapse];
-	}else {
-        [splitView setVertical:horiz];
-//        if (!verticalDividerImg && [splitView divider]) verticalDividerImg = [splitView divider];
-//        [splitView setDivider: verticalDividerImg];
-		[splitView setDividerThickness:kSplitViewExpandedDividerThickness];
+    CGFloat dimension = [self notesListDimension];
+    BOOL collapsed = [self notesListIsCollapsed];
+    [splitView setVertical:horiz];
+    if (collapsed) {
+        [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
+    } else {
+        [splitView setCustomDividerThickness:kSplitViewExpandedDividerThickness];
+        [self forceNotesListDimension:dimension];
         if (![self dualFieldIsVisible]) {
             [self setDualFieldIsVisible:YES];
         }
-	}
-    splitViewIsChangingLayout=NO;
-    if (horiz) {
-        [splitSubview setMinDimension:100.0 andMaxDimension:0.0];
     }
+    [splitView adjustSubviews];
+    splitViewIsChangingLayout=NO;
+    notesWasCollapsed = [self notesListIsCollapsed];
 }
 
 - (IBAction)switchViewLayout:(id)sender {
@@ -667,7 +743,7 @@ terminateApp:
     }
 	ViewLocationContext ctx = [notesTableView viewingLocation];
 	ctx.pivotRowWasEdge = NO;
-	CGFloat colW = [notesSubview dimension];
+	CGFloat colW = [self notesListDimension];
     if (![splitView isVertical]) {
         colW += 30.0f;
     }else{
@@ -677,8 +753,12 @@ terminateApp:
 	[prefsController setHorizontalLayout:![prefsController horizontalLayout] sender:self];
 	[notationController updateDateStringsIfNecessary];
 	[self _configureDividerForCurrentLayout];
-    //	[notesTableView noteFirstVisibleRow];
-    [notesSubview setDimension:colW];
+    //the other layout's saved position is stale; start its own from this size
+    NSString *layoutName = [self splitViewAutosaveNameForCurrentLayout];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:[NVSplitView defaultsKeyForAutosaveName:layoutName]];
+    [splitView setAutosaveName:layoutName];
+    //    [notesTableView noteFirstVisibleRow];
+    [self setNotesListDimension:colW];
 	[notationController regenerateAllPreviews];
 	[splitView adjustSubviews];
     
@@ -700,7 +780,7 @@ terminateApp:
 
 
 - (IBAction)renameNote:(id)sender {
-    if ([notesSubview isCollapsed]) {
+    if ([self notesListIsCollapsed]) {
         [self toggleCollapse:sender];
     }
     //edit the first selected note
@@ -828,7 +908,7 @@ terminateApp:
 
 - (IBAction)tagNote:(id)sender {
     
-    if ([notesSubview isCollapsed]) {
+    if ([self notesListIsCollapsed]) {
         [self toggleCollapse:sender];
     }
 	//if single note, add the tag column if necessary and then begin editing
@@ -1484,7 +1564,7 @@ terminateApp:
 	if (state) {
         [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFinderShouldHide" object:self];
 		[editorStatusView setLabelStatus:[notesTableView numberOfSelectedRows]];
-        if ([notesSubview isCollapsed]) {
+        if ([self notesListIsCollapsed]) {
             [self toggleCollapse:self];
         }
 	}
@@ -1996,7 +2076,7 @@ terminateApp:
 - (void)makeActiveAndShowWindowByFocusingControlField:(BOOL)focus andForcingActivation:(BOOL)activate{
 
     if (focus) {
-        if ([notesSubview isCollapsed]) {
+        if ([self notesListIsCollapsed]) {
             [self toggleCollapse:self];
         }else if (![self dualFieldIsVisible]){
             [self setDualFieldIsVisible:YES];
@@ -2029,18 +2109,35 @@ terminateApp:
 
 #pragma mark SplitView Delegate methods
 
-- (void)splitView:(RBSplitView*)sender wasResizedFrom:(CGFloat)oldDimension to:(CGFloat)newDimension {
-	if (sender == splitView) {
-		[sender adjustSubviewsExcepting:notesSubview];
-	}
+//when the window resizes, the notes list keeps its size and the editor takes the change
+- (BOOL)splitView:(NSSplitView *)sender shouldAdjustSizeOfSubview:(NSView *)subview {
+	return subview != notesSubview;
 }
 
-- (BOOL)splitView:(RBSplitView*)sender shouldHandleEvent:(NSEvent*)theEvent inDivider:(NSUInteger)divider
-	  betweenView:(RBSplitSubview*)leading andView:(RBSplitSubview*)trailing {
+- (BOOL)splitView:(NSSplitView *)sender canCollapseSubview:(NSView *)subview {
+	//only the list collapses, and only once a note is open to take its place
+	return subview == notesSubview && (currentNote != nil || splitViewIsRestoring);
+}
+
+//a double click on the divider collapses or expands the list instead (see below)
+- (BOOL)splitView:(NSSplitView *)sender shouldCollapseSubview:(NSView *)subview forDoubleClickOnDividerAtIndex:(NSInteger)dividerIndex {
+	return NO;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sender constrainMinCoordinate:(CGFloat)proposedMin ofSubviewAt:(NSInteger)dividerIndex {
+	return proposedMin + kNotesListMinDimension;
+}
+
+- (CGFloat)splitView:(NSSplitView *)sender constrainMaxCoordinate:(CGFloat)proposedMax ofSubviewAt:(NSInteger)dividerIndex {
+	CGFloat editorMin = [prefsController horizontalLayout] ? 100.0 : 1.0;
+	return MIN(proposedMax - editorMin, kNotesListMaxDimension);
+}
+
+- (BOOL)splitView:(NVSplitView *)sender shouldTrackMouseDown:(NSEvent *)theEvent onDividerAtIndex:(NSInteger)index {
 	//if upon the first mousedown, the top selected index is visible, snap to it when resizing
 	[notesTableView noteFirstVisibleRow];
 	if ([theEvent clickCount]>1) {
-        if ((currentNote)||([notesSubview isCollapsed])){
+        if ((currentNote)||([self notesListIsCollapsed])){
             [self toggleCollapse:sender];
         }
 		return NO;
@@ -2049,95 +2146,15 @@ terminateApp:
 }
 
 //mail.app-like resizing behavior wrt item selections
-- (void)willAdjustSubviews:(RBSplitView*)sender {
+- (void)splitViewWillResizeSubviews:(NSNotification *)notification {
 	//problem: don't do this if the horizontal splitview is being resized; in horizontal layout, only do this when resizing the window
 	if (![prefsController horizontalLayout]) {
 		[notesTableView makeFirstPreviouslyVisibleRowVisibleIfNecessary];
 	}
 }
 
-- (BOOL)splitView:(RBSplitView*)sender shouldResizeWindowForDivider:(NSUInteger)divider
-	  betweenView:(RBSplitSubview*)leading andView:(RBSplitSubview*)trailing willGrow:(BOOL)grow {
-    
-	if ([sender isDragging]) {
-		BOOL toolbarVisible  = [self dualFieldIsVisible];
-        //		NSPoint mouse = [sender convertPoint:[[window currentEvent] locationInWindow] fromView:nil];
-        //        CGFloat mouseDim = mouse.y;
-        //        if ([splitView isVertical]) {
-        //            mouseDim = mouse.x - 50.0;
-        //        }
-		if (!toolbarVisible && grow&&([notesSubview dimension]>80.3f)) {
-            //                [self setDualFieldIsVisible:YES];
-            
-			if ([window firstResponder] == window) {
-				//if dualfield had first responder previously, it might need to be restored
-				//if it had been removed from the view hierarchy due to hiding the toolbar
-				[field selectText:sender];
-			}
-		}
-	}
-    
-	return NO;
-}
-
-- (NSRect)splitView:(RBSplitView*)sender willDrawDividerInRect:(NSRect)dividerRect betweenView:(RBSplitSubview*)leading
-			andView:(RBSplitSubview*)trailing withProposedRect:(NSRect)imageRect {
-	[dividerShader drawDividerInRect:dividerRect withDimpleRect:imageRect blendVertically:![prefsController horizontalLayout]];
-	
-	return NSZeroRect;
-}
-
-- (NSUInteger)splitView:(RBSplitView*)sender dividerForPoint:(NSPoint)point inSubview:(RBSplitSubview*)subview {
-	//if ([(AugmentedScrollView*)[notesTableView enclosingScrollView] shouldDragWithPoint:point sender:sender]) {
-	//	return 0;       // [firstSplit position], which we assume to be zero
-	//}
-	return NSNotFound;
-}
-
-- (BOOL)splitView:(RBSplitView*)sender canCollapse:(RBSplitSubview*)subview {
-	if ([sender subviewAtPosition:0] == subview) {
-		return currentNote != nil;
-		//this is the list view; let it collapse in horizontal layout when a note is being edited
-		//return [prefsController horizontalLayout] && currentNote != nil;
-	}
-	return NO;
-}
-
-
-- (void)splitView:(RBSplitView*)sender willCollapse:(RBSplitSubview*)subview{
-    if(!splitViewIsChangingLayout){
-        [self setDualFieldIsVisible:NO];
-        if ([self isInFullScreen]) {
-            [sender setMustAdjust];
-        }
-    }
-}
-
-- (void)splitView:(RBSplitView*)sender didCollapse:(RBSplitSubview*)subview{
-    if(!splitViewIsChangingLayout){
-        [splitView setDividerThickness: kSplitViewCollapsedDividerThickness];
-        [window makeFirstResponder:textView];
-        [splitView adjustSubviews];
-        [mainView setNeedsDisplay:YES];
-    }
-}
-
-- (void)splitView:(RBSplitView*)sender willExpand:(RBSplitSubview*)subview{
-    if(!splitViewIsChangingLayout){
-        [self setDualFieldIsVisible:YES];
-        if ([self isInFullScreen]) {
-            [sender setMustAdjust];
-        }
-    }
-}
-
-
-- (void)splitView:(RBSplitView*)sender didExpand:(RBSplitSubview*)subview{
-    if(!splitViewIsChangingLayout){
-        [splitView setDividerThickness:kSplitViewExpandedDividerThickness];
-        [splitView adjustSubviews];
-        [mainView setNeedsDisplay:YES];
-    }
+- (void)splitViewDidResizeSubviews:(NSNotification *)notification {
+	[self notesListCollapsedStateMayHaveChanged];
 }
 
 
@@ -2391,11 +2408,17 @@ terminateApp:
 }
 
 - (IBAction)toggleCollapse:(id)sender{
-	if ([notesSubview isCollapsed]) {
-		[notesSubview expand];
+	if ([self notesListIsCollapsed]) {
+        CGFloat dimension = lastNotesDimension;
+        if (dimension < kNotesListMinDimension) dimension = [splitView isVertical] ? 200.0 : 150.0;
+        [self forceNotesListDimension:dimension];
+        [notesSubview setHidden:NO];
 	}else {
-        [notesSubview collapse];
+        lastNotesDimension = [self notesListDimension];
+        [notesSubview setHidden:YES];
 	}
+    [splitView adjustSubviews];
+    [self notesListCollapsedStateMayHaveChanged];
 }
 
 #pragma mark fullscreen methods
@@ -2441,7 +2464,7 @@ terminateApp:
 }
 
 - (void)windowWillExitFullScreen:(NSNotification *)aNotification{
-    wasDFVisible=[self dualFieldIsVisible]&&(![notesSubview isCollapsed]);
+    wasDFVisible=[self dualFieldIsVisible]&&(![self notesListIsCollapsed]);
     if ((!wasVert)&&([splitView isVertical])) {
         [self switchViewLayout:self];
     }
@@ -2493,14 +2516,14 @@ terminateApp:
         }else {
             options = nil;
         }
-        CGFloat colW = [notesSubview dimension];
+        CGFloat colW = [self notesListDimension];
         
         wasDFVisible=[self dualFieldIsVisible];
         if ([self isInFullScreen]) {
             window = normalWindow;
             [mainView exitFullScreenModeWithOptions:options];
             
-            [notesSubview setDimension:colW];
+            [self setNotesListDimension:colW];
             [self setDualFieldInToolbar];
             [splitView setFrameSize:[mainView frame].size];
             if ((!wasVert)&&([splitView isVertical])) {
@@ -2511,7 +2534,7 @@ terminateApp:
             [window makeKeyAndOrderFront:self];
         }else {
             [mainView enterFullScreenMode:[window screen]  withOptions:options];
-            [notesSubview setDimension:colW];
+            [self setNotesListDimension:colW];
             [self setDualFieldInView];
             if (![splitView isVertical]) {
                 [self switchViewLayout:self];
@@ -2630,7 +2653,6 @@ terminateApp:
     if (currentNote) {
         [self contentsUpdatedForNote:currentNote];
     }
-    [dividerShader updateColorsWithBackgroundColor:backgrndColor andForegroundColor:foregrndColor];
     [splitView setNeedsDisplay:YES];
     
 }

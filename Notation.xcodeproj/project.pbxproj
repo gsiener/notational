@@ -41,8 +41,6 @@
 		216D9C2E12CFEF2A0004B9CE /* LinkBackPressed.tif in Resources */ = {isa = PBXBuildFile; fileRef = 216D9C2C12CFEF2A0004B9CE /* LinkBackPressed.tif */; };
 		217D4282096545A000E84749 /* LabelObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 217D4281096545A000E84749 /* LabelObject.m */; };
 		2181171309F311110020A252 /* DeletedNoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2181171209F311110020A252 /* DeletedNoteObject.m */; };
-		2182B39A106B2296008641E4 /* RBSplitSubview.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B396106B2296008641E4 /* RBSplitSubview.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		2182B39B106B2296008641E4 /* RBSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B398106B2296008641E4 /* RBSplitView.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		218D43330AA2ABC600F36CCA /* NotesTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2191930209CFBEBD00586B15 /* NotesTableView.m */; };
 		21918FD009C49B2500586B15 /* EmptyView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21918FCE09C49B2400586B15 /* EmptyView.m */; };
 		219190F109C4A60700586B15 /* DualField.m in Sources */ = {isa = PBXBuildFile; fileRef = 219190F009C4A60700586B15 /* DualField.m */; };
@@ -251,8 +249,6 @@
 		29778FA94872EFB655842226 /* URLGetter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21E6B09D0B6E6D18001ABEDC /* URLGetter.m */; };
 		8DBF96A80ACE220331AE803A /* BookmarksController.m in Sources */ = {isa = PBXBuildFile; fileRef = 21582DC40B73F59A00711663 /* BookmarksController.m */; };
 		0AB1AADE53B0C6DFB912A650 /* MultiTextFinder.m in Sources */ = {isa = PBXBuildFile; fileRef = 213621F00B92414F008C0830 /* MultiTextFinder.m */; };
-		14FBC1AEF60DF9640732DBE0 /* RBSplitSubview.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B396106B2296008641E4 /* RBSplitSubview.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		A9835D2185716909AD6AF723 /* RBSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B398106B2296008641E4 /* RBSplitView.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		E408F598FE7C816622A55117 /* NVPasswordGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */; };
 		329AA812A43D8AB72ACA3DAA /* LinearDividerShader.m in Sources */ = {isa = PBXBuildFile; fileRef = 21BD2ECF10DAF31500BA3DF6 /* LinearDividerShader.m */; };
 		8C076A101812EA5B3F62F83E /* TitlebarButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 212C6951110E1940004DD82C /* TitlebarButton.m */; };
@@ -347,6 +343,9 @@
 		711437CC0586B589020F4E59 /* NVTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = E0A0788F1432C8560CA302BD /* NVTheme.m */; };
 		7BBD2EF5C32C11C0C472D7B1 /* NVTheme.m in Sources */ = {isa = PBXBuildFile; fileRef = E0A0788F1432C8560CA302BD /* NVTheme.m */; };
 		D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */; };
+		8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 048B1473D0F4023FAC6A1F24 /* NVSplitView.m */; };
+		364D5222ACE98AA942BA847B /* NVSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 048B1473D0F4023FAC6A1F24 /* NVSplitView.m */; };
+		2BEAFF072117A52D88C5C202 /* NVSplitViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F384225420AF77379D8DF89B /* NVSplitViewTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -433,11 +432,6 @@
 		2181171209F311110020A252 /* DeletedNoteObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DeletedNoteObject.m; sourceTree = "<group>"; };
 		2181193909FA9CF90020A252 /* SynchronizedNoteProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SynchronizedNoteProtocol.h; sourceTree = "<group>"; };
 		21813561105AF27400A0AE18 /* Acknowledgments.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Acknowledgments.txt; sourceTree = "<group>"; };
-		2182B395106B2296008641E4 /* RBSplitSubview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitSubview.h; path = RBSplitView/RBSplitSubview.h; sourceTree = "<group>"; };
-		2182B396106B2296008641E4 /* RBSplitSubview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RBSplitSubview.m; path = RBSplitView/RBSplitSubview.m; sourceTree = "<group>"; };
-		2182B397106B2296008641E4 /* RBSplitView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitView.h; path = RBSplitView/RBSplitView.h; sourceTree = "<group>"; };
-		2182B398106B2296008641E4 /* RBSplitView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RBSplitView.m; path = RBSplitView/RBSplitView.m; sourceTree = "<group>"; };
-		2182B399106B2296008641E4 /* RBSplitViewPrivateDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitViewPrivateDefines.h; path = RBSplitView/RBSplitViewPrivateDefines.h; sourceTree = "<group>"; };
 		21918FCE09C49B2400586B15 /* EmptyView.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = EmptyView.m; sourceTree = SOURCE_ROOT; };
 		21918FCF09C49B2500586B15 /* EmptyView.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = EmptyView.h; sourceTree = SOURCE_ROOT; };
 		219190EF09C4A60600586B15 /* DualField.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DualField.h; sourceTree = "<group>"; };
@@ -810,6 +804,9 @@
 		ECA60B9C7474BFE2351E83F2 /* NVTheme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTheme.h; sourceTree = "<group>"; };
 		E0A0788F1432C8560CA302BD /* NVTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTheme.m; sourceTree = "<group>"; };
 		8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVThemeTests.m; sourceTree = "<group>"; };
+		6A37956C7FD5533FED208FB6 /* NVSplitView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVSplitView.h; sourceTree = "<group>"; };
+		048B1473D0F4023FAC6A1F24 /* NVSplitView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSplitView.m; sourceTree = "<group>"; };
+		F384225420AF77379D8DF89B /* NVSplitViewTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVSplitViewTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -855,6 +852,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				048B1473D0F4023FAC6A1F24 /* NVSplitView.m */,
+				6A37956C7FD5533FED208FB6 /* NVSplitView.h */,
 				E0A0788F1432C8560CA302BD /* NVTheme.m */,
 				ECA60B9C7474BFE2351E83F2 /* NVTheme.h */,
 				A4BC83841EF0CF906C12FB29 /* NVTaskPaperMarkdown.m */,
@@ -1051,18 +1050,6 @@
 			name = "Help Notes";
 			sourceTree = "<group>";
 		};
-		2182B38E106B2286008641E4 /* RBSplitView */ = {
-			isa = PBXGroup;
-			children = (
-				2182B395106B2296008641E4 /* RBSplitSubview.h */,
-				2182B396106B2296008641E4 /* RBSplitSubview.m */,
-				2182B397106B2296008641E4 /* RBSplitView.h */,
-				2182B398106B2296008641E4 /* RBSplitView.m */,
-				2182B399106B2296008641E4 /* RBSplitViewPrivateDefines.h */,
-			);
-			name = RBSplitView;
-			sourceTree = "<group>";
-		};
 		2191930609CFBED200586B15 /* View Classes */ = {
 			isa = PBXGroup;
 			children = (
@@ -1241,7 +1228,6 @@
 				93B90E7D138601C100BEC5FB /* ODBEditor */,
 				5C96F5A8131C379200A2E4AC /* Markup */,
 				21F07C7010EDED87004FE56F /* BSJSON */,
-				2182B38E106B2286008641E4 /* RBSplitView */,
 				21F1CD490B3A38CB001FB5F6 /* HotKeys */,
 				211345A10B35D8340081B064 /* Crypto */,
 				32CA4F630368D1EE00C91783 /* Notation_Prefix.pch */,
@@ -1365,6 +1351,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				F384225420AF77379D8DF89B /* NVSplitViewTests.m */,
 				8DB5FB1CF58A58F01B665E84 /* NVThemeTests.m */,
 				9708D80BE8B086B02A22E54B /* NVTaskPaperMarkdownTests.m */,
 				9F4566F8D262DD3888A1513A /* NVMarkupRendererTests.m */,
@@ -1629,6 +1616,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */,
 				711437CC0586B589020F4E59 /* NVTheme.m in Sources */,
 				660B821D0C9DE53C16AD0A31 /* NVTaskPaperMarkdown.m in Sources */,
 				7F0E7B3F7A33E744EAFC4DA5 /* NVMarkupRenderer.m in Sources */,
@@ -1688,8 +1676,6 @@
 				21E6B09F0B6E6D18001ABEDC /* URLGetter.m in Sources */,
 				21582DC50B73F59B00711663 /* BookmarksController.m in Sources */,
 				213621F20B92414F008C0830 /* MultiTextFinder.m in Sources */,
-				2182B39A106B2296008641E4 /* RBSplitSubview.m in Sources */,
-				2182B39B106B2296008641E4 /* RBSplitView.m in Sources */,
 				D3EECA00106F66C70023D7F8 /* NVPasswordGenerator.m in Sources */,
 				21BD2ED110DAF31500BA3DF6 /* LinearDividerShader.m in Sources */,
 				212C6952110E1940004DD82C /* TitlebarButton.m in Sources */,
@@ -1726,6 +1712,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2BEAFF072117A52D88C5C202 /* NVSplitViewTests.m in Sources */,
+				364D5222ACE98AA942BA847B /* NVSplitView.m in Sources */,
 				D3ECE9A59795965D9D777E90 /* NVThemeTests.m in Sources */,
 				7BBD2EF5C32C11C0C472D7B1 /* NVTheme.m in Sources */,
 				2B44F9FF062B3A25E7B09919 /* NVTaskPaperMarkdownTests.m in Sources */,
@@ -1804,8 +1792,6 @@
 				29778FA94872EFB655842226 /* URLGetter.m in Sources */,
 				8DBF96A80ACE220331AE803A /* BookmarksController.m in Sources */,
 				0AB1AADE53B0C6DFB912A650 /* MultiTextFinder.m in Sources */,
-				14FBC1AEF60DF9640732DBE0 /* RBSplitSubview.m in Sources */,
-				A9835D2185716909AD6AF723 /* RBSplitView.m in Sources */,
 				E408F598FE7C816622A55117 /* NVPasswordGenerator.m in Sources */,
 				329AA812A43D8AB72ACA3DAA /* LinearDividerShader.m in Sources */,
 				8C076A101812EA5B3F62F83E /* TitlebarButton.m in Sources */,

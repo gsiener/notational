@@ -173,6 +173,49 @@
 	[self assertStillRunning];
 }
 
+- (void)relaunch {
+	[app terminate];
+	[app launch];
+	XCTAssertTrue([[self mainWindow] waitForExistenceWithTimeout:20], @"main window never reappeared");
+	[self dismissAccountWindow];
+}
+
+//the list's size along the divider's axis: width beside the editor, height above it
+- (CGFloat)notesListSizeAcrossDivider:(XCUIElement *)splitter {
+	CGRect list = [self mainWindow].tables.firstMatch.frame;
+	return splitter.frame.size.width > splitter.frame.size.height ? list.size.height : list.size.width;
+}
+
+- (void)testDividerPositionSurvivesRelaunch {
+	[self createNoteTitled:@"Divider note" body:@"the divider is dragged"];
+	XCUIElement *splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
+	XCTAssertTrue([splitter waitForExistenceWithTimeout:5], @"no divider in the main window");
+	BOOL stacked = splitter.frame.size.width > splitter.frame.size.height;
+	CGFloat before = [self notesListSizeAcrossDivider:splitter];
+
+	XCUICoordinate *start = [splitter coordinateWithNormalizedOffset:CGVectorMake(0.5, 0.5)];
+	XCUICoordinate *end = [start coordinateWithOffset:stacked ? CGVectorMake(0, 80) : CGVectorMake(80, 0)];
+	[start clickForDuration:0.3 thenDragToCoordinate:end];
+	CGFloat dragged = [self notesListSizeAcrossDivider:splitter];
+	XCTAssertGreaterThan(dragged, before + 40, @"dragging the divider didn't resize the notes list");
+
+	[self relaunch];
+	splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
+	XCTAssertTrue([splitter waitForExistenceWithTimeout:5]);
+	XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:splitter], dragged, 2.0, @"the divider moved back after a relaunch");
+}
+
+- (void)testCollapsedListSurvivesRelaunch {
+	[self createNoteTitled:@"Collapse note" body:@"the list is collapsed"];
+	[self toggleNotesList];
+	[self relaunch];
+	XCUIElement *bar = app.menuBars.firstMatch;
+	[bar.menuBarItems[@"View"] click];
+	XCUIElement *expand = bar.menuBarItems[@"View"].menus.menuItems[@"Expand Notes List"];
+	XCTAssertTrue([expand waitForExistenceWithTimeout:5], @"the notes list came back expanded");
+	[expand click];
+}
+
 - (void)testRelaunchKeepsNotes {
 	[self createNoteTitled:@"Survives relaunch" body:@"still here"];
 	[app terminate];

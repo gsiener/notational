@@ -15,6 +15,7 @@
 #import <Cocoa/Cocoa.h>
 #import "NVMarkupRenderer.h"
 #import "NVTheme.h"
+#import "NVSplitView.h"
 
 #import "NotationController.h"
 #import "NotesTableView.h"
@@ -25,10 +26,8 @@
 @class GlobalPrefs;
 @class PrefsWindowController;
 @class DualField;
-@class RBSplitView;
-@class RBSplitSubview;
+@class NVSplitView;
 @class TitlebarButton;
-@class LinearDividerShader;
 @class TagEditingManager;
 @class DFView;
 @class PreviewController;
@@ -41,7 +40,7 @@
 
 @interface AppController : NSObject 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-<NSApplicationDelegate, NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate>
+<NSApplicationDelegate, NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NVSplitViewDelegate>
 #endif
 {
 	IBOutlet NSMenuItem *fsMenuItem;
@@ -64,9 +63,9 @@
 	NSTimer *modifierTimer;
 	IBOutlet WordCountToken *wordCounter;
     IBOutlet DualField *field;
-	RBSplitSubview *splitSubview;
-	RBSplitSubview *notesSubview;
-	RBSplitView *splitView;
+	NSView *splitSubview;   //the note editor
+	NSView *notesSubview;   //the notes list
+	NVSplitView *splitView;
     IBOutlet ETScrollView *notesScrollView;
     IBOutlet ETNoteScrollView *textScrollView;
     IBOutlet NotesTableView *notesTableView;
@@ -82,7 +81,6 @@
 	BOOL waitedForUncommittedChanges;
 	
     //	NSImage *verticalDividerImg;
-	LinearDividerShader *dividerShader;
 	
 	NSString *URLToInterpretOnLaunch;
 	NSMutableArray *pathsToOpenOnLaunch;
@@ -111,6 +109,9 @@
     IBOutlet NSMenuItem *savePreviewItem;
     NSInteger currentPreviewMode;
     BOOL splitViewIsChangingLayout;
+    BOOL splitViewIsRestoring;
+    BOOL notesWasCollapsed;
+    CGFloat lastNotesDimension;   //the list's size to come back to when it is expanded
 }
 
 @property(readwrite)BOOL isEditing;
