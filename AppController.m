@@ -1000,12 +1000,14 @@ terminateApp:
 
 - (void)applicationDidBecomeActive:(NSNotification *)aNotification {
 	[notationController updateDateStringsIfNecessary];
+	[[notationController syncEngine] setInBackground:NO];
 	[[notationController syncEngine] syncNow];
 }
 
 - (void)applicationWillResignActive:(NSNotification *)aNotification {
 	//sync note files when switching apps so user doesn't have to guess when they'll be updated
 	[notationController synchronizeNoteChanges:nil];
+	[[notationController syncEngine] setInBackground:YES];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"ModTimersShouldReset" object:nil];
     
 }

@@ -663,4 +663,39 @@
 	[mac->engine stop];
 }
 
+- (BOOL)waitForNoteCount:(NSUInteger)count in:(NVTestMachine *)mac within:(NSTimeInterval)seconds {
+	NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:seconds];
+	while ([mac->store noteCount] < count && [deadline timeIntervalSinceNow] > 0) [NSThread sleepForTimeInterval:0.05];
+	return [mac->store noteCount] >= count;
+}
+
+- (void)testBackgroundUsesTheBackgroundInterval {
+	NVTestMachine *mac = [self machine:@"mac"];
+	[mac->engine setPollInterval:60];
+	[mac->engine setBackgroundPollInterval:0.2];
+	[server remoteCreateNoteWithContent:@"first" tags:nil];
+	[mac->engine start];
+	XCTAssertTrue([self waitForNoteCount:1 in:mac within:5], @"start runs a cycle straight away");
+
+	//in the background the short interval applies
+	[mac->engine setInBackground:YES];
+	XCTAssertTrue([mac->engine isInBackground]);
+	[server remoteCreateNoteWithContent:@"second" tags:nil];
+	XCTAssertTrue([self waitForNoteCount:2 in:mac within:5]);
+
+	//back in front, the next scheduled cycle is a full minute away
+	[mac->engine setInBackground:NO];
+	XCTAssertFalse([mac->engine isInBackground]);
+	[NSThread sleepForTimeInterval:0.5];
+	[server remoteCreateNoteWithContent:@"third" tags:nil];
+	XCTAssertFalse([self waitForNoteCount:3 in:mac within:1]);
+	[mac->engine stop];
+}
+
+- (void)testBackgroundDefaultsToFiveMinutes {
+	NVTestMachine *mac = [self machine:@"mac"];
+	XCTAssertEqual([mac->engine backgroundPollInterval], 300.0);
+	XCTAssertFalse([mac->engine isInBackground]);
+}
+
 @end

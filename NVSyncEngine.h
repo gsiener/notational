@@ -47,6 +47,11 @@ extern NSString *const NVSyncStatusKey;
 @property (nonatomic, strong) dispatch_queue_t delegateQueue;
 //seconds between automatic cycles while started; default 30
 @property (nonatomic, assign) NSTimeInterval pollInterval;
+//seconds between automatic cycles while the app is in the background; default 300
+@property (nonatomic, assign) NSTimeInterval backgroundPollInterval;
+//set when the app moves to the background or back; cycles then run every backgroundPollInterval.
+//Changing it doesn't run a cycle: the app syncs with -syncNow when it becomes active.
+@property (nonatomic, assign, getter=isInBackground) BOOL inBackground;
 //index page size for full syncs; default 100
 @property (nonatomic, assign) NSUInteger indexPageSize;
 

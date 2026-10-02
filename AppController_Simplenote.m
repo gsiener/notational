@@ -108,7 +108,10 @@ static BOOL loadingToken = NO;
 - (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store token:(NSString *)token {
 	if (![store metadataValueForKey:AccountKey] || !token) return nil;
 	NVSimplenoteHTTPService *service = [[NVSimplenoteHTTPService alloc] initWithToken:token clientID:[self clientIDForStore:store]];
-	return [[NVSyncEngine alloc] initWithStore:store service:service];
+	NVSyncEngine *engine = [[NVSyncEngine alloc] initWithStore:store service:service];
+	//a menu-bar app spends most of its time in the background: poll less often there (#36)
+	[engine setInBackground:![NSApp isActive]];
+	return engine;
 }
 
 - (NotationController *)openSimplenoteBackedNotationReturningError:(NSError **)error {

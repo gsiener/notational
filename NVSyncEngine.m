@@ -36,6 +36,7 @@
 	NSError *lastError;
 	BOOL cycleRequested;
 	BOOL running;
+	BOOL inBackground;
 	NSUInteger consecutiveFailures;
 	NSDate *nextAllowedAttempt;
 
@@ -85,7 +86,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 
 @implementation NVSyncEngine
 
-@synthesize delegate, delegateQueue, pollInterval, indexPageSize;
+@synthesize delegate, delegateQueue, pollInterval, backgroundPollInterval, indexPageSize;
 
 - (id)initWithStore:(NVNotesStore *)aStore service:(id<NVSimplenoteService>)aService {
 	if ((self = [super init])) {
@@ -94,6 +95,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 		queue = dispatch_queue_create("net.elasticthreads.nv.sync-engine", DISPATCH_QUEUE_SERIAL);
 		delegateQueue = dispatch_get_main_queue();
 		pollInterval = 30.0;
+		backgroundPollInterval = 300.0;
 		indexPageSize = 100;
 		updatedNotes = [[NSMutableDictionary alloc] init];
 		removedNoteIDs = [[NSMutableSet alloc] init];
@@ -130,11 +132,31 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 		if (timer) return;
 		timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 		__weak NVSyncEngine *weakSelf = self;
-		uint64_t interval = (uint64_t)(pollInterval * NSEC_PER_SEC);
-		dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval, interval / 10);
 		dispatch_source_set_event_handler(timer, ^{ [weakSelf _runScheduledCycle]; });
+		[self _armTimerStartingIn:0];
 		dispatch_resume(timer);
 	});
+}
+
+- (BOOL)isInBackground {
+	__block BOOL flag;
+	dispatch_sync(queue, ^{ flag = inBackground; });
+	return flag;
+}
+
+- (void)setInBackground:(BOOL)flag {
+	dispatch_async(queue, ^{
+		if (inBackground == flag) return;
+		inBackground = flag;
+		NSTimeInterval interval = inBackground ? backgroundPollInterval : pollInterval;
+		if (timer) [self _armTimerStartingIn:interval];
+	});
+}
+
+//on the engine queue: the timer's next fire, then every interval for the current mode
+- (void)_armTimerStartingIn:(NSTimeInterval)delay {
+	uint64_t interval = (uint64_t)((inBackground ? backgroundPollInterval : pollInterval) * NSEC_PER_SEC);
+	dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), interval, interval / 10);
 }
 
 - (void)stop {
