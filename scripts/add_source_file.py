@@ -42,6 +42,8 @@ mode = 'test'
 if args and args[0] in ('--app', '--lib'):
     mode, args = args[0][2:], args[1:]
 targets = ['Notation', 'NotationTests'] if mode in ('app', 'lib') else ['NotationTests']
+if not args or any(a.startswith('-') or not os.path.exists(a) for a in args if mode != 'lib'):
+    sys.exit(__doc__ + '\nevery argument after the optional mode must be an existing file')
 
 for path in args:
     name = os.path.basename(path)

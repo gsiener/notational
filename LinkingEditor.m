@@ -474,6 +474,14 @@ static CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 		if (rtfData) [pboard setData:rtfData forType:type];
 		return YES;
 	}
+	if ([type isEqualToString:NSPasteboardTypeString]) {
+		//NSTextView writes only the legacy type names (NSStringPboardType), so asking super for
+		//public.utf8-plain-text writes nothing and Copy would leave the clipboard empty
+		NSMutableArray *pieces = [NSMutableArray array];
+		for (NSValue *range in [self selectedRanges])
+			[pieces addObject:[[self string] substringWithRange:[range rangeValue]]];
+		return [pboard setString:[pieces componentsJoinedByString:@"\n"] forType:type];
+	}
 	
 	return [super writeSelectionToPasteboard:pboard type:type];
 }

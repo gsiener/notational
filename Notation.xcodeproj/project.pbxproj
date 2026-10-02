@@ -351,6 +351,7 @@
 		6D281D4D1B4E7EDB4F6EDA6E /* PreviewPageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FB71A1B2D18F29AEDE8B102C /* PreviewPageTests.m */; };
 		74F43DE013CF09C669B42B43 /* NVTestSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 5105AA8740DFB619F1959375 /* NVTestSupport.m */; };
 		60FBF1D9433BAEF1F05F0F19 /* NoteTitleRuleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */; };
+		998C7FE2BDC15D18479B6728 /* LinkingEditorCopyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -819,6 +820,7 @@
 		00F99F931D9600E2083992AE /* NVTestSupport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVTestSupport.h; sourceTree = "<group>"; };
 		5105AA8740DFB619F1959375 /* NVTestSupport.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTestSupport.m; sourceTree = "<group>"; };
 		E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NoteTitleRuleTests.m; sourceTree = "<group>"; };
+		69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LinkingEditorCopyTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1362,6 +1364,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */,
 				E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */,
 				5105AA8740DFB619F1959375 /* NVTestSupport.m */,
 				00F99F931D9600E2083992AE /* NVTestSupport.h */,
@@ -1730,6 +1733,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				998C7FE2BDC15D18479B6728 /* LinkingEditorCopyTests.m in Sources */,
 				60FBF1D9433BAEF1F05F0F19 /* NoteTitleRuleTests.m in Sources */,
 				74F43DE013CF09C669B42B43 /* NVTestSupport.m in Sources */,
 				6D281D4D1B4E7EDB4F6EDA6E /* PreviewPageTests.m in Sources */,

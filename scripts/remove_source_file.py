@@ -23,6 +23,8 @@ def remove_variant_group(name):
         s = '\n'.join(line for line in s.split('\n') if not re.match(r'\s*' + ident + r' ', line))
     return True
 
+if not sys.argv[1:] or any(a.startswith('-') for a in sys.argv[1:]):
+    sys.exit(__doc__)
 for path in sys.argv[1:]:
     name = os.path.basename(path)
     if remove_variant_group(name):
