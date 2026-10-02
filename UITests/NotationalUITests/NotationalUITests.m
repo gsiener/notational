@@ -47,11 +47,13 @@
 //never signed in, the app asks for a Simplenote account; close that window
 - (void)dismissAccountWindow {
 	XCUIElement *account = app.windows[@"Simplenote Account"];
-	if ([account waitForExistenceWithTimeout:5]) {
+	//it can be shown again right after launch, so keep closing it until it stays closed
+	for (int attempt = 0; attempt < 4 && [account waitForExistenceWithTimeout:attempt ? 2 : 5]; attempt++) {
 		//its own close button: ⌘W would go to whichever window is key
 		[account.buttons[XCUIIdentifierCloseWindow] click];
-		XCTAssertTrue([self waitForGone:account], @"account window didn't close");
+		[self waitForGone:account];
 	}
+	XCTAssertFalse(account.exists, @"account window didn't close");
 }
 
 - (BOOL)waitForGone:(XCUIElement *)element {
@@ -64,7 +66,10 @@
 	XCUIElement *bar = app.menuBars.firstMatch;
 	[bar.menuBarItems[menu] click];
 	XCUIElement *menuItem = bar.menuBarItems[menu].menus.menuItems[item];
-	XCTAssertTrue([menuItem waitForExistenceWithTimeout:5], @"no %@ ▸ %@", menu, item);
+	if (![menuItem waitForExistenceWithTimeout:5]) {
+		NSArray *titles = [bar.menuBarItems[menu].menus.menuItems.allElementsBoundByIndex valueForKey:@"title"];
+		XCTFail(@"no %@ ▸ %@; the menu has: %@", menu, item, [titles componentsJoinedByString:@" | "]);
+	}
 	[menuItem click];
 }
 
