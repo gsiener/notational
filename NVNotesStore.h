@@ -55,6 +55,8 @@ extern NSString *const NVNotesStoreErrorDomain;
 //Stores the record's content, tags, trash flag and dates as a local edit: marks it
 //pending and bumps its local revision. Keeps the stored server data and confirmed version.
 - (void)saveLocalEdit:(NVNoteRecord *)record;
+//the same for each record, committed together
+- (void)saveLocalEdits:(NSArray *)records;
 
 #pragma mark Sync
 

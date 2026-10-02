@@ -56,7 +56,7 @@ static BOOL loadingToken = NO;
 	NVLegacyImportResult result = [importer read];
 	switch (result) {
 		case NVLegacyImportRead: {
-			for (NVNoteRecord *record in [importer recoveredNotes]) [store saveLocalEdit:record];
+			[store saveLocalEdits:[importer recoveredNotes]];
 			//carry over the settings that still apply
 			if (![store metadataValueForKey:NotationSettingsKey]) {
 				NotationPrefs *prefs = [[NotationPrefs alloc] init];

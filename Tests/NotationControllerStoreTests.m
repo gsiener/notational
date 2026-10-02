@@ -100,6 +100,23 @@
 	XCTAssertFalse([[store noteWithID:noteID] pending]);
 }
 
+- (void)testEditsToSeveralNotesAreSavedTogether {
+	NSString *a = [server remoteCreateNoteWithContent:@"First\none" tags:nil];
+	NSString *b = [server remoteCreateNoteWithContent:@"Second\ntwo" tags:nil];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	[[self noteTitled:@"First"] setContentString:[[NSAttributedString alloc] initWithString:@"one more"]];
+	[[self noteTitled:@"Second"] setContentString:[[NSAttributedString alloc] initWithString:@"two more"]];
+	[controller synchronizeNoteChanges:nil];
+
+	XCTAssertEqual([[store pendingNotes] count], (NSUInteger)2);
+	XCTAssertEqualObjects([[store noteWithID:a] content], @"First\none more");
+	XCTAssertEqualObjects([[store noteWithID:b] content], @"Second\ntwo more");
+	XCTAssertEqual([[store noteWithID:a] confirmedVersion], (NSInteger)1);
+	[self syncAndDeliver];
+	XCTAssertEqualObjects([[server currentDataOfNote:b] objectForKey:@"content"], @"Second\ntwo more");
+}
+
 - (void)testRemoteEditUpdatesTheNoteWithoutEchoing {
 	NSString *noteID = [server remoteCreateNoteWithContent:@"Plan\nstep one" tags:nil];
 	XCTAssertTrue([engine syncOnceReturningError:NULL]);

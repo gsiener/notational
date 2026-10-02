@@ -209,8 +209,9 @@
 
 - (void)synchronizeNoteChanges:(NSTimer*)timer {
 	if ([unwrittenNotes count] > 0) {
-		for (NoteObject *note in unwrittenNotes)
-			[notesStore saveLocalEdit:[note noteRecordRepresentation]];
+		NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[unwrittenNotes count]];
+		for (NoteObject *note in unwrittenNotes) [edits addObject:[note noteRecordRepresentation]];
+		[notesStore saveLocalEdits:edits];
 		[unwrittenNotes removeAllObjects];
 		[syncEngine syncNow];
 		[self scheduleUpdateListForAttribute:NoteDateModifiedColumnString];

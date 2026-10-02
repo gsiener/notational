@@ -103,6 +103,65 @@
 	XCTAssertEqual([[store pendingNotes] count], (NSUInteger)1);
 }
 
+- (void)testBatchedLocalEditsUpdateStoredNotesAndCreateNewOnes {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"v1" version:4]] into:store];
+	NVNoteRecord *edit = [store noteWithID:@"a"];
+	[edit setContent:@"edited"];
+	[edit setTags:nil];
+	[edit setDeleted:YES];
+	[edit setCreationDate:1600000000];
+	[edit setModificationDate:1800000000];
+	//what the caller passes for these is ignored for a stored note
+	[edit setServerData:[NSDictionary dictionaryWithObject:@"stale" forKey:@"content"]];
+	[edit setConfirmedVersion:99];
+	[edit setLocalRevision:50];
+	NVNoteRecord *fresh = [[NVNoteRecord alloc] init];
+	[fresh setNoteID:@"new"];
+	[fresh setContent:@"new note"];
+	[fresh setLocalRevision:2];
+	[store saveLocalEdits:@[edit, fresh]];
+	[store saveLocalEdits:@[]];
+
+	NVNoteRecord *a = [store noteWithID:@"a"];
+	XCTAssertEqualObjects([a content], @"edited");
+	XCTAssertEqualObjects([a tags], [NSArray array]);
+	XCTAssertTrue([a deleted]);
+	XCTAssertEqual([a creationDate], 1600000000.0);
+	XCTAssertEqual([a modificationDate], 1800000000.0);
+	XCTAssertTrue([a pending]);
+	XCTAssertEqual([a localRevision], (NSInteger)1);
+	XCTAssertEqual([a confirmedVersion], (NSInteger)4);
+	XCTAssertEqualObjects([[a serverData] objectForKey:@"content"], @"v1");
+	XCTAssertEqualObjects([[a serverData] objectForKey:@"futureField"], @"x");
+
+	NVNoteRecord *created = [store noteWithID:@"new"];
+	XCTAssertEqualObjects([created content], @"new note");
+	XCTAssertTrue([created pending]);
+	XCTAssertEqual([created localRevision], (NSInteger)3);
+	XCTAssertEqual([created confirmedVersion], (NSInteger)0);
+	XCTAssertEqual([[store pendingNotes] count], (NSUInteger)2);
+}
+
+- (void)testReopensAfterEveryKindOfStatementWasUsed {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"v1" version:1]] into:store];
+	[store saveLocalEdit:[store noteWithID:@"a"]];
+	[store allNotes];
+	[store allNotesWithoutServerData];
+	[store pendingNotes];
+	[store syncStatesOfNotesWithIDs:@[@"a"]];
+	[store setMetadataValue:@"x" forKey:@"k"];
+	[store metadataValueForKey:@"k"];
+	[store close];
+	XCTAssertEqual([store noteCount], (NSUInteger)0);
+	XCTAssertNil([store noteWithID:@"a"]);
+
+	store = [self openStore];
+	XCTAssertEqual([[store noteWithID:@"a"] localRevision], (NSInteger)1);
+	XCTAssertEqualObjects([store metadataValueForKey:@"k"], @"x");
+}
+
 - (void)testNewLocalNote {
 	NVNotesStore *store = [self openStore];
 	NVNoteRecord *note = [[NVNoteRecord alloc] init];
