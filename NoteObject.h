@@ -148,7 +148,9 @@ NSInteger compareTitleStringReverse(__unsafe_unretained id *a, __unsafe_unretain
 - (void)setSyncObjectAndKeyMD:(NSDictionary*)aDict forService:(NSString*)serviceName;
 - (void)removeAllSyncMDForService:(NSString*)serviceName;
 //- (void)removeKey:(NSString*)aKey forService:(NSString*)serviceName;
+//changes from Simplenote: like the user-edit setters, minus dirtying the note and scheduling a write
 - (void)updateWithSyncBody:(NSString*)newBody andTitle:(NSString*)newTitle;
+- (void)updateWithSyncLabels:(NSString*)newLabels;
 - (void)registerModificationWithOwnedServices;
 
 - (BOOL)updateFromPlainTextData:(NSMutableData*)data;

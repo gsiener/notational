@@ -65,7 +65,7 @@ static NSArray *TagsFromLabelString(NSString *labels) {
 	}
 	NSString *labels = LabelStringFromTags([record tags]);
 	if (![labels isEqualToString:labelsOfNote(self)]) {
-		[self setLabelString:labels];
+		[self updateWithSyncLabels:labels];
 		changed = YES;
 	}
 	if ([record modificationDate] > 0) [self setDateModified:[record modificationDate] - kCFAbsoluteTimeIntervalSince1970];

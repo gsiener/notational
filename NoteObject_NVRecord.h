@@ -21,7 +21,8 @@
 - (NVNoteRecord *)noteRecordRepresentation;
 
 //Replace title, body, labels and dates with the record's. Returns YES if anything visible changed.
-//Does not mark the note dirty; the caller must suppress the resulting write.
+//The delegate hears about the change as for an edit, but the note isn't dirtied and no write is
+//scheduled: the record is already in the store.
 - (BOOL)applyNoteRecord:(NVNoteRecord *)record;
 
 @end

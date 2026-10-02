@@ -65,7 +65,6 @@
 	//notes-folder code paths are bypassed
 	NVNotesStore *notesStore;
 	NVSyncEngine *syncEngine;
-	BOOL applyingRemoteChanges;
 }
 
 - (id)initWithNotesStore:(NVNotesStore *)store;

@@ -858,20 +858,33 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	return YES;
 }
 
+//a change that came from Simplenote: update the note, its search caches and table preview, and tell
+//the delegate as an edit would, but don't dirty the note or schedule a write; it is already stored
 - (void)updateWithSyncBody:(NSString*)newBody andTitle:(NSString*)newTitle {
 	
 	NSMutableAttributedString *attributedBodyString = [[NSMutableAttributedString alloc] initWithString:newBody attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
 	[attributedBodyString addLinkAttributesForRange:NSMakeRange(0, [attributedBodyString length])];
 	[attributedBodyString addStrikethroughNearDoneTagsForRange:NSMakeRange(0, [attributedBodyString length])];
 	
-	//should eventually sync changes back to disk:
-	[self setContentString:attributedBodyString updateTime:NO];
-
-	//actions that user-editing via AppDelegate would have handled for us:
-    [self updateContentCacheCStringIfNecessary];
+	[contentString setAttributedString:attributedBodyString];
+	contentCacheNeedsUpdate = YES;
+	[self updateContentCacheCStringIfNecessary];
 	[undoManager removeAllActions];
+	
+	BOOL retitled = [self _setTitleString:newTitle];
+	[self updateTablePreviewString];
+	
+	[delegate note:self attributeChanged:NotePreviewString];
+	if (retitled) [delegate note:self attributeChanged:NoteTitleColumnString];
+}
 
-	[self setTitleString:newTitle];
+- (void)updateWithSyncLabels:(NSString*)newLabels {
+	if ([self _setLabelString:newLabels]) {
+		if ([[GlobalPrefs defaultPrefs] horizontalLayout]) {
+			[self updateTablePreviewString];
+		}
+		[delegate note:self attributeChanged:NoteLabelsColumnString];
+	}
 }
 
 - (void)registerModificationWithOwnedServices {

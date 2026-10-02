@@ -83,13 +83,11 @@
 		notationPrefs = ([prefs isKindOfClass:[NotationPrefs class]]) ? prefs : [[NotationPrefs alloc] init];
 		[notationPrefs setDelegate:self];
 		
-		applyingRemoteChanges = YES;
 		for (NVNoteRecord *record in [store allNotes]) {
 			if ([record deleted]) continue;
 			NoteObject *note = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (note) [self _insertNote:note];
 		}
-		applyingRemoteChanges = NO;
 		
 		[prefsController setNotationPrefs:notationPrefs sender:self];
 		[self makeForegroundTextColorMatchGlobalPrefs];
@@ -138,7 +136,6 @@
 - (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
 	BOOL listChanged = NO;
 	NSMutableArray *removed = [NSMutableArray array];
-	applyingRemoteChanges = YES;
 	for (NVNoteRecord *record in records) {
 		NoteObject *note = [notesByRecordID objectForKey:[record noteID]];
 		if (note && [unwrittenNotes containsObject:note]) {
@@ -163,7 +160,6 @@
 			}
 		}
 	}
-	applyingRemoteChanges = NO;
 	
 	for (NSString *recordID in noteIDs) {
 		NoteObject *note = [notesByRecordID objectForKey:recordID];
@@ -410,9 +406,6 @@
 }
 
 - (void)scheduleWriteForNote:(NoteObject*)note {
-	//applying a change that came from Simplenote is not a local edit
-	if (applyingRemoteChanges) return;
-
 	if ([allNotes containsObject:note]) {
 	
 		[unwrittenNotes addObject:note];
