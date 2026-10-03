@@ -70,6 +70,9 @@
 #define kDualFieldHeight 35.0
 
 #define k_FinderTaggingReset 0
+#define NVEditorUndoMaxStates 33
+#define NVEditorUndoMaxBytes (8 * 1024 * 1024)
+#define NVEditorUndoMaxNotes 8
 
 NSInteger ModFlagger;
 NSInteger popped;
@@ -1183,6 +1186,32 @@ terminateApp:
 }
 
 - (void)_setCurrentNote:(NoteObject*)aNote {
+	if (currentNote != aNote) {
+		if (!editorUndoByNote) editorUndoByNote = [NSMapTable weakToStrongObjectsMapTable];
+		if (!editorUndoRecentNotes) editorUndoRecentNotes = [NSMutableArray array];
+		if (editorUndoNote == currentNote && editorUndoStates) {
+			[editorUndoByNote setObject:@{ @"states": editorUndoStates,
+											  @"index": [NSNumber numberWithInteger:editorUndoIndex] }
+							 forKey:currentNote];
+			[editorUndoRecentNotes removeObjectIdenticalTo:currentNote];
+			[editorUndoRecentNotes addObject:currentNote];
+		}
+		while ([editorUndoRecentNotes count] > NVEditorUndoMaxNotes) {
+			NoteObject *oldest = [editorUndoRecentNotes objectAtIndex:0];
+			[editorUndoByNote removeObjectForKey:oldest];
+			[editorUndoRecentNotes removeObjectAtIndex:0];
+		}
+		NSDictionary *saved = [editorUndoByNote objectForKey:aNote];
+		if (saved) {
+			[editorUndoRecentNotes removeObjectIdenticalTo:aNote];
+			[editorUndoRecentNotes addObject:aNote];
+		}
+		editorUndoStates = [saved objectForKey:@"states"];
+		editorUndoIndex = saved ? [[saved objectForKey:@"index"] integerValue] : 0;
+		editorUndoNote = saved ? aNote : nil;
+		editorUndoGroupClosed = YES;
+		editorUndoNeedsRebuild = NO;
+	}
 	//save range of old current note
 	//we really only want to save the insertion point position if it's currently invisible
 	//how do we test that?
@@ -1561,10 +1590,102 @@ terminateApp:
 }
 
 //from linkingeditor
+- (void)_editorUndoGroupDidClose:(NSNotification *)notification {
+	if ([notification object] == [currentNote undoManager]) {
+		editorUndoGroupClosed = YES;
+		if (editorUndoNeedsRebuild && !rebuildingEditorUndoActions &&
+			[[notification object] groupingLevel] == 0)
+			[self _rebuildSelectedEditorUndoActions];
+	}
+}
+
+- (void)_rebuildSelectedEditorUndoActions {
+	if (!editorUndoNeedsRebuild || rebuildingEditorUndoActions || !currentNote) return;
+	NSUndoManager *manager = [currentNote undoManager];
+	if ([manager groupingLevel] != 0) return;
+	rebuildingEditorUndoActions = YES;
+	[manager removeAllActions];
+	BOOL groupedByEvent = [manager groupsByEvent];
+	[manager setGroupsByEvent:NO];
+	for (NSInteger i = 0; i < editorUndoIndex; i++) {
+		[manager beginUndoGrouping];
+		[manager registerUndoWithTarget:self selector:@selector(_applyRebasedEditorUndoState:)
+							 object:[NSNumber numberWithInteger:i]];
+		[manager endUndoGrouping];
+	}
+	[manager setGroupsByEvent:groupedByEvent];
+	rebuildingEditorUndoActions = NO;
+	editorUndoNeedsRebuild = NO;
+}
+
 - (void)textDidChange:(NSNotification *)aNotification {
 	id textObject = [aNotification object];
     //[self resetModTimers];
 	if (textObject == textView) {
+		if (applyingRemoteOrRebasedText) return;
+		NSUndoManager *manager = [currentNote undoManager];
+		NSString *before = [[[currentNote contentString] string] copy];
+		NSString *after = [[textView string] copy];
+		if (currentNote && ![before isEqualToString:after]) {
+			if (!observingEditorUndoGroups) {
+				[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_editorUndoGroupDidClose:)
+									 name:NSUndoManagerDidCloseUndoGroupNotification object:nil];
+				observingEditorUndoGroups = YES;
+			}
+			if (editorUndoNote != currentNote || !editorUndoStates) {
+				editorUndoNote = currentNote;
+				editorUndoStates = [NSMutableArray arrayWithObject:before];
+				editorUndoIndex = 0;
+				editorUndoGroupClosed = YES;
+			}
+			if ([manager isUndoing]) {
+				BOOL found = NO;
+				for (NSInteger i = editorUndoIndex - 1; i >= 0; i--) {
+					if ([[editorUndoStates objectAtIndex:i] isEqualToString:after]) {
+						editorUndoIndex = i;
+						found = YES;
+						break;
+					}
+				}
+				if (!found) {
+					editorUndoStates = [NSMutableArray arrayWithObject:after];
+					editorUndoIndex = 0;
+				}
+			} else if ([manager isRedoing]) {
+				BOOL found = NO;
+				for (NSInteger i = editorUndoIndex + 1; i < (NSInteger)[editorUndoStates count]; i++) {
+					if ([[editorUndoStates objectAtIndex:i] isEqualToString:after]) {
+						editorUndoIndex = i;
+						found = YES;
+						break;
+					}
+				}
+				if (!found) {
+					editorUndoStates = [NSMutableArray arrayWithObject:after];
+					editorUndoIndex = 0;
+				}
+			} else {
+				while ([editorUndoStates count] > editorUndoIndex + 1) [editorUndoStates removeLastObject];
+				if (editorUndoGroupClosed || editorUndoIndex == 0) {
+					[editorUndoStates addObject:after];
+					editorUndoIndex++;
+				} else {
+					[editorUndoStates replaceObjectAtIndex:editorUndoIndex withObject:after];
+				}
+				editorUndoGroupClosed = NO;
+				NSUInteger bytes = 0;
+				for (NSString *state in editorUndoStates) bytes += [state length] * sizeof(unichar);
+				while ([editorUndoStates count] > 2 &&
+						([editorUndoStates count] > NVEditorUndoMaxStates || bytes > NVEditorUndoMaxBytes)) {
+					bytes -= [[editorUndoStates objectAtIndex:0] length] * sizeof(unichar);
+					[editorUndoStates removeObjectAtIndex:0];
+					editorUndoIndex--;
+					editorUndoNeedsRebuild = YES;
+				}
+				if (editorUndoNeedsRebuild)
+					[self performSelector:@selector(_rebuildSelectedEditorUndoActions) withObject:nil afterDelay:0];
+			}
+		}
 		[currentNote setContentString:[textView textStorage]];
 		[self postTextUpdate];
 		[self updateWordCount:(![prefsController showWordCount])];
@@ -1572,6 +1693,31 @@ terminateApp:
 	}
     
     
+}
+
+//The text system keeps replacement ranges in its undo actions. Once a remote edit
+//moves those ranges, replace the actions with whole-state transitions rebased over
+//the new text. An overlapping remote line wins when a local step is undone.
+- (void)_applyRebasedEditorUndoState:(NSNumber *)targetIndex {
+	if (editorUndoNote != currentNote || !editorUndoStates) return;
+	NSInteger target = [targetIndex integerValue];
+	if (target < 0 || target >= (NSInteger)[editorUndoStates count]) return;
+	NSUndoManager *manager = [currentNote undoManager];
+	[manager registerUndoWithTarget:self selector:@selector(_applyRebasedEditorUndoState:)
+							 object:[NSNumber numberWithInteger:editorUndoIndex]];
+	NSString *body = [editorUndoStates objectAtIndex:target];
+	NSAttributedString *content = [[NSAttributedString alloc] initWithString:body
+											 attributes:[[GlobalPrefs defaultPrefs] noteBodyAttributes]];
+	applyingRemoteOrRebasedText = YES;
+	NSArray *moved = [NVTextMerge updateStorage:[textView textStorage] toContent:content
+									 selectedRanges:[textView selectedRanges]];
+	[textView setSelectedRanges:moved];
+	[textView breakUndoCoalescing];
+	applyingRemoteOrRebasedText = NO;
+	editorUndoIndex = target;
+	[currentNote setContentString:[textView textStorage]];
+	[self postTextUpdate];
+	[self updateWordCount:(![prefsController showWordCount])];
 }
 
 - (void)textDidBeginEditing:(NSNotification *)aNotification {
@@ -1900,13 +2046,42 @@ terminateApp:
 
 - (void)contentsUpdatedForNote:(NoteObject*)aNoteObject {
 	if (aNoteObject == currentNote) {
+		NSString *oldBody = [[textView string] copy];
+		NSString *newBody = [[[aNoteObject contentString] string] copy];
+		if (![oldBody isEqualToString:newBody]) {
+			NSUndoManager *manager = [aNoteObject undoManager];
+			if (editorUndoNote == aNoteObject && editorUndoStates && editorUndoIndex > 0) {
+				//States after the current Undo position belong to Redo; discard them
+				//because the server applied its update to the currently visible body.
+				while ([editorUndoStates count] > editorUndoIndex + 1) [editorUndoStates removeLastObject];
+				for (NSUInteger i = 0; i < [editorUndoStates count]; i++) {
+					NSString *rebased = [NVTextMerge mergeBase:oldBody ours:newBody
+													  theirs:[editorUndoStates objectAtIndex:i]];
+					[editorUndoStates replaceObjectAtIndex:i withObject:[rebased copy]];
+				}
+			} else {
+				editorUndoStates = nil;
+				editorUndoIndex = 0;
+			}
+			//End any active typing group before replacing its range-based actions.
+			while ([manager groupingLevel] > 0) [manager endUndoGrouping];
+			editorUndoNeedsRebuild = YES;
+			[self _rebuildSelectedEditorUndoActions];
+		}
 		//apply only the part that changed (e.g. a line merged in from another device), so the
 		//selection stays with the text the user was looking at (ADR 0001 §8)
+		applyingRemoteOrRebasedText = YES;
 		NSArray *moved = [NVTextMerge updateStorage:[textView textStorage] toContent:[aNoteObject contentString]
 								  selectedRanges:[textView selectedRanges]];
 		[textView setSelectedRanges:moved];
+		[textView breakUndoCoalescing];
+		applyingRemoteOrRebasedText = NO;
 		[self postTextUpdate];
 		[self updateWordCount:(![prefsController showWordCount])];
+	} else {
+		//NotationController discards stale AppKit actions for a nonselected note.
+		[editorUndoByNote removeObjectForKey:aNoteObject];
+		[editorUndoRecentNotes removeObjectIdenticalTo:aNoteObject];
 	}
 }
 

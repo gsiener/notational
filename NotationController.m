@@ -151,8 +151,15 @@
 			continue;
 		}
 		if (note) {
+			NSString *previousBody = [[[note contentString] string] copy];
 			if ([note applyNoteRecord:record]) {
 				listChanged = YES;
+				//Only the selected editor can rebase its text-system undo actions.
+				//Other notes have no live editor, so discard their now-stale ranges.
+				BOOL selected = [delegate respondsToSelector:@selector(selectedNoteObject)] &&
+					[delegate performSelector:@selector(selectedNoteObject)] == note;
+				if (!selected && ![previousBody isEqualToString:[[note contentString] string]])
+					[[note undoManager] removeAllActions];
 				if ([delegate respondsToSelector:@selector(contentsUpdatedForNote:)])
 					[delegate performSelector:@selector(contentsUpdatedForNote:) withObject:note];
 			}
