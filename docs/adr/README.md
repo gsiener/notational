@@ -12,7 +12,7 @@ Proposed records require a decision before implementation. Recording a proposal 
 | [0005](0005-webkit-preview-and-background-rendering.md) | WebKit preview and background conversion | Accepted, retrospective |
 | [0006](0006-native-import-conversion.md) | Native HTML and TaskPaper conversion | Accepted, retrospective |
 | [0007](0007-native-scroll-controls.md) | Replace custom scrollbar rendering | Proposed |
-| [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Proposed |
+| [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Accepted |
 
 ## Known gaps
 
