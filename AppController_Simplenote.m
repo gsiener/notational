@@ -16,6 +16,7 @@
 #import "NVSimplenoteAccountWindowController.h"
 #import "TitlebarButton.h"
 #import "NVAccountSession.h"
+#import "EmptyView.h"
 
 static NSString *const AccountKey = @"simplenoteAccount";
 static NSString *const ClientIDKey = @"clientID";
@@ -155,11 +156,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(simplenoteSyncStatusChanged:)
 												 name:NVSyncStatusDidChangeNotification object:nil];
 	
-	//never signed in: notes come from Simplenote, so say so instead of showing an empty list
-	//(UI tests launch with -SuppressSignInPrompt YES; the menu item still opens the window)
-	if (![[notationController notesStore] metadataValueForKey:AccountKey] &&
-		![[NSUserDefaults standardUserDefaults] boolForKey:@"SuppressSignInPrompt"])
-		[self performSelector:@selector(showSimplenoteAccount:) withObject:nil afterDelay:0.3];
+	[editorStatusView setShowsSignIn:[accountSession status] == NVSyncStatusSignedOut && [notesTableView numberOfRows] == 0];
 }
 
 - (IBAction)showSimplenoteAccount:(id)sender {
@@ -173,14 +170,14 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 - (void)simplenoteSyncStatusChanged:(NSNotification *)notification {
 	NVSyncStatus status = (NVSyncStatus)[[[notification userInfo] objectForKey:NVSyncStatusKey] intValue];
 	[accountWindow refresh];
+	[editorStatusView setShowsSignIn:status == NVSyncStatusSignedOut && [notesTableView numberOfRows] == 0];
 	switch (status) {
 		case NVSyncStatusSyncing: [titleBarButton setStatusIconType:SynchronizingIcon]; break;
 		case NVSyncStatusOffline:
 		case NVSyncStatusSignedOut: [titleBarButton setStatusIconType:AlertIcon]; break;
 		default: [titleBarButton setStatusIconType:NoIcon]; break;
 	}
-	if (status == NVSyncStatusSignedOut) {
-		//the token stopped working: ask to sign in again
+	if ([[[notification userInfo] objectForKey:NVAccountCredentialExpiredKey] boolValue]) {
 		[self showSimplenoteAccount:nil];
 	}
 }
@@ -192,9 +189,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 }
 
 - (NVSyncStatus)simplenoteSyncStatus {
-	NVSyncEngine *engine = [notationController syncEngine];
-	if (!engine && [accountSession loadingCredentials]) return NVSyncStatusSyncing;
-	return engine ? [engine status] : NVSyncStatusSignedOut;
+	return [accountSession status];
 }
 
 - (NSError *)simplenoteLastError {

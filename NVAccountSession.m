@@ -3,6 +3,7 @@
 #import "NVNotesStore.h"
 
 static NSString *const AccountKey = @"simplenoteAccount";
+NSString *const NVAccountCredentialExpiredKey = @"credentialExpired";
 static NSError *TransitionError(NSString *message) {
     return [NSError errorWithDomain:@"NVAccountSession" code:1
                           userInfo:@{NSLocalizedDescriptionKey: message}];
@@ -12,8 +13,22 @@ static NSError *TransitionError(NSString *message) {
     id<NVAccountCredentials> credentials;
     NVSyncEngine *(^engineFactory)(NVNotesStore *, NSString *);
     NSUInteger generation;
+    NVSyncStatus currentStatus;
 }
 @synthesize notation = _notation, loadingCredentials = _loadingCredentials;
+- (NVSyncStatus)status { return currentStatus; }
+
+- (void)publishStatus:(NVSyncStatus)status expired:(BOOL)expired {
+    if (currentStatus == status) return;
+    currentStatus = status;
+    [[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification
+        object:_notation userInfo:@{NVSyncStatusKey: @(status), NVAccountCredentialExpiredKey: @(expired)}];
+}
+
+- (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
+    if (engine != [_notation syncEngine]) return;
+    [self publishStatus:status expired:status == NVSyncStatusSignedOut];
+}
 
 - (instancetype)initWithNotation:(NotationController *)notation
                     credentials:(id<NVAccountCredentials>)aCredentials
@@ -22,6 +37,8 @@ static NSError *TransitionError(NSString *message) {
         _notation = notation;
         credentials = aCredentials;
         engineFactory = [factory copy];
+        notation.accountSession = self;
+        currentStatus = NVSyncStatusSignedOut;
     }
     return self;
 }
@@ -31,6 +48,7 @@ static NSError *TransitionError(NSString *message) {
     if (!account) return;
     NSUInteger request = ++generation;
     _loadingCredentials = YES;
+    [self publishStatus:NVSyncStatusSyncing expired:NO];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSString *token = [self->credentials tokenForAccount:account];
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -41,8 +59,7 @@ static NSError *TransitionError(NSString *message) {
                 [self->_notation setSyncEngine:engine];
                 [engine start];
             }
-            [[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification
-                object:self->_notation userInfo:@{NVSyncStatusKey: @([self->_notation syncEngine] ? NVSyncStatusSyncing : NVSyncStatusSignedOut)}];
+            [self publishStatus:[self->_notation syncEngine] ? NVSyncStatusSyncing : NVSyncStatusSignedOut expired:NO];
         });
     });
 }
@@ -53,6 +70,7 @@ static NSError *TransitionError(NSString *message) {
     [_notation setSyncEngine:nil];
     [_notation flushAllNoteChanges];
     [credentials removeTokenForAccount:[[_notation notesStore] metadataValueForKey:AccountKey]];
+    [self publishStatus:NVSyncStatusSignedOut expired:NO];
 }
 
 - (void)signInAs:(NSString *)email token:(NSString *)token
@@ -88,6 +106,7 @@ static NSError *TransitionError(NSString *message) {
             [store setSyncPoint:nil];
             [store setMetadataValue:email forKey:AccountKey];
             self->_notation = [[NotationController alloc] initWithNotesStore:store];
+            self->_notation.accountSession = self;
             [self->credentials removeTokenForAccount:previous];
         } else {
             [store setMetadataValue:email forKey:AccountKey];
@@ -95,6 +114,7 @@ static NSError *TransitionError(NSString *message) {
         NVSyncEngine *engine = self->engineFactory(store, token);
         [self->_notation setSyncEngine:engine];
         [engine start];
+        [self publishStatus:NVSyncStatusSyncing expired:NO];
         completion(YES, nil);
     };
     if (choice != NVAccountSwitchSync) { finish(nil); return; }

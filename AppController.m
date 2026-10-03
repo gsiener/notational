@@ -34,6 +34,7 @@
 #import "BufferUtils.h"
 #import "LinkingEditor.h"
 #import "EmptyView.h"
+#import "NVAccountSession.h"
 #import "DualField.h"
 #import "TitlebarButton.h"
 #import "BookmarksController.h"
@@ -1489,6 +1490,8 @@ terminateApp:
     [self updateWordCount:![prefsController showWordCount]];
 	[textView setHidden:state];
 	[editorStatusView setHidden:!state];
+	[editorStatusView setShowsSignIn:state && [notesTableView numberOfRows] == 0 &&
+		[accountSession status] == NVSyncStatusSignedOut];
 	
 	if (state) {
         [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFinderShouldHide" object:self];

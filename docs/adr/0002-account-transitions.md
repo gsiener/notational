@@ -13,6 +13,11 @@ A delayed credential read could also restart sync after sign-out.
 
 The Account session owns credential restoration, sign-in, sign-out, and account switching.
 The window presents choices and status. The Account session owns the order of operations.
+It also publishes account status. The Notes controller forwards status changes from its
+active Sync engine; stale engines cannot publish. Only a credential rejection on the
+active engine marks an expiry transition and opens the account window automatically.
+Launch and ordinary sign-out leave the window closed. An empty local-only notes list
+offers an explicit sign-in action.
 
 When another account has unsynced changes, offer **Sync and Switch**, **Discard and Switch**, and **Cancel**.
 A failed sync keeps the old account active. Discard requires an explicit choice.
