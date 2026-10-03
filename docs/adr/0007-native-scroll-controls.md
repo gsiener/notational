@@ -1,24 +1,19 @@
-# ADR 0007: Replace custom scrollbar rendering with AppKit controls
+# ADR 0007: Use native AppKit scroll controls
 
-- Status: proposed
+- Status: accepted, implemented
 - Date: 2026-10-02
+- Accepted: 2026-10-03
 
-## Context and proposal
+## Decision
 
-The app carries BWToolKit-derived scroller classes, image assets, and a preference for an older scrollbar appearance.
-[ETScrollView](../../ETScrollView.m) already selects ordinary NSScroller when that preference is disabled.
-It also opts out of responsive scrolling.
+Use AppKit `NSScrollView` and `NSScroller` for the notes list and editor. Let the system choose the scroller style from the user's macOS setting. Set a light or dark knob for the app's custom note background; when the color cannot be converted to RGB, use AppKit's default knob style.
 
-Use NSScrollView and NSScroller with system-selected scroller style and appropriate knob contrast.
-Remove custom scroller subclasses and their assets after checking references in every localized nib.
-Remove the obsolete appearance preference while retaining scrolling, selection, and split-view behavior.
+Remove the obsolete nvALT scrollbar preference and the three custom scroller classes after checking localized nib references. Retain historical license attribution in `Acknowledgments.txt`. Keep responsive scrolling disabled until selection and editor hit testing have demonstrated parity. Preserve the existing split-view sizing and collapse state behavior; issue #34 owns its redesign.
 
-## Trade-off and acceptance
+## Evidence and follow-up
 
-This reduces drawing code and resource maintenance but changes the scrollbar appearance.
-It requires approval of that visible change before implementation.
-Test both system scrollbar settings, light/dark backgrounds, trackpad and mouse input, and the collapsed notes list.
-Re-evaluate responsive scrolling after removing the custom behavior; do not assume that changing its flag alone is safe.
+The implementation and localized nib audit are recorded in [the issue 46 review](issue-46-manual-review.md). The app builds, the edited localized Preferences nibs compile, and focused scroll and split-view tests pass. Physical mouse and trackpad input, selection while scrolling, all system scrollbar settings, restored dimensions in both layouts, and appearance remain manual checks; the review does not claim they passed.
 
-Apple documents [overlay scrollers](https://developer.apple.com/documentation/appkit/nsscroller/style/overlay) and
-[system-selected style](https://developer.apple.com/documentation/appkit/nsscroller/scrollerstyle).
+The accepted product decision is to proceed with native controls despite the visible appearance change. Manual findings can lead to follow-up fixes without restoring the obsolete rendering path.
+
+Apple documents [overlay scrollers](https://developer.apple.com/documentation/appkit/nsscroller/style/overlay) and [system-selected style](https://developer.apple.com/documentation/appkit/nsscroller/scrollerstyle).

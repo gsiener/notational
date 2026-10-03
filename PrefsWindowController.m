@@ -80,20 +80,17 @@
 }
 
 - (IBAction)setAppShortcut:(id)sender {
-	[[PTKeyComboPanel sharedPanel] showSheetForHotkey:[prefsController appActivationHotKey] forWindow:window modalDelegate:self];
+	[[PTKeyComboPanel sharedPanel] showSheetForKeyCombo:[prefsController appActivationKeyCombo] name:@"bring Notational Velocity to the foreground" forWindow:window modalDelegate:self];
 }
 
 - (void)keyComboPanelEnded:(PTKeyComboPanel*)panel {
-	PTKeyCombo *oldKeyCombo = [prefsController appActivationKeyCombo];
-	[prefsController setAppActivationKeyCombo:[panel keyCombo] sender:self];
-	
-	[appShortcutField setStringValue:[[prefsController appActivationKeyCombo] description]];
-		
-	if (![prefsController registerAppActivationKeystrokeWithTarget:[NSApp delegate] selector:@selector(toggleNVActivation:)]) {
-		[prefsController setAppActivationKeyCombo:oldKeyCombo sender:self];
-		NSLog(@"reverting to old (hopefully working key combo");
-	}
-	
+    if (![prefsController trySetAppActivationKeyCombo:[panel keyCombo]
+                                               target:[NSApp delegate]
+                                             selector:@selector(toggleNVActivation:)]) {
+        NSBeep();
+        NSLog(@"Activation shortcut is unavailable; keeping the previous shortcut");
+    }
+    [appShortcutField setStringValue:[[prefsController appActivationKeyCombo] description]];
 }
 
 - (IBAction)changeBodyFont:(id)sender {

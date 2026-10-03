@@ -28,4 +28,12 @@
     XCTAssertEqual([ETScrollView knobStyleForBackgroundColor:[NSColor whiteColor]], NSScrollerKnobStyleDark);
 }
 
+- (void)testUnknownBackgroundUsesSystemKnobStyle {
+    XCTAssertEqual([ETScrollView knobStyleForBackgroundColor:nil], NSScrollerKnobStyleDefault);
+    NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(2, 2)];
+    NSColor *pattern = [NSColor colorWithPatternImage:image];
+    XCTAssertNil([pattern colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]]);
+    XCTAssertEqual([ETScrollView knobStyleForBackgroundColor:pattern], NSScrollerKnobStyleDefault);
+}
+
 @end

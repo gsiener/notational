@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		B04600000000000000000001 /* ETScrollViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B04600000000000000000002 /* ETScrollViewTests.m */; };
+		A44100010000000000000005 /* NVActivationShortcutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A44100010000000000000006 /* NVActivationShortcutTests.m */; };
+		A44100010000000000000001 /* NVActivationShortcut.m in Sources */ = {isa = PBXBuildFile; fileRef = A44100010000000000000002 /* NVActivationShortcut.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
+		A44100010000000000000003 /* NVActivationShortcut.m in Sources */ = {isa = PBXBuildFile; fileRef = A44100010000000000000002 /* NVActivationShortcut.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		A11CE0000000000000000003 /* NVArchiving.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NVArchiving.m */; };
 		A11CE0000000000000000004 /* NVArchiving.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NVArchiving.m */; };
 		A11CE0000000000000000005 /* NVArchivingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000002 /* NVArchivingTests.m */; };
@@ -81,11 +84,9 @@
 		21DF19B410D172F600543C35 /* DFCapLeftRoundedInactive.png in Resources */ = {isa = PBXBuildFile; fileRef = 21DF19B010D172F600543C35 /* DFCapLeftRoundedInactive.png */; };
 		21E6B09B0B6E6D0C001ABEDC /* URLGetter.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21E6B0950B6E6D0B001ABEDC /* URLGetter.nib */; };
 		21E6B09F0B6E6D18001ABEDC /* URLGetter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21E6B09D0B6E6D18001ABEDC /* URLGetter.m */; };
-		21F1CD6D0B3A38DB001FB5F6 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F1CD6F0B3A38DB001FB5F6 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F1CD700B3A38DB001FB5F6 /* PTKeyCodes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 21F1CD6A0B3A38DB001FB5F6 /* PTKeyCodes.plist */; };
 		21F1CD710B3A38DB001FB5F6 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
-		21F1CD980B3A3F77001FB5F6 /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F1CDAD0B3A401F001FB5F6 /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		21F459AD0A92E01D00FB6FFE /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21F4599B0A92E01C00FB6FFE /* Carbon.framework */; };
 		21FF94F30B5AD22800DB6A2F /* ExporterManager.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21FF94ED0B5AD22800DB6A2F /* ExporterManager.nib */; };
@@ -222,10 +223,8 @@
 		F02771BFAA6A59EF3226689E /* BlorPasswordRetriever.m in Sources */ = {isa = PBXBuildFile; fileRef = 219FD63D0B309B69004E132B /* BlorPasswordRetriever.m */; };
 		C2A0F6CD512E8D5027F16D34 /* idea_ossl.c in Sources */ = {isa = PBXBuildFile; fileRef = 211344440B354E000081B064 /* idea_ossl.c */; };
 		25424577BEDCB154CE675753 /* broken_md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 211345A90B35D8540081B064 /* broken_md5.c */; };
-		C62B6EF44808A10668AC5C54 /* PTHotKeyCenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		61F158FEF89BE20B71903C78 /* PTKeyBroadcaster.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		B1F3E44983E1A5A65C72C678 /* PTKeyComboPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
-		410B5D775DE677368F3756AD /* PTHotKey.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		763AE2038000290F2D53F76C /* PTKeyCombo.m in Sources */ = {isa = PBXBuildFile; fileRef = 21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		4605ACDD374BF2D296FAD538 /* MultiplePageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21C737940B50C73E0048C08A /* MultiplePageView.m */; };
 		11BCD1A8BB46DEB0C1D61691 /* ExporterManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21FF94F50B5AD23B00DB6A2F /* ExporterManager.m */; };
@@ -351,6 +350,9 @@
 
 /* Begin PBXFileReference section */
 		B04600000000000000000002 /* ETScrollViewTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ETScrollViewTests.m; sourceTree = "<group>"; };
+		A44100010000000000000006 /* NVActivationShortcutTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVActivationShortcutTests.m; sourceTree = "<group>"; };
+		A44100010000000000000002 /* NVActivationShortcut.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = NVActivationShortcut.m; path = PTHotKeys/NVActivationShortcut.m; sourceTree = "<group>"; };
+		A44100010000000000000004 /* NVActivationShortcut.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = NVActivationShortcut.h; path = PTHotKeys/NVActivationShortcut.h; sourceTree = "<group>"; };
 		A11CE0000000000000000000 /* NVArchiving.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVArchiving.h; sourceTree = "<group>"; };
 		A11CE0000000000000000001 /* NVArchiving.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVArchiving.m; sourceTree = "<group>"; };
 		A11CE0000000000000000002 /* NVArchivingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVArchivingTests.m; sourceTree = "<group>"; };
@@ -495,15 +497,11 @@
 		21DF19B110D172F600543C35 /* DFCapLeftRounded.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = DFCapLeftRounded.png; path = Images/DFCapLeftRounded.png; sourceTree = "<group>"; };
 		21E6B09D0B6E6D18001ABEDC /* URLGetter.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = URLGetter.m; sourceTree = "<group>"; };
 		21E6B09E0B6E6D18001ABEDC /* URLGetter.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = URLGetter.h; sourceTree = "<group>"; };
-		21F1CD650B3A38DB001FB5F6 /* PTHotKeyCenter.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = PTHotKeyCenter.h; path = PTHotKeys/PTHotKeyCenter.h; sourceTree = "<group>"; };
-		21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PTHotKeyCenter.m; path = PTHotKeys/PTHotKeyCenter.m; sourceTree = "<group>"; };
 		21F1CD680B3A38DB001FB5F6 /* PTKeyBroadcaster.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = PTKeyBroadcaster.h; path = PTHotKeys/PTKeyBroadcaster.h; sourceTree = "<group>"; };
 		21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PTKeyBroadcaster.m; path = PTHotKeys/PTKeyBroadcaster.m; sourceTree = "<group>"; };
 		21F1CD6A0B3A38DB001FB5F6 /* PTKeyCodes.plist */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.plist; name = PTKeyCodes.plist; path = PTHotKeys/PTKeyCodes.plist; sourceTree = "<group>"; };
 		21F1CD6B0B3A38DB001FB5F6 /* PTKeyComboPanel.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = PTKeyComboPanel.h; path = PTHotKeys/PTKeyComboPanel.h; sourceTree = "<group>"; };
 		21F1CD6C0B3A38DB001FB5F6 /* PTKeyComboPanel.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PTKeyComboPanel.m; path = PTHotKeys/PTKeyComboPanel.m; sourceTree = "<group>"; };
-		21F1CD960B3A3F77001FB5F6 /* PTHotKey.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = PTHotKey.h; path = PTHotKeys/PTHotKey.h; sourceTree = "<group>"; };
-		21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PTHotKey.m; path = PTHotKeys/PTHotKey.m; sourceTree = "<group>"; };
 		21F1CDAB0B3A401F001FB5F6 /* PTKeyCombo.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = PTKeyCombo.h; path = PTHotKeys/PTKeyCombo.h; sourceTree = "<group>"; };
 		21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = PTKeyCombo.m; path = PTHotKeys/PTKeyCombo.m; sourceTree = "<group>"; };
 		21F4599B0A92E01C00FB6FFE /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
@@ -1157,12 +1155,10 @@
 		21F1CD490B3A38CB001FB5F6 /* HotKeys */ = {
 			isa = PBXGroup;
 			children = (
-				21F1CD650B3A38DB001FB5F6 /* PTHotKeyCenter.h */,
-				21F1CD660B3A38DB001FB5F6 /* PTHotKeyCenter.m */,
+				A44100010000000000000002 /* NVActivationShortcut.m */,
+				A44100010000000000000004 /* NVActivationShortcut.h */,
 				21F1CD680B3A38DB001FB5F6 /* PTKeyBroadcaster.h */,
 				21F1CD690B3A38DB001FB5F6 /* PTKeyBroadcaster.m */,
-				21F1CD960B3A3F77001FB5F6 /* PTHotKey.h */,
-				21F1CD970B3A3F77001FB5F6 /* PTHotKey.m */,
 				21F1CDAB0B3A401F001FB5F6 /* PTKeyCombo.h */,
 				21F1CDAC0B3A401F001FB5F6 /* PTKeyCombo.m */,
 				21F1CD6A0B3A38DB001FB5F6 /* PTKeyCodes.plist */,
@@ -1311,6 +1307,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				A44100010000000000000006 /* NVActivationShortcutTests.m */,
 				DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */,
 				69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */,
 				E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */,
@@ -1623,10 +1620,9 @@
 				219FD63E0B309B69004E132B /* BlorPasswordRetriever.m in Sources */,
 				211344450B354E000081B064 /* idea_ossl.c in Sources */,
 				211345AB0B35D8540081B064 /* broken_md5.c in Sources */,
-				21F1CD6D0B3A38DB001FB5F6 /* PTHotKeyCenter.m in Sources */,
 				21F1CD6F0B3A38DB001FB5F6 /* PTKeyBroadcaster.m in Sources */,
+				A44100010000000000000001 /* NVActivationShortcut.m in Sources */,
 				21F1CD710B3A38DB001FB5F6 /* PTKeyComboPanel.m in Sources */,
-				21F1CD980B3A3F77001FB5F6 /* PTHotKey.m in Sources */,
 				21F1CDAD0B3A401F001FB5F6 /* PTKeyCombo.m in Sources */,
 				21C737950B50C73E0048C08A /* MultiplePageView.m in Sources */,
 				21FF94F70B5AD23B00DB6A2F /* ExporterManager.m in Sources */,
@@ -1665,6 +1661,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A44100010000000000000005 /* NVActivationShortcutTests.m in Sources */,
 				4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */,
 				EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */,
 				998C7FE2BDC15D18479B6728 /* LinkingEditorCopyTests.m in Sources */,
@@ -1746,10 +1743,9 @@
 				F02771BFAA6A59EF3226689E /* BlorPasswordRetriever.m in Sources */,
 				C2A0F6CD512E8D5027F16D34 /* idea_ossl.c in Sources */,
 				25424577BEDCB154CE675753 /* broken_md5.c in Sources */,
-				C62B6EF44808A10668AC5C54 /* PTHotKeyCenter.m in Sources */,
 				61F158FEF89BE20B71903C78 /* PTKeyBroadcaster.m in Sources */,
+				A44100010000000000000003 /* NVActivationShortcut.m in Sources */,
 				B1F3E44983E1A5A65C72C678 /* PTKeyComboPanel.m in Sources */,
-				410B5D775DE677368F3756AD /* PTHotKey.m in Sources */,
 				763AE2038000290F2D53F76C /* PTKeyCombo.m in Sources */,
 				4605ACDD374BF2D296FAD538 /* MultiplePageView.m in Sources */,
 				11BCD1A8BB46DEB0C1D61691 /* ExporterManager.m in Sources */,

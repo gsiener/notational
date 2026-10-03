@@ -9,6 +9,7 @@
 
 + (NSScrollerKnobStyle)knobStyleForBackgroundColor:(NSColor *)color {
     NSColor *rgb = [color colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+    if (!rgb) return NSScrollerKnobStyleDefault;
     CGFloat red, green, blue, alpha;
     [rgb getRed:&red green:&green blue:&blue alpha:&alpha];
     CGFloat brightness = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
