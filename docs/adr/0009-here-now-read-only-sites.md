@@ -1,6 +1,6 @@
 # ADR 0009: Read-only here.now Sites in the Notes list
 
-- Status: proposed
+- Status: accepted for issue #30 implementation
 - Date: 2026-10-03
 - Issue: #30
 
@@ -10,7 +10,7 @@ The current [here.now list documentation](https://here.now/docs#list) and [OpenA
 
 These statements were checked against the public docs on 2026-10-03. No authenticated live account response was available; the adapter still needs a real account smoke test before UI integration.
 
-## Proposed behavior
+## Behavior
 
 1. Offer an independent here.now connection. Store its API key in a distinct Keychain service, never the Simplenote service. A Simplenote sign-out or account switch does not reassign Sites to another identity. Clearing the here.now connection removes its key and cached metadata.
 2. List personal, accepted shared, and joined workspace Sites using `scope=all`. Show each as a read-only row alongside Notes, with a Site icon and ownership or workspace label. Prefer `displayName`, then `slug`, for the title. Use `primaryUrl` for opening and retain `siteUrl` as the canonical address. The cache key is `(here.now account identity, ownership/workspace identity, slug)`, never a Note ID. Site rows never enter `NVNotesStore`, `NoteObject`, or Simplenote sync.
@@ -18,11 +18,15 @@ These statements were checked against the public docs on 2026-10-03. No authenti
 4. Refresh on connection and explicit Refresh, and on app activation after a reasonable age threshold. Follow every cursor before replacing the visible snapshot. Preserve the last complete snapshot on transport failure, 401, 403, 429, or partial pagination; mark it stale and show an actionable status. A successful empty inventory replaces the snapshot. Do not treat a failed refresh as evidence that Sites were deleted. Cache metadata per here.now identity for offline list visibility; opening a Site still needs network access.
 5. Search Notes locally as today. Filter cached Site title, slug, workspace name, and URL locally so results remain predictable offline. A separate opt-in content search could call the here.now search endpoint, with debounce, cancellation, cursor handling, and an explicit partial-index label. Do not silently mix incomplete remote full-text results into the local Notes search.
 
-## Decisions needed before broad UI integration
+## Chosen defaults
 
-- Should the default scope include accepted shared and every joined workspace, or should users select scopes?
-- Should clicking open the system browser or an in-app read-only WebKit pane? The prototype assumes the system browser because visitor access may need a separate session.
-- Should search include here.now indexed content, despite the documented format gaps, or only locally cached metadata?
-- How long should offline metadata remain visible after a 401 or lost workspace membership? The prototype keeps the last snapshot marked stale until reconnect or a completed refresh.
+- Include personal, accepted shared, and joined workspace Sites with `scope=all`.
+- Open the system browser only from an explicit Open command or Return on a Site row.
+- Search cached Site metadata locally; do not imply complete content search.
+- Keep the last complete snapshot marked stale on refresh failure until disconnect, reconnect, or a complete successful refresh.
 
-The attached isolated adapter prototype (`tools/here-now-read-prototype.swift`) exercises inventory refresh without changing application behavior. It intentionally has no publishing, mutation, credential storage, or UI wiring.
+`NVHereNowSites` owns read-only requests and a separate JSON metadata cache. Its API key lives in a dedicated Keychain service. `NVHereNowMixedList` combines Site rows with visible Notes without inserting a Site into `NVNotesStore` or Simplenote sync. The Notes menu supplies connection, disconnection, refresh, and explicit Open commands. The isolated earlier prototype (`tools/here-now-read-prototype.swift`) remains as design history.
+
+## Validation limits
+
+Fake-adapter tests cover cursor pagination, atomic replacement, authentication failure, URL preference, identity, metadata filtering, and Note command gating. An authenticated account smoke test and manual UI checks for both list layouts, keyboard and context-menu commands, offline display, and browser access to restricted Sites remain before release.

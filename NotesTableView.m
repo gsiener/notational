@@ -31,6 +31,7 @@
 #import "NotesTableHeaderCell.h"
 #import "LinkingEditor.h"
 #import "AppController.h"
+#import "NVHereNowSites.h"
 #import "AppController_Importing.h"
 
 #define STATUS_STRING_FONT_SIZE 16.0f
@@ -707,6 +708,13 @@ static id<NSDraggingSource> NVNoteFileDragSource(void) {
 	
 	if (![self numberOfSelectedRows])
 		return nil;
+	if ([(AppController *)[NSApp delegate] selectionContainsHereNowSite]) {
+		NSMenu *menu = [[NSMenu alloc] initWithTitle:@"here.now Site"];
+		NSMenuItem *item = [menu addItemWithTitle:@"Open in Browser" action:@selector(openSelectedHereNowSite:) keyEquivalent:@""];
+		item.target = [NSApp delegate];
+		item.enabled = [(AppController *)[NSApp delegate] selectedRowIsHereNowSite] && [self numberOfSelectedRows] == 1;
+		return menu;
+	}
 	
 	return [self defaultNoteCommandsMenuWithTarget:[NSApp delegate]];
 }
@@ -819,6 +827,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 			//changed selected rows:
 			selectedRows = [self selectedRowIndexes];
 		}
+		if ([(AppController *)[NSApp delegate] selectionContainsHereNowSite]) return;
 		
         NSArray *notes = [(FastListDataSource*)[self dataSource] objectsAtFilteredIndexes:selectedRows];
 		NSMutableArray *paths = [NSMutableArray arrayWithCapacity:[notes count]];
@@ -860,6 +869,10 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	unichar keyChar = [theEvent firstCharacter];
 
     if (keyChar == NSNewlineCharacter || keyChar == NSCarriageReturnCharacter || keyChar == NSEnterCharacter) {
+		if ([(AppController *)[NSApp delegate] selectedRowIsHereNowSite]) {
+			[(AppController *)[NSApp delegate] openSelectedHereNowSite:self];
+			return;
+		}
 		NSInteger sel = [self selectedRow];
 		if (sel < (unsigned)[self numberOfRows] && [self numberOfSelectedRows] == 1) {
 			NSInteger colIndex = [self columnWithIdentifier:NoteTitleColumnString];
@@ -1154,6 +1167,7 @@ enum { kNext_Tag = 'j', kPrev_Tag = 'k' };
 }
 
 - (void)editColumn:(NSInteger)columnIndex row:(NSInteger)rowIndex withEvent:(NSEvent *)event select:(BOOL)flag {
+    if ([[self dataSource] isKindOfClass:[NVHereNowMixedList class]] && [(NVHereNowMixedList *)[self dataSource] siteAtRow:rowIndex]) return;
     
     [(AppController *)[self delegate] setIsEditing:YES];
 	BOOL isTitleCol = [self columnWithIdentifier:NoteTitleColumnString] == columnIndex;

@@ -50,6 +50,7 @@
 #import "WordCountToken.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "nvaDevConfig.h"
+#import "NVHereNowSites.h"
 
 #define NSApplicationPresentationAutoHideMenuBar (1 <<  2)
 #define NSApplicationPresentationHideMenuBar (1 <<  3)
@@ -344,8 +345,9 @@ void outletObjectAwoke(id sender) {
 	//on tiger dualfield is often not ready to add tracking tracks until this point:
 	
 	[field setTrackingRect];
-    NSDate *before = [NSDate date];
+	NSDate *before = [NSDate date];
 	prefsWindowController = [[PrefsWindowController alloc] init];
+	NSString *siteCache = [[[NSFileManager defaultManager] applicationSupportDirectory] stringByAppendingPathComponent:@"here-now-sites.json"];
 	
 	//notes live in a Simplenote-backed store (ADR 0001); the old database is migrated once
 	NSError *storeError = nil;
@@ -357,6 +359,14 @@ void outletObjectAwoke(id sender) {
 	}
 	[self setNotationController:newNotation];
 	[self installSimplenoteMenuItem];
+	hereNowSites = [[NVHereNowSites alloc] initWithTransport:[NVHereNowHTTPTransport new] cacheURL:[NSURL fileURLWithPath:siteCache]];
+	mixedList = [NVHereNowMixedList new];
+	mixedList.notes = [notationController notesListDataSource];
+	[notesTableView setDataSource:mixedList];
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(hereNowSitesChanged:) name:NVHereNowSitesDidChangeNotification object:hereNowSites];
+	[self installHereNowMenuItems];
+	[hereNowSites restore];
+	lastHereNowActivationRefresh = [NSDate date];
 	
 	NSLog(@"load time: %g, ",[[NSDate date] timeIntervalSinceDate:before]);
 	//	NSLog(@"version: %s", PRODUCT_NAME);
@@ -428,7 +438,10 @@ terminateApp:
 			[[prefsController bookmarksController] performSelector:@selector(updateBookmarksUI) withObject:nil afterDelay:0.0];
 		}
 		[notationController setSortColumn:[notesTableView noteAttributeColumnForIdentifier:[prefsController sortedTableColumnKey]]];
-		[notesTableView setDataSource:[notationController notesListDataSource]];
+		if (mixedList) {
+			mixedList.notes = [notationController notesListDataSource];
+			[notesTableView setDataSource:mixedList];
+		} else [notesTableView setDataSource:[notationController notesListDataSource]];
 		[notesTableView setLabelsListSource:[notationController labelsListDataSource]];
 		[notationController setDelegate:self];
 		
@@ -484,6 +497,12 @@ terminateApp:
 	SEL selector = [menuItem action];
 	NSInteger numberSelected = [notesTableView numberOfSelectedRows];
 	NSInteger tag = [menuItem tag];
+    if (selector == @selector(openSelectedHereNowSite:)) return [self selectedRowIsHereNowSite] && numberSelected == 1;
+    if (selector == @selector(refreshHereNow:) || selector == @selector(disconnectHereNow:)) return [hereNowSites connected];
+    if (selector == @selector(connectHereNow:)) return YES;
+    if ([self selectionContainsHereNowSite] && (selector == @selector(printNote:) || selector == @selector(deleteNote:) ||
+        selector == @selector(exportNote:) || selector == @selector(tagNote:) || selector == @selector(renameNote:) ||
+        selector == @selector(copyNoteLink:) || selector == @selector(editNoteExternally:) || selector == @selector(previewNoteWithMarked:))) return NO;
     
     if ((tag == NVMarkupMarkdown) || (tag == NVMarkupMultiMarkdown)) {
         // Allow only one Preview mode to be selected at every one time
@@ -746,6 +765,7 @@ terminateApp:
 
 
 - (IBAction)renameNote:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
     if ([self notesListIsCollapsed]) {
         [self toggleCollapse:sender];
     }
@@ -756,6 +776,7 @@ terminateApp:
 }
 
 - (IBAction)deleteNote:(id)sender {
+	if ([self selectionContainsHereNowSite]) return;
 	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
 	if ([indexes count] > 0) {
 		
@@ -785,6 +806,7 @@ terminateApp:
 }
 
 - (IBAction)copyNoteLink:(id)sender {
+	if ([self selectionContainsHereNowSite]) return;
 	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
 	
 	if ([indexes count] == 1) {
@@ -794,6 +816,7 @@ terminateApp:
 }
 
 - (IBAction)exportNote:(id)sender {
+	if ([self selectionContainsHereNowSite]) return;
 	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
 	
 	NSArray *notes = [notationController notesAtIndexes:indexes];
@@ -803,6 +826,7 @@ terminateApp:
 }
 
 - (IBAction)editNoteExternally:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
     ExternalEditor *ed = [sender representedObject];
     if ([ed isKindOfClass:[ExternalEditor class]]) {
         NSIndexSet *indexes = [notesTableView selectedRowIndexes];
@@ -819,6 +843,7 @@ terminateApp:
 }
 
 - (IBAction)previewNoteWithMarked:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
     if (![[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2"] isFileURL] && ![[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marky"] isFileURL] && ![[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked-setapp"] isFileURL] && ![[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2.beta"] isFileURL])
     {
         NSBeep();
@@ -832,12 +857,14 @@ terminateApp:
 }
 
 - (IBAction)printNote:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
 	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
 	
 	[MultiplePageView printNotes:[notationController notesAtIndexes:indexes] forWindow:window];
 }
 
 - (IBAction)tagNote:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
     
     if ([self notesListIsCollapsed]) {
         [self toggleCollapse:sender];
@@ -1005,6 +1032,10 @@ terminateApp:
 	[notationController updateDateStringsIfNecessary];
 	[[notationController syncEngine] setInBackground:NO];
 	[[notationController syncEngine] syncNow];
+	if ([hereNowSites connected] && (!lastHereNowActivationRefresh || [[NSDate date] timeIntervalSinceDate:lastHereNowActivationRefresh] > 300)) {
+		lastHereNowActivationRefresh = [NSDate date];
+		[hereNowSites refresh];
+	}
 }
 
 - (void)applicationWillResignActive:(NSNotification *)aNotification {
@@ -1042,6 +1073,8 @@ terminateApp:
 		
 		[notesTableView deselectAll:sender];//thiss
 		[notationController filterNotesFromString:@""];
+		hereNowSearchQuery = @"";
+		if (mixedList) { [mixedList filterSitesForString:hereNowSearchQuery]; [notesTableView reloadData]; }
 		//was here
         [self setDualFieldIsVisible:YES];
         //		[self _expandToolbar];
@@ -1234,6 +1267,8 @@ terminateApp:
 		NSString *fieldString = [fieldEditor string];
 		
 		BOOL didFilter = [notationController filterNotesFromString:fieldString];
+		hereNowSearchQuery = [fieldString copy];
+		if (mixedList) { [mixedList filterSitesForString:fieldString]; [notesTableView reloadData]; }
 		
 		if ([fieldString length] > 0) {
 //             [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFindContextShouldReset" object:self];
@@ -1382,6 +1417,14 @@ terminateApp:
 	NSTextView *fieldEditor = (NSTextView*)[field currentEditor];
 	
 	if (table == (NSTableView*)notesTableView) {
+		if ([self selectionContainsHereNowSite]) {
+			[self _setCurrentNote:nil];
+			[textView setString:@""];
+			[self setEmptyViewState:YES];
+			NVHereNowSite *site = [mixedList siteAtRow:selectedRow];
+			[window setTitle:site ? [NSString stringWithFormat:@"%@ — here.now (read-only)%@", site.title, hereNowSites.stale ? @" — saved" : @""] : @"here.now Sites (read-only)"];
+			return;
+		}
 		
 		if (selectedRow > -1 && numberSelected == 1) {
 			//if it is uncached, cache the typed string only if we are selecting a note
@@ -1776,6 +1819,8 @@ terminateApp:
 			//set the field's text and filter from that same string, so the two agree (#24)
 			[field setStringValue:string];
 			[notationController filterNotesFromString:string];
+			hereNowSearchQuery = [string copy];
+			if (mixedList) { [mixedList filterSitesForString:string]; [notesTableView reloadData]; }
 		}
 	}
 }
@@ -1866,6 +1911,10 @@ terminateApp:
 	
 	if (someNotation == notationController) {
 		//deal with one notation at a time
+		if (mixedList) {
+			mixedList.notes = [notationController notesListDataSource];
+			[mixedList filterSitesForString:hereNowSearchQuery];
+		}
         
 		[notesTableView reloadData];
 		//[notesTableView noteNumberOfRowsChanged];
@@ -2109,6 +2158,7 @@ terminateApp:
 #pragma mark multitagging
 
 - (NSArray *)commonLabelsForNotesAtIndexes:(NSIndexSet *)selDexes{
+	if (mixedList && [mixedList selectionContainsSite:selDexes]) return @[];
 	NSArray *retArray =[NSArray array];
     
 	NSEnumerator *noteEnum = [[notationController notesAtIndexes:selDexes] objectEnumerator];
@@ -2148,6 +2198,7 @@ terminateApp:
 }
 
 - (IBAction)multiTag:(id)sender {
+    if ([self selectionContainsHereNowSite]) return;
 	NSString *tagString = [tagEditor.tagFieldString stringByTrimmingCharactersInSet:[NSCharacterSet labelSeparatorCharacterSet]];
 	NSArray *newTags;
     if (tagString&&(tagString.length>0)) {
@@ -2856,4 +2907,65 @@ terminateApp:
         return returnArray;
     }
     
+- (BOOL)selectionContainsHereNowSite {
+    return mixedList && [mixedList selectionContainsSite:[notesTableView selectedRowIndexes]];
+}
+
+- (BOOL)selectedRowIsHereNowSite {
+    return mixedList && [mixedList siteAtRow:[notesTableView selectedRow]] != nil;
+}
+
+- (void)installHereNowMenuItems {
+    NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
+    [menu addItem:[NSMenuItem separatorItem]];
+    NSMenuItem *open = [menu addItemWithTitle:@"Open here.now Site" action:@selector(openSelectedHereNowSite:) keyEquivalent:@""];
+    open.target = self;
+    NSMenuItem *connect = [menu addItemWithTitle:@"Connect here.now…" action:@selector(connectHereNow:) keyEquivalent:@""];
+    connect.target = self;
+    NSMenuItem *refresh = [menu addItemWithTitle:@"Refresh here.now Sites" action:@selector(refreshHereNow:) keyEquivalent:@""];
+    refresh.target = self;
+    NSMenuItem *disconnect = [menu addItemWithTitle:@"Disconnect here.now" action:@selector(disconnectHereNow:) keyEquivalent:@""];
+    disconnect.target = self;
+    NSMenuItem *status = [menu addItemWithTitle:@"here.now: Not connected" action:NULL keyEquivalent:@""];
+    status.tag = 30030; status.enabled = NO;
+}
+
+- (void)hereNowSitesChanged:(NSNotification *)notification {
+    if (mixedList) {
+        mixedList.sites = hereNowSites.sites;
+        mixedList.stale = hereNowSites.stale;
+        [mixedList filterSitesForString:hereNowSearchQuery];
+        [notesTableView reloadData];
+    }
+    NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
+    [[menu itemWithTag:30030] setTitle:[@"here.now: " stringByAppendingString:hereNowSites.status ?: @"Unknown"]];
+}
+
+- (IBAction)connectHereNow:(id)sender {
+    NSAlert *alert = [NSAlert new];
+    alert.messageText = @"Connect here.now";
+    alert.informativeText = @"Paste a here.now API key. It is stored in Keychain and used only to list Sites.";
+    NSSecureTextField *input = [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 0, 320, 24)];
+    alert.accessoryView = input;
+    [alert addButtonWithTitle:@"Connect"];
+    [alert addButtonWithTitle:@"Cancel"];
+    if ([alert runModal] != NSAlertFirstButtonReturn) return;
+    [hereNowSites connectWithKey:input.stringValue completion:^(NSError *error) {
+        if (error) {
+            NSAlert *failure = [NSAlert new];
+            failure.messageText = @"here.now connection failed";
+            failure.informativeText = error.localizedDescription;
+            [failure beginSheetModalForWindow:self->window completionHandler:nil];
+        }
+    }];
+}
+
+- (IBAction)disconnectHereNow:(id)sender { [hereNowSites disconnect]; }
+- (IBAction)refreshHereNow:(id)sender { [hereNowSites refresh]; }
+- (IBAction)openSelectedHereNowSite:(id)sender {
+    if ([notesTableView numberOfSelectedRows] != 1) return;
+    NVHereNowSite *site = [mixedList siteAtRow:[notesTableView selectedRow]];
+    if (site) [[NSWorkspace sharedWorkspace] openURL:site.URL];
+}
+
     @end

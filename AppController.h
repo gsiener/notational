@@ -21,6 +21,7 @@
 #import "NotesTableView.h"
 
 @class NVAccountSession;
+@class NVHereNowSites, NVHereNowMixedList;
 @class LinkingEditor;
 @class EmptyView;
 @class NotesTableView;
@@ -43,6 +44,10 @@
 <NSApplicationDelegate, NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NVSplitViewDelegate>
 {
 	NVAccountSession *accountSession;
+	NVHereNowSites *hereNowSites;
+	NVHereNowMixedList *mixedList;
+	NSString *hereNowSearchQuery;
+	NSDate *lastHereNowActivationRefresh;
 	IBOutlet NSMenuItem *fsMenuItem;
 	BOOL wasVert;
     BOOL wasDFVisible;
@@ -123,6 +128,12 @@ void outletObjectAwoke(id sender);
 - (IBAction)makeActiveAndShowWindow:(id)sender;
 - (IBAction)renameNote:(id)sender;
 - (IBAction)deleteNote:(id)sender;
+- (IBAction)connectHereNow:(id)sender;
+- (IBAction)disconnectHereNow:(id)sender;
+- (IBAction)refreshHereNow:(id)sender;
+- (IBAction)openSelectedHereNowSite:(id)sender;
+- (BOOL)selectionContainsHereNowSite;
+- (BOOL)selectedRowIsHereNowSite;
 - (IBAction)copyNoteLink:(id)sender;
 - (IBAction)exportNote:(id)sender;
 - (IBAction)editNoteExternally:(id)sender;
