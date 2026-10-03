@@ -16,7 +16,7 @@ On this checkout's host, `/Applications` and `~/Applications` contain no visibly
 | External deletion | A missing path fails import and leaves note content intact. Covered by `NoteObjectTests`. | Treat deletion as a missing edit, not an empty note, and decide how to finish the session. |
 | Concurrent local change | A later `FMod` imports the entire temp file, replacing the local note body. No conflict detection exists in this path. Covered as current behavior by `NoteObjectTests`. | Track the note revision at session start and decide merge/conflict policy before importing. |
 | Close and cleanup | `FCls` calls `NoteObject` to remove the temporary file and removes the session record. Covered at the note callback. | Supply an equivalent close/abandon signal. File watching alone has no document-close event; a timeout can discard late edits. |
-| Failed open | The Apple-event send status is now checked, and a failed note launch removes its temp file. | Surface open failure and remove the temp file without registering a session. |
+| Failed open | Launch and Apple-event failures return `NO` without registering a session. Generated note and string files are removed; `editFile:` leaves the caller's original file intact. Deterministic tests cover both failures. | Surface open failure and remove only files owned by the editing session. |
 
 `NSWorkspace` can choose and open an editor, but it does not provide the ODB save and close callbacks. A native replacement would need directory monitoring, atomic-replacement recovery, import debouncing, session ownership, conflict handling, and an explicit close/cleanup policy. That is not yet a demonstrated reduction in code or risk.
 

@@ -34,6 +34,7 @@ NSString * const ODBEditorIsEditingString	= @"ODBEditorIsEditingString";
 @interface ODBEditor(Private)
 
 - (BOOL)_launchExternalEditor:(ExternalEditor*)ed;
+- (OSStatus)_sendOpenEvent:(NSAppleEventDescriptor *)event reply:(AEDesc *)reply;
 - (NSString*)_nonexistingTemporaryPathForFilename:(NSString*)filename;
 - (NSString *)_tempFilePathForEditingString:(NSString *)string;
 - (BOOL)_editFile:(NSString *)path inEditor:(ExternalEditor*)ed isEditingString:(BOOL)editingStringFlag options:(NSDictionary *)options forClient:(id)client context:(NSDictionary *)context;
@@ -59,7 +60,7 @@ static ODBEditor	*_sharedODBEditor;
 		UInt32  packageType = 0;
 		UInt32  packageCreator = 0;
 		
-		if (_sharedODBEditor != nil) {
+		if (_sharedODBEditor != nil && [self class] == [ODBEditor class]) {
 			[self autorelease];
 			[NSException raise: NSInternalInconsistencyException format: @"ODBEditor is a singleton - use [ODBEditor sharedODBEditor]"];
 			return nil;
@@ -73,9 +74,11 @@ static ODBEditor	*_sharedODBEditor;
 
 		// setup our event handlers
 		
-		NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
-		[appleEventManager setEventHandler: self andSelector: @selector(handleModifiedFileEvent:withReplyEvent:) forEventClass: kODBEditorSuite andEventID: kAEModifiedFile];
-		[appleEventManager setEventHandler: self andSelector: @selector(handleClosedFileEvent:withReplyEvent:) forEventClass: kODBEditorSuite andEventID: kAEClosedFile];
+		if ([self class] == [ODBEditor class]) {
+			NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
+			[appleEventManager setEventHandler: self andSelector: @selector(handleModifiedFileEvent:withReplyEvent:) forEventClass: kODBEditorSuite andEventID: kAEModifiedFile];
+			[appleEventManager setEventHandler: self andSelector: @selector(handleClosedFileEvent:withReplyEvent:) forEventClass: kODBEditorSuite andEventID: kAEClosedFile];
+		}
 				
 	}
 	
@@ -83,9 +86,11 @@ static ODBEditor	*_sharedODBEditor;
 }
 
 - (void)dealloc {
-	NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
-	[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEModifiedFile];
-	[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEClosedFile];
+	if ([self class] == [ODBEditor class]) {
+		NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
+		[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEModifiedFile];
+		[appleEventManager removeEventHandlerForEventClass: kODBEditorSuite andEventID: kAEClosedFile];
+	}
 	[_filePathsBeingEdited release];
 	[super dealloc];
 }
@@ -163,7 +168,9 @@ beepReturn:
 	NSString *path = [self _tempFilePathForEditingString:string];
 
 	if (path != nil) {
-		return [self _editFile:path inEditor:ed isEditingString:YES options:options forClient:client context:context];
+		BOOL opened = [self _editFile:path inEditor:ed isEditingString:YES options:options forClient:client context:context];
+		if (!opened) [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+		return opened;
     }
     
 	return NO;
@@ -173,6 +180,10 @@ beepReturn:
 @end
 
 @implementation ODBEditor(Private)
+
+- (OSStatus)_sendOpenEvent:(NSAppleEventDescriptor *)event reply:(AEDesc *)reply {
+	return AESendMessage([event aeDesc], reply, kAEWaitReply, kAEDefaultTimeout);
+}
 
 - (BOOL)_launchExternalEditor:(ExternalEditor*)ed {
 	BOOL success = NO;
@@ -251,16 +262,17 @@ beepReturn:
 	AEDesc reply = {typeNull, NULL};														
 	NSString *customPath = [options objectForKey: ODBEditorCustomPathKey];
 	
-	[self _launchExternalEditor:ed];
+	if (![self _launchExternalEditor:ed]) return NO;
 	
 	[appleEvent setParamDescriptor: [NSAppleEventDescriptor descriptorWithFilePath: path] forKeyword: keyDirectObject];
 	[appleEvent setParamDescriptor: [NSAppleEventDescriptor descriptorWithTypeCode: _signature] forKeyword: keyFileSender];
 	if (customPath != nil)
 		[appleEvent setParamDescriptor: [NSAppleEventDescriptor descriptorWithString: customPath] forKeyword: keyFileCustomPath];
 	
-	status = AESendMessage([appleEvent aeDesc], &reply, kAEWaitReply, kAEDefaultTimeout);
+	status = [self _sendOpenEvent:appleEvent reply:&reply];
 	
 	if (status == noErr) {
+		if (reply.descriptorType == typeNull) return NO;
 		replyDescriptor = [[[NSAppleEventDescriptor alloc] initWithAEDescNoCopy: &reply] autorelease];
 		errorDescriptor = [replyDescriptor paramDescriptorForKeyword: keyErrorNumber];
 		
@@ -281,6 +293,9 @@ beepReturn:
 			
 			[_filePathsBeingEdited setObject: dictionary forKey: path];
 		}
+	}
+	else if (reply.descriptorType != typeNull) {
+		AEDisposeDesc(&reply);
 	}
 	
 	success = (status == noErr);
