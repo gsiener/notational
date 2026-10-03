@@ -129,12 +129,14 @@
 }
 
 - (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
+    if (engine != syncEngine || resourcesClosed) return;
 	[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:self
 													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:NVSyncStatusKey]];
 }
 
 //NVSyncEngineDelegate, on the main thread
 - (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
+    if (engine != syncEngine || resourcesClosed) return;
 	BOOL listChanged = NO;
 	NSMutableArray *removed = [NSMutableArray array];
 	for (NVNoteRecord *record in records) {
@@ -223,6 +225,8 @@
 }
 
 - (void)closeAllResources {
+    if (resourcesClosed) return;
+    resourcesClosed = YES;
 	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
 	[self flushAllNoteChanges];
 	[syncEngine stop];

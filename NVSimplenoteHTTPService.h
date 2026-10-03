@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NVSimplenoteService.h"
+#import "NVAccountSession.h"
 
 @interface NVSimplenoteHTTPService : NSObject <NVSimplenoteService>
 
@@ -36,7 +37,7 @@
 @end
 
 //Keychain storage for the sync token (generic password, one per account email)
-@interface NVSimplenoteCredentials : NSObject
+@interface NVSimplenoteCredentials : NSObject <NVAccountCredentials>
 
 - (id)initWithService:(NSString *)service;
 + (NVSimplenoteCredentials *)defaultCredentials;

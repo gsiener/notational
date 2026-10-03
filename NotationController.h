@@ -34,6 +34,7 @@
 @class NVNotesStore, NVSyncEngine;
 
 @interface NotationController : NSObject <NVNoteDelegate> {
+    BOOL resourcesClosed;
     NSMutableArray *allNotes;
 	//the same notes by Simplenote id; kept in step wherever allNotes gains or loses a note
 	NSMutableDictionary *notesByRecordID;

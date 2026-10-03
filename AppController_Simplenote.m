@@ -15,6 +15,7 @@
 #import "NVLegacyImporter.h"
 #import "NVSimplenoteAccountWindowController.h"
 #import "TitlebarButton.h"
+#import "NVAccountSession.h"
 
 static NSString *const AccountKey = @"simplenoteAccount";
 static NSString *const ClientIDKey = @"clientID";
@@ -22,8 +23,7 @@ static NSString *const LegacyImportKey = @"legacyImportVersion";
 static NSString *const NotationSettingsKey = @"notationSettings";
 
 static NVSimplenoteAccountWindowController *accountWindow = nil;
-//the saved token is being read from the keychain at launch
-static BOOL loadingToken = NO;
+
 
 @implementation AppController (Simplenote)
 
@@ -100,11 +100,6 @@ static BOOL loadingToken = NO;
 	return clientID;
 }
 
-- (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store {
-	NSString *account = [store metadataValueForKey:AccountKey];
-	return [self syncEngineForStore:store token:[[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account]];
-}
-
 - (NVSyncEngine *)syncEngineForStore:(NVNotesStore *)store token:(NSString *)token {
 	if (![store metadataValueForKey:AccountKey] || !token) return nil;
 	NVSimplenoteHTTPService *service = [[NVSimplenoteHTTPService alloc] initWithToken:token clientID:[self clientIDForStore:store]];
@@ -129,26 +124,13 @@ static BOOL loadingToken = NO;
 	[self migrateLegacyDatabaseIntoStore:store];
 
 	NotationController *notation = [[NotationController alloc] initWithNotesStore:store];
-	NSString *account = [store metadataValueForKey:AccountKey];
-	if (account) {
-		//off the main thread: the keychain may put up an access prompt (e.g. after a rebuild changes the
-		//signature), and the window should still appear while it waits (#27)
-		loadingToken = YES;
-		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-			NSString *token = [[NVSimplenoteCredentials defaultCredentials] tokenForAccount:account];
-			dispatch_async(dispatch_get_main_queue(), ^{
-				loadingToken = NO;
-				//still the same store and account, and nobody signed in meanwhile
-				if (![notation syncEngine] && [account isEqualToString:[store metadataValueForKey:AccountKey]]) {
-					NVSyncEngine *engine = [self syncEngineForStore:store token:token];
-					[notation setSyncEngine:engine];
-					[engine start];
-				}
-				[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:nil
-																  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:[self simplenoteSyncStatus]] forKey:NVSyncStatusKey]];
-			});
-		});
-	}
+    __weak AppController *weakSelf = self;
+    accountSession = [[NVAccountSession alloc] initWithNotation:notation
+        credentials:[NVSimplenoteCredentials defaultCredentials]
+        engineFactory:^NVSyncEngine *(NVNotesStore *aStore, NSString *token) {
+            return [weakSelf syncEngineForStore:aStore token:token];
+        }];
+    [accountSession restoreSignIn];
 	return notation;
 }
 
@@ -211,7 +193,7 @@ static BOOL loadingToken = NO;
 
 - (NVSyncStatus)simplenoteSyncStatus {
 	NVSyncEngine *engine = [notationController syncEngine];
-	if (!engine && loadingToken) return NVSyncStatusSyncing;
+	if (!engine && [accountSession loadingCredentials]) return NVSyncStatusSyncing;
 	return engine ? [engine status] : NVSyncStatusSignedOut;
 }
 
@@ -219,45 +201,22 @@ static BOOL loadingToken = NO;
 	return [[notationController syncEngine] lastError];
 }
 
-- (BOOL)simplenoteAccountWillSignInAs:(NSString *)email {
-	NVNotesStore *store = [notationController notesStore];
-	NSString *previous = [store metadataValueForKey:AccountKey];
-	if (!previous || [previous caseInsensitiveCompare:email] == NSOrderedSame || ![store noteCount]) return YES;
-
-	return NVRunAlert(NSAlertStyleWarning, [NSString stringWithFormat:NSLocalizedString(@"Switch from %@ to %@?", nil), previous, email],
-					  NSLocalizedString(@"Notes from the other account will be removed from this Mac. They stay in Simplenote. Notes not yet synced will be lost.", nil),
-					  NSLocalizedString(@"Switch Accounts", nil), NSLocalizedString(@"Cancel", nil), nil) == NSAlertFirstButtonReturn;
-}
-
-- (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token {
-	NVNotesStore *store = [notationController notesStore];
-	NSString *previous = [store metadataValueForKey:AccountKey];
-	[[NVSimplenoteCredentials defaultCredentials] setToken:token forAccount:email];
-
-	if (previous && [previous caseInsensitiveCompare:email] != NSOrderedSame) {
-		[[notationController syncEngine] stop];
-		[notationController setSyncEngine:nil];
-		[[NVSimplenoteCredentials defaultCredentials] removeTokenForAccount:previous];
-		[store removeAllNotes];
-		[store setSyncPoint:nil];
-		[store setMetadataValue:email forKey:AccountKey];
-		[self setNotationController:[[NotationController alloc] initWithNotesStore:store]];
-	} else {
-		[store setMetadataValue:email forKey:AccountKey];
-	}
-
-	NVSyncEngine *engine = [self syncEngineForStore:store];
-	[notationController setSyncEngine:engine];
-	[engine start];
+- (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token completion:(void (^)(BOOL, NSError *))completion {
+    [accountSession signInAs:email token:token choose:^NVAccountSwitchChoice {
+        NSInteger result = NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"Switch accounts with unsynced changes?", nil),
+            NSLocalizedString(@"Sync changes to the old account before switching, or discard them. Discarded changes cannot be recovered from this Mac.", nil),
+            NSLocalizedString(@"Sync and Switch", nil), NSLocalizedString(@"Cancel", nil), NSLocalizedString(@"Discard and Switch", nil));
+        if (result == NSAlertFirstButtonReturn) return NVAccountSwitchSync;
+        return result == NSAlertThirdButtonReturn ? NVAccountSwitchDiscard : NVAccountSwitchCancel;
+    } completion:^(BOOL switched, NSError *error) {
+        if (switched && notationController != [accountSession notation])
+            [self setNotationController:[accountSession notation]];
+        completion(switched, error);
+    }];
 }
 
 - (void)simplenoteAccountSignOut {
-	NVNotesStore *store = [notationController notesStore];
-	NSString *account = [store metadataValueForKey:AccountKey];
-	[[notationController syncEngine] stop];
-	[notationController setSyncEngine:nil];
-	[[NVSimplenoteCredentials defaultCredentials] removeTokenForAccount:account];
-	//the account name stays so signing back in to the same account keeps the local copy
+    [accountSession signOut];
 }
 
 - (void)simplenoteSyncNow {

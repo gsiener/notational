@@ -20,6 +20,7 @@
 #import "NotationController.h"
 #import "NotesTableView.h"
 
+@class NVAccountSession;
 @class LinkingEditor;
 @class EmptyView;
 @class NotesTableView;
@@ -41,6 +42,7 @@
 @interface AppController : NSObject 
 <NSApplicationDelegate, NSToolbarDelegate, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NVSplitViewDelegate>
 {
+	NVAccountSession *accountSession;
 	IBOutlet NSMenuItem *fsMenuItem;
 	BOOL wasVert;
     BOOL wasDFVisible;

@@ -352,6 +352,9 @@
 		74F43DE013CF09C669B42B43 /* NVTestSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 5105AA8740DFB619F1959375 /* NVTestSupport.m */; };
 		60FBF1D9433BAEF1F05F0F19 /* NoteTitleRuleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */; };
 		998C7FE2BDC15D18479B6728 /* LinkingEditorCopyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */; };
+		7531994172A106E0A77C503F /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
+		EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
+		4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -821,6 +824,9 @@
 		5105AA8740DFB619F1959375 /* NVTestSupport.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVTestSupport.m; sourceTree = "<group>"; };
 		E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NoteTitleRuleTests.m; sourceTree = "<group>"; };
 		69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LinkingEditorCopyTests.m; sourceTree = "<group>"; };
+		51D4FC1A5C566FFB63B24FA9 /* NVAccountSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVAccountSession.h; sourceTree = "<group>"; };
+		301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSession.m; sourceTree = "<group>"; };
+		DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSessionTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -866,6 +872,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */,
+				51D4FC1A5C566FFB63B24FA9 /* NVAccountSession.h */,
 				D22B77BC1DBEEE80D2AECD55 /* NVNoteDelegate.h */,
 				048B1473D0F4023FAC6A1F24 /* NVSplitView.m */,
 				6A37956C7FD5533FED208FB6 /* NVSplitView.h */,
@@ -1364,6 +1372,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */,
 				69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */,
 				E336A7BAE1D0B07C7193BFD3 /* NoteTitleRuleTests.m */,
 				5105AA8740DFB619F1959375 /* NVTestSupport.m */,
@@ -1638,6 +1647,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7531994172A106E0A77C503F /* NVAccountSession.m in Sources */,
 				8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */,
 				711437CC0586B589020F4E59 /* NVTheme.m in Sources */,
 				A11CE0000000000000000003 /* NVArchiving.m in Sources */,
@@ -1733,6 +1743,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */,
+				EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */,
 				998C7FE2BDC15D18479B6728 /* LinkingEditorCopyTests.m in Sources */,
 				60FBF1D9433BAEF1F05F0F19 /* NoteTitleRuleTests.m in Sources */,
 				74F43DE013CF09C669B42B43 /* NVTestSupport.m in Sources */,

@@ -13,9 +13,7 @@
 - (NSString *)simplenoteAccountEmail;
 - (NVSyncStatus)simplenoteSyncStatus;
 - (NSError *)simplenoteLastError;
-//return NO to cancel (e.g. the user declined switching accounts)
-- (BOOL)simplenoteAccountWillSignInAs:(NSString *)email;
-- (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token;
+- (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token completion:(void (^)(BOOL switched, NSError *error))completion;
 - (void)simplenoteAccountSignOut;
 - (void)simplenoteSyncNow;
 @end

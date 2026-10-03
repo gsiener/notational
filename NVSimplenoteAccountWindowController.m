@@ -11,10 +11,11 @@ typedef enum { StepEmail, StepCode, StepSignedIn } AccountStep;
 @interface NVSimplenoteAccountWindowController () {
 	NSTextField *messageLabel, *statusLabel;
 	NSTextField *emailField, *codeField;
-	NSButton *primaryButton, *secondaryButton;
+	NSButton *primaryButton, *secondaryButton, *switchButton;
 	NSProgressIndicator *spinner;
 	AccountStep step;
-	NSString *pendingEmail;
+	NSString *pendingEmail, *pendingToken;
+    BOOL choosingAccount;
 	BOOL busy;
 }
 @end
@@ -69,6 +70,13 @@ static NSTextField *Label(NSRect frame) {
 		[secondaryButton setAction:@selector(secondaryAction:)];
 		[content addSubview:secondaryButton];
 
+        switchButton = [[NSButton alloc] initWithFrame:NSMakeRect(20, 14, 100, 32)];
+        [switchButton setBezelStyle:NSBezelStyleRounded];
+        [switchButton setTitle:NSLocalizedString(@"Switch…", nil)];
+        [switchButton setTarget:self];
+        [switchButton setAction:@selector(switchAccount:)];
+        [content addSubview:switchButton];
+
 		spinner = [[NSProgressIndicator alloc] initWithFrame:NSMakeRect(20, 22, 16, 16)];
 		[spinner setStyle:NSProgressIndicatorStyleSpinning];
 		[spinner setControlSize:NSControlSizeSmall];
@@ -86,6 +94,7 @@ static NSTextField *Label(NSRect frame) {
 	else [spinner stopAnimation:nil];
 	[primaryButton setEnabled:!busy];
 	[secondaryButton setEnabled:!busy];
+    [switchButton setEnabled:!busy];
 	[emailField setEnabled:!busy];
 	[codeField setEnabled:!busy];
 }
@@ -106,11 +115,13 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 	[emailField setHidden:step != StepEmail];
 	[codeField setHidden:step != StepCode];
 	[secondaryButton setHidden:NO];
+    [switchButton setHidden:step != StepSignedIn];
 	switch (step) {
 		case StepEmail:
 			[messageLabel setStringValue:NSLocalizedString(@"Sign in to keep your notes in sync with Simplenote. Simplenote will email you a sign-in code.", nil)];
 			[primaryButton setTitle:NSLocalizedString(@"Email Me a Code", nil)];
-			[secondaryButton setHidden:YES];
+			[secondaryButton setHidden:!choosingAccount];
+            [secondaryButton setTitle:NSLocalizedString(@"Cancel", nil)];
 			if (![[emailField stringValue] length] && [accountDelegate simplenoteAccountEmail])
 				[emailField setStringValue:[accountDelegate simplenoteAccountEmail]];
 			[[self window] makeFirstResponder:emailField];
@@ -132,7 +143,7 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 
 - (void)refresh {
 	[self window];
-	if (busy || step == StepCode) return;
+	if (busy || step == StepCode || choosingAccount) return;
 	NVSyncStatus status = [accountDelegate simplenoteSyncStatus];
 	BOOL signedIn = [accountDelegate simplenoteAccountEmail] && status != NVSyncStatusSignedOut;
 	[self showStep:signedIn ? StepSignedIn : StepEmail];
@@ -153,6 +164,34 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 	});
 }
 
+- (void)switchAccount:(id)sender {
+    choosingAccount = YES;
+    pendingToken = nil;
+    [emailField setStringValue:@""];
+    [self showStep:StepEmail];
+    [emailField setStringValue:@""];
+    [secondaryButton setHidden:NO];
+    [secondaryButton setTitle:NSLocalizedString(@"Cancel", nil)];
+}
+
+- (void)finishSignInWithToken:(NSString *)token {
+    pendingToken = [token copy];
+    [self setBusy:YES];
+    [statusLabel setStringValue:NSLocalizedString(@"Preparing account…", nil)];
+    [accountDelegate simplenoteAccountDidSignInAs:pendingEmail token:token completion:^(BOOL switched, NSError *transitionError) {
+        [self setBusy:NO];
+        if (switched) {
+            pendingToken = nil;
+            choosingAccount = NO;
+            step = StepSignedIn;
+            [self refresh];
+        } else {
+            [primaryButton setTitle:NSLocalizedString(@"Retry Switch", nil)];
+            [statusLabel setStringValue:transitionError ? [transitionError localizedDescription] : NSLocalizedString(@"Account switch cancelled.", nil)];
+        }
+    }];
+}
+
 - (void)primaryAction:(id)sender {
 	if (busy) return;
 	if (step == StepEmail) {
@@ -161,7 +200,6 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 			[statusLabel setStringValue:NSLocalizedString(@"Enter the email address of your Simplenote account.", nil)];
 			return;
 		}
-		if (![accountDelegate simplenoteAccountWillSignInAs:email]) return;
 		pendingEmail = [email copy];
 		[self runInBackground:^id(NSError **error) {
 			NVSimplenoteAuthenticator *auth = [[NVSimplenoteAuthenticator alloc] init];
@@ -171,6 +209,7 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 			else [statusLabel setStringValue:[error localizedDescription] ? [error localizedDescription] : NSLocalizedString(@"Couldn't reach Simplenote.", nil)];
 		}];
 	} else if (step == StepCode) {
+        if (pendingToken) { [self finishSignInWithToken:pendingToken]; return; }
 		NSString *code = [codeField stringValue];
 		NSString *email = [pendingEmail copy];
 		[self runInBackground:^id(NSError **error) {
@@ -178,9 +217,7 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 			return [auth tokenForEmail:email code:code error:error];
 		} completion:^(id token, NSError *error) {
 			if (token) {
-				[accountDelegate simplenoteAccountDidSignInAs:email token:token];
-				step = StepSignedIn;
-				[self refresh];
+                [self finishSignInWithToken:token];
 			} else {
 				[statusLabel setStringValue:[error localizedDescription] ? [error localizedDescription] : NSLocalizedString(@"Sign-in failed.", nil)];
 			}
@@ -194,7 +231,11 @@ NSString *NVSyncStatusDescription(NVSyncStatus status, NSError *error) {
 - (void)secondaryAction:(id)sender {
 	if (busy) return;
 	if (step == StepCode) {
+        pendingToken = nil;
 		[self showStep:StepEmail];
+    } else if (step == StepEmail && choosingAccount) {
+        choosingAccount = NO;
+        [self refresh];
 	} else if (step == StepSignedIn) {
 		[accountDelegate simplenoteAccountSignOut];
 		step = StepEmail;

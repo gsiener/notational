@@ -17,8 +17,7 @@
 - (NSString *)simplenoteAccountEmail { return email; }
 - (NVSyncStatus)simplenoteSyncStatus { return status; }
 - (NSError *)simplenoteLastError { return nil; }
-- (BOOL)simplenoteAccountWillSignInAs:(NSString *)anEmail { return YES; }
-- (void)simplenoteAccountDidSignInAs:(NSString *)anEmail token:(NSString *)token {}
+- (void)simplenoteAccountDidSignInAs:(NSString *)anEmail token:(NSString *)token completion:(void (^)(BOOL, NSError *))completion { completion(YES, nil); }
 - (void)simplenoteAccountSignOut {}
 - (void)simplenoteSyncNow {}
 - (void)showSimplenoteAccount:(id)sender { accountWindowRequests++; }
@@ -103,4 +102,65 @@ static NSButton *ButtonTitled(NSView *view, NSString *title) {
 	XCTAssertNil(ButtonTitled([controller view], @"Turn On Note Encryption..."));
 }
 
+@end
+
+@interface NVSimplenoteAccountWindowController (AccountTransitionTesting)
+- (void)finishSignInWithToken:(NSString *)token;
+@end
+
+@interface RetryAccountApp : FakeAccountApp
+@property NSUInteger attempts;
+@property NSString *receivedToken;
+@end
+@implementation RetryAccountApp
+- (void)simplenoteAccountDidSignInAs:(NSString *)email token:(NSString *)token completion:(void (^)(BOOL, NSError *))completion {
+    self.attempts++;
+    self.receivedToken = token;
+    if (self.attempts == 1) completion(NO, [NSError errorWithDomain:@"Test" code:1 userInfo:@{NSLocalizedDescriptionKey: @"Offline"}]);
+    else { self.email = email; self.status = NVSyncStatusIdle; completion(YES, nil); }
+}
+@end
+
+@interface AccountWindowTransitionTests : XCTestCase
+@end
+@implementation AccountWindowTransitionTests
+- (void)testSwitchCanBeCancelledWithoutSigningOut {
+    FakeAccountApp *app = [[FakeAccountApp alloc] init];
+    app.email = @"old@example.com";
+    app.status = NVSyncStatusIdle;
+    NVSimplenoteAccountWindowController *window = [[NVSimplenoteAccountWindowController alloc] init];
+    window.accountDelegate = app;
+    [window refresh];
+    NSView *view = [[window window] contentView];
+    [ButtonTitled(view, @"Switch…") performClick:nil];
+    XCTAssertFalse([ButtonTitled(view, @"Email Me a Code") isHidden]);
+    [window refresh]; // Sync status notifications must not interrupt account entry.
+    XCTAssertFalse([ButtonTitled(view, @"Cancel") isHidden]);
+    [ButtonTitled(view, @"Cancel") performClick:nil];
+    XCTAssertNotNil(ButtonTitled(view, @"Sign Out"));
+    XCTAssertEqualObjects(app.email, @"old@example.com");
+    [[window window] close];
+}
+- (void)testFailedTransitionRetriesVerifiedTokenWithoutAnotherCode {
+    RetryAccountApp *app = [[RetryAccountApp alloc] init];
+    app.email = @"old@example.com";
+    app.status = NVSyncStatusIdle;
+    NVSimplenoteAccountWindowController *window = [[NVSimplenoteAccountWindowController alloc] init];
+    window.accountDelegate = app;
+    [window refresh];
+    // Enter at the authentication completion; no network or real credential access.
+    [window setValue:@1 forKey:@"step"];
+    [window setValue:@"new@example.com" forKey:@"pendingEmail"];
+    [window finishSignInWithToken:@"verified-token"];
+    NSView *view = [[window window] contentView];
+    XCTAssertTrue([AllText(view) containsString:@"Offline"]);
+    NSButton *retry = ButtonTitled(view, @"Retry Switch");
+    XCTAssertTrue([retry isEnabled]);
+    [retry performClick:nil];
+    XCTAssertEqual(app.attempts, (NSUInteger)2);
+    XCTAssertEqualObjects(app.receivedToken, @"verified-token");
+    XCTAssertTrue([AllText(view) containsString:@"new@example.com"]);
+    XCTAssertNil([window valueForKey:@"pendingToken"]);
+    [[window window] close];
+}
 @end
