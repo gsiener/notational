@@ -204,11 +204,13 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
     if (![[self window] isVisible]) {
         self.isPreviewOutdated = YES;
         //a render still in flight is for older text; it mustn't mark the preview up to date
+        [NSObject cancelPreviousPerformRequestsWithTarget:self];
         renderGeneration++;
         return;
     }
 
     if (self.isPreviewSticky) {
+        self.isPreviewOutdated = YES;
         return;
     }
 
@@ -231,6 +233,9 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
         //      if (self.isPreviewSticky)
         //        [self makePreviewNotSticky:self];
         [wnd orderOut:self];
+        [NSObject cancelPreviousPerformRequestsWithTarget:self];
+        renderGeneration++;
+        self.isPreviewOutdated = YES;
     } else {
         if (self.isPreviewOutdated) {
             // TODO high coupling; too many assumptions on architecture:
@@ -249,6 +254,9 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 
 -(void)windowWillClose:(NSNotification *)notification
 {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    renderGeneration++;
+    self.isPreviewOutdated = YES;
     [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:NO]
                                               forKey:kDefaultMarkupPreviewVisible];
     NSMenu *previewMenu = [[[NSApp mainMenu] itemWithTitle:@"Preview"] submenu];
@@ -257,7 +265,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 
 -(void)preview:(id)object
 {
-    if (self.isPreviewSticky) {
+    if (self.isPreviewSticky || ![[self window] isVisible]) {
         return;
     }
     AppController *app = object;
@@ -274,21 +282,25 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
         return;
     }
     //rendering runs a separate program; keep it off the main thread, and show only the latest
-    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    NVMarkupRenderer *renderer = [self markupRenderer];
     dispatch_async(renderQueue, ^{
         NSString *html = [renderer htmlForText:text];
         dispatch_async(dispatch_get_main_queue(), ^{
             renderedText = text;
             renderedHTML = html;
-            if (generation != renderGeneration) return;
+            if (generation != renderGeneration || self.isPreviewSticky || ![[self window] isVisible]) return;
             [self showHTML:html ofNote:note title:noteTitle sameNote:sameNote generation:generation];
         });
     });
 }
 
+- (NVMarkupRenderer *)markupRenderer {
+    return [NVMarkupRenderer defaultRenderer];
+}
+
 - (void)showHTML:(NSString *)processedString ofNote:(NoteObject *)note title:(NSString *)noteTitle sameNote:(BOOL)sameNote generation:(NSUInteger)generation
 {
-    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    NVMarkupRenderer *renderer = [self markupRenderer];
     [[self window] setTitle:noteTitle];
     [sourceView replaceCharactersInRange:NSMakeRange(0, [[sourceView string] length]) withString:processedString];
     self.isPreviewOutdated = NO;
@@ -311,7 +323,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 
 - (void)loadPageForHTML:(NSString *)processedString ofNote:(NoteObject *)note title:(NSString *)noteTitle sameNote:(BOOL)sameNote generation:(NSUInteger)generation
 {
-    NVMarkupRenderer *renderer = [NVMarkupRenderer defaultRenderer];
+    NVMarkupRenderer *renderer = [self markupRenderer];
     //the same note again: keep the reader's place (the page is replaced, so ask where it was first)
     NSString *scrollScript = @"(document.scrollingElement || document.body).scrollTop";
     [preview evaluateJavaScript:sameNote ? scrollScript : @"0" completionHandler:^(id result, NSError *error) {
@@ -338,6 +350,8 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 
 -(IBAction)makePreviewSticky:(id)sender
 {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    renderGeneration++;
     self.isPreviewSticky = YES;
     //  [[preview window] setTitle:@"Locked"];
     [stickyPreviewButton setState:YES];
