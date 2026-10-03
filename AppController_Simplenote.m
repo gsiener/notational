@@ -56,15 +56,22 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	NVLegacyImportResult result = [importer read];
 	switch (result) {
 		case NVLegacyImportRead: {
-			[store saveLocalEdits:[importer recoveredNotes]];
+			NSError *writeError = nil;
+			if (![store saveLocalEdits:[importer recoveredNotes] error:&writeError]) {
+				NSLog(@"Legacy note import could not be saved: %@", writeError);
+				return;
+			}
 			//carry over the settings that still apply
 			if (![store metadataValueForKey:NotationSettingsKey]) {
 				NotationPrefs *prefs = [[NotationPrefs alloc] init];
 				if ([importer bodyFont]) [prefs setBaseBodyFont:[importer bodyFont]];
 				if ([importer textColor]) [prefs setForegroundTextColor:[importer textColor]];
 				[prefs setConfirmsFileDeletion:[importer confirmsDeletion]];
-				[store setMetadataValue:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
-								 forKey:NotationSettingsKey];
+				if (![store setMetadataValue:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
+								 forKey:NotationSettingsKey error:&writeError]) {
+					NSLog(@"Legacy settings import could not be saved: %@", writeError);
+					return;
+				}
 			}
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",
 				  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes], (unsigned long)[[importer recoveredNotes] count]);
@@ -88,7 +95,9 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 		case NVLegacyImportNothingFound:
 			break;
 	}
-	[store setMetadataValue:@"1" forKey:LegacyImportKey];
+	NSError *markerError = nil;
+	if (![store setMetadataValue:@"1" forKey:LegacyImportKey error:&markerError])
+		NSLog(@"Legacy import marker could not be saved: %@", markerError);
 }
 
 - (NSString *)clientIDForStore:(NVNotesStore *)store {

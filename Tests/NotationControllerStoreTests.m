@@ -16,6 +16,7 @@
 #import "NoteObject_NVRecord.h"
 #import "NVFakeSimplenoteService.h"
 #import "NotationPrefs.h"
+#include <sqlite3.h>
 
 @interface NotationController (TestAccess)
 - (NSArray *)allNotesForTesting;
@@ -113,6 +114,45 @@
 	XCTAssertEqual([[store noteWithID:a] confirmedVersion], (NSInteger)1);
 	[self syncAndDeliver];
 	XCTAssertEqualObjects([[server currentDataOfNote:b] objectForKey:@"content"], @"Second\ntwo more");
+}
+
+- (void)testFailedFlushKeepsLatestEditForRetry {
+	NSString *noteID = [server remoteCreateNoteWithContent:@"Plan\nold" tags:nil];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	NoteObject *note = [self noteTitled:@"Plan"];
+	[note setContentString:[[NSAttributedString alloc] initWithString:@"first edit"]];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_edit BEFORE UPDATE ON notes BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([controller flushAllNoteChangesReturningError:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Plan\nold");
+	[note setContentString:[[NSAttributedString alloc] initWithString:@"newer edit"]];
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_edit", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([controller flushAllNoteChangesReturningError:&error], @"%@", error);
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Plan\nnewer edit");
+	sqlite3_close(other);
+}
+
+- (void)testShutdownAfterFailedWriteKeepsControllerOpenForRetry {
+	NSString *noteID = [server remoteCreateNoteWithContent:@"Plan\nold" tags:nil];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	[[self noteTitled:@"Plan"] setContentString:[[NSAttributedString alloc] initWithString:@"saved later"]];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_edit BEFORE UPDATE ON notes BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([controller closeAllResourcesReturningError:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_edit", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([controller closeAllResourcesReturningError:&error], @"%@", error);
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Plan\nsaved later");
+	sqlite3_close(other);
 }
 
 - (void)testRemoteEditUpdatesTheNoteWithoutEchoing {

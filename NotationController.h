@@ -59,6 +59,7 @@
 	int lastLayoutStyleGenerated;
     
     NSMutableSet *unwrittenNotes;
+	NSMutableDictionary *failedTrashEdits;
 	NSTimer *changeWritingTimer;
 	NSUndoManager *undoManager;
 	
@@ -76,6 +77,8 @@
 
 - (id)init;
 - (void)flushAllNoteChanges;
+- (BOOL)flushAllNoteChangesReturningError:(NSError **)error;
+- (BOOL)closeAllResourcesReturningError:(NSError **)error;
 - (void)flushEverything;
 
 

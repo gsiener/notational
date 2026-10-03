@@ -1937,8 +1937,12 @@ terminateApp:
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-	//unsynced edits are already saved in the Notes store and are pushed on the next launch,
-	//so there's nothing to wait for
+	NSError *writeError = nil;
+	if (notationController && ![notationController flushAllNoteChangesReturningError:&writeError]) {
+		NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"Notational couldn't save your notes", nil),
+			[writeError localizedDescription], nil, nil, nil);
+		return NSTerminateCancel;
+	}
 	return NSTerminateNow;
 }
 

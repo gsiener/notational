@@ -20,6 +20,8 @@ static NSString *const SyncPointKey = @"syncPoint";
 	NSString *movedAsideCorruptFile;
 	//prepared statements by SQL, kept until the database closes
 	NSMutableDictionary *statements;
+	NSError *transactionError;
+	BOOL failNextCommitForTesting;
 }
 - (id)initWithPath:(NSString *)aPath;
 - (BOOL)openReturningError:(NSError **)error;
@@ -35,6 +37,7 @@ static NSString *const SyncPointKey = @"syncPoint";
 - (NVNoteRecord *)_recordWithID:(NSString *)noteID;
 - (BOOL)_writeRecord:(NVNoteRecord *)record;
 - (void)_deleteRecordWithID:(NSString *)noteID;
+- (BOOL)_saveLocalEdit:(NVNoteRecord *)edit;
 - (NSArray *)_recordsWhere:(const char *)where;
 - (NSArray *)_recordsWithColumns:(const char *)columns where:(const char *)where;
 - (NVNoteRecord *)_syncStateWithID:(NSString *)noteID;
@@ -210,10 +213,10 @@ static void Done(sqlite3_stmt *stmt) {
 }
 
 - (BOOL)_writeRecord:(NVNoteRecord *)record {
-	if (!db || ![record noteID]) return NO;
+	if (!db || ![record noteID]) { transactionError = SQLiteError(db, SQLITE_MISUSE, @"write note"); return NO; }
 	sqlite3_stmt *stmt = [self _statement:"INSERT OR REPLACE INTO notes (id, content, tags, deleted, created, modified, server_data, "
 						  "confirmed_version, pending, revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"];
-	if (!stmt) return NO;
+	if (!stmt) { transactionError = SQLiteError(db, sqlite3_errcode(db), @"prepare write note"); return NO; }
 	BindText(stmt, 1, [record noteID]);
 	BindText(stmt, 2, [record content] ? [record content] : @"");
 	BindText(stmt, 3, JSONString([record tags] ? [record tags] : [NSArray array]));
@@ -227,7 +230,7 @@ static void Done(sqlite3_stmt *stmt) {
 	int result = sqlite3_step(stmt);
 	Done(stmt);
 	if (result != SQLITE_DONE) {
-		NSLog(@"NVNotesStore: %@", SQLiteError(db, result, @"write note"));
+		transactionError = SQLiteError(db, result, @"write note");
 		return NO;
 	}
 	return YES;
@@ -243,14 +246,16 @@ static void Done(sqlite3_stmt *stmt) {
 	return value;
 }
 
-- (void)_setMetadataValue:(NSString *)value forKey:(NSString *)key {
-	if (!db) return;
+- (BOOL)_setMetadataValue:(NSString *)value forKey:(NSString *)key {
+	if (!db) { transactionError = SQLiteError(db, SQLITE_MISUSE, @"write metadata"); return NO; }
 	sqlite3_stmt *stmt = [self _statement:value ? "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)" : "DELETE FROM metadata WHERE key = ?"];
-	if (!stmt) return;
+	if (!stmt) { transactionError = SQLiteError(db, sqlite3_errcode(db), @"prepare metadata"); return NO; }
 	BindText(stmt, 1, key);
 	if (value) BindText(stmt, 2, value);
-	if (sqlite3_step(stmt) != SQLITE_DONE) NSLog(@"NVNotesStore: %@", SQLiteError(db, 0, @"write metadata"));
+	int result = sqlite3_step(stmt);
+	if (result != SQLITE_DONE) transactionError = SQLiteError(db, result, @"write metadata");
 	Done(stmt);
+	return result == SQLITE_DONE;
 }
 
 #pragma mark Opening
@@ -347,7 +352,17 @@ static void Done(sqlite3_stmt *stmt) {
 }
 
 - (void)close {
-	dispatch_sync(queue, ^{ [self _closeDatabase]; });
+	[self closeReturningError:NULL];
+}
+
+- (BOOL)closeReturningError:(NSError **)error {
+	__block NSError *failure = nil;
+	dispatch_sync(queue, ^{
+		if (db && sqlite3_get_autocommit(db) == 0) failure = SQLiteError(db, SQLITE_BUSY, @"close with open transaction");
+		[self _closeDatabase];
+	});
+	if (error) *error = failure;
+	return failure == nil;
 }
 
 - (void)waitUntilWritten {
@@ -410,24 +425,28 @@ static void Done(sqlite3_stmt *stmt) {
 }
 
 - (void)saveLocalEdits:(NSArray *)records {
-	NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[records count]];
-	for (NVNoteRecord *record in records) [edits addObject:[record copy]];
-	if (![edits count]) return;
-	dispatch_async(queue, ^{
-		if (!db) return;
-		//one commit (and one sync to disk) for the lot
-		BOOL began = [edits count] > 1 && Exec(db, "BEGIN IMMEDIATE");
-		for (NVNoteRecord *edit in edits) [self _saveLocalEdit:edit];
-		if (began) Exec(db, "COMMIT");
-	});
+	NSError *error = nil;
+	if (![self saveLocalEdits:records error:&error]) NSLog(@"NVNotesStore: %@", error);
 }
 
-- (void)_saveLocalEdit:(NVNoteRecord *)edit {
-	if (!db || ![edit noteID]) return;
+- (BOOL)saveLocalEdits:(NSArray *)records error:(NSError **)error {
+	NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[records count]];
+	for (NVNoteRecord *record in records) [edits addObject:[record copy]];
+	if (![edits count]) return YES;
+	return [self performTransaction:^(id<NVNotesStoreTransaction> transaction) {
+		for (NVNoteRecord *edit in edits) {
+			if (transactionError) break;
+			[self _saveLocalEdit:edit];
+		}
+	} error:error];
+}
+
+- (BOOL)_saveLocalEdit:(NVNoteRecord *)edit {
+	if (!db || ![edit noteID]) { transactionError = SQLiteError(db, SQLITE_MISUSE, @"save local edit"); return NO; }
 	//a stored note keeps its server data and confirmed version; only the edited fields change
 	sqlite3_stmt *stmt = [self _statement:"UPDATE notes SET content = ?, tags = ?, deleted = ?, created = ?, modified = ?, "
 						  "pending = 1, revision = revision + 1 WHERE id = ?"];
-	if (!stmt) return;
+	if (!stmt) { transactionError = SQLiteError(db, sqlite3_errcode(db), @"prepare local edit"); return NO; }
 	BindText(stmt, 1, [edit content] ? [edit content] : @"");
 	BindText(stmt, 2, JSONString([edit tags] ? [edit tags] : [NSArray array]));
 	sqlite3_bind_int(stmt, 3, [edit deleted] ? 1 : 0);
@@ -438,42 +457,87 @@ static void Done(sqlite3_stmt *stmt) {
 	int changed = result == SQLITE_DONE ? sqlite3_changes(db) : 0;
 	Done(stmt);
 	if (result != SQLITE_DONE) {
-		NSLog(@"NVNotesStore: %@", SQLiteError(db, result, @"save local edit"));
-		return;
+		transactionError = SQLiteError(db, result, @"save local edit");
+		return NO;
 	}
-	if (changed > 0) return;
+	if (changed > 0) return YES;
 
 	//new to the store: the record as given, pending, one revision on
 	[edit setPending:YES];
 	[edit setLocalRevision:[edit localRevision] + 1];
-	[self _writeRecord:edit];
+	return [self _writeRecord:edit];
 }
 
 - (void)_deleteRecordWithID:(NSString *)noteID {
 	sqlite3_stmt *stmt = [self _statement:"DELETE FROM notes WHERE id = ?"];
-	if (!stmt) return;
+	if (!stmt) { transactionError = SQLiteError(db, sqlite3_errcode(db), @"prepare delete note"); return; }
 	BindText(stmt, 1, noteID);
-	sqlite3_step(stmt);
+	int result = sqlite3_step(stmt);
+	if (result != SQLITE_DONE) transactionError = SQLiteError(db, result, @"delete note");
 	Done(stmt);
 }
 
 - (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block {
+	NSError *error = nil;
+	if (![self performTransaction:block error:&error]) NSLog(@"NVNotesStore: %@", error);
+}
+
+- (BOOL)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block error:(NSError **)error {
+	__block NSError *failure = nil;
 	dispatch_sync(queue, ^{
 		NVNotesStoreTransactionImpl *transaction = [[NVNotesStoreTransactionImpl alloc] init];
 		transaction->store = self;
-		if (!db) return;
-		BOOL began = Exec(db, "BEGIN IMMEDIATE");
+		if (!db) { failure = SQLiteError(db, SQLITE_MISUSE, @"store closed"); return; }
+		int result = sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL);
+		if (result != SQLITE_OK) { failure = SQLiteError(db, result, @"begin transaction"); return; }
+		transactionError = nil;
 		@try {
 			block(transaction);
+		} @catch (NSException *exception) {
+			transactionError = [NSError errorWithDomain:NVNotesStoreErrorDomain code:SQLITE_ABORT
+				userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"transaction aborted: %@", [exception reason] ?: [exception name]]}];
 		} @finally {
-			if (began) Exec(db, "COMMIT");
+			failure = transactionError;
+			if (!failure) {
+				if (failNextCommitForTesting) { failNextCommitForTesting = NO; failure = SQLiteError(db, SQLITE_IOERR, @"commit transaction"); }
+				else {
+					result = sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+					if (result != SQLITE_OK) failure = SQLiteError(db, result, @"commit transaction");
+				}
+			}
+			if (failure) sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+			transactionError = nil;
 			transaction->store = nil;
 		}
 	});
+	if (error) *error = failure;
+	return failure == nil;
+}
+
+- (void)failNextCommitForTesting {
+	dispatch_sync(queue, ^{ failNextCommitForTesting = YES; });
 }
 
 - (void)removeAllNotes {
-	dispatch_async(queue, ^{ if (db) Exec(db, "DELETE FROM notes"); });
+	NSError *error = nil;
+	if (![self removeAllNotesReturningError:&error]) NSLog(@"NVNotesStore: %@", error);
+}
+
+- (BOOL)removeAllNotesReturningError:(NSError **)error {
+	return [self performTransaction:^(id<NVNotesStoreTransaction> transaction) {
+		int result = sqlite3_exec(db, "DELETE FROM notes", NULL, NULL, NULL);
+		if (result != SQLITE_OK) transactionError = SQLiteError(db, result, @"remove all notes");
+	} error:error];
+}
+
+- (BOOL)resetForAccount:(NSString *)account error:(NSError **)error {
+	NSString *newAccount = [account copy];
+	return [self performTransaction:^(id<NVNotesStoreTransaction> transaction) {
+		int result = sqlite3_exec(db, "DELETE FROM notes", NULL, NULL, NULL);
+		if (result != SQLITE_OK) { transactionError = SQLiteError(db, result, @"clear account notes"); return; }
+		if (![self _setMetadataValue:nil forKey:SyncPointKey]) return;
+		[self _setMetadataValue:newAccount forKey:@"simplenoteAccount"];
+	} error:error];
 }
 
 - (NSString *)syncPoint {
@@ -491,8 +555,15 @@ static void Done(sqlite3_stmt *stmt) {
 }
 
 - (void)setMetadataValue:(NSString *)value forKey:(NSString *)key {
+	NSError *error = nil;
+	if (![self setMetadataValue:value forKey:key error:&error]) NSLog(@"NVNotesStore: %@", error);
+}
+
+- (BOOL)setMetadataValue:(NSString *)value forKey:(NSString *)key error:(NSError **)error {
 	NSString *v = [value copy], *k = [key copy];
-	dispatch_async(queue, ^{ [self _setMetadataValue:v forKey:k]; });
+	return [self performTransaction:^(id<NVNotesStoreTransaction> transaction) {
+		[self _setMetadataValue:v forKey:k];
+	} error:error];
 }
 
 @end
