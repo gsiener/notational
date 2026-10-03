@@ -21,7 +21,7 @@
 #import "NotesTableView.h"
 
 @class NVAccountSession;
-@class NVHereNowSites, NVHereNowMixedList;
+@class NVHereNowSites, NVHereNowMixedList, NVHereNowSiteViewer;
 @class LinkingEditor;
 @class EmptyView;
 @class NotesTableView;
@@ -46,6 +46,7 @@
 	NVAccountSession *accountSession;
 	NVHereNowSites *hereNowSites;
 	NVHereNowMixedList *mixedList;
+	NVHereNowSiteViewer *siteViewer;   //the selected Site, read-only, in the editor pane
 	NSString *hereNowSearchQuery;
 	NSDate *lastHereNowActivationRefresh;
 	IBOutlet NSMenuItem *fsMenuItem;

@@ -12,6 +12,13 @@
 #import "NVTestSupport.h"
 #import "NVHereNowSiteViewer.h"
 #import "NVHereNowSites.h"
+#import "AppController.h"
+#import "NotationController.h"
+#import "EmptyView.h"
+
+@interface AppController (SiteViewerTests)
+- (void)processChangedSelectionForTable:(NSTableView *)table;
+@end
 
 static NSString *const SitePage =
 	@"<html><head><title>Site</title></head><body>"
@@ -256,6 +263,68 @@ static NSString *const SitePage =
 	XCTAssertTrue([viewer isHidden]);
 	XCTAssertNil(viewer.webView);
 	XCTAssertNil(viewer.site);
+}
+
+#pragma mark - AppController
+
+static NSMutableArray *KeptControllers;
+
+- (void)testAppControllerShowsTheViewerOnlyForOneSelectedSite {
+	NotationController *notation = [[NotationController alloc] init];
+	[notation addNotes:@[NVTestNote(@"Groceries", @"milk", nil)]];
+	NVHereNowSite *other = [self siteNamed:@"second"];
+	NVHereNowMixedList *mixed = [NVHereNowMixedList new];
+	NSTableView *table = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 200, 100)];
+	[table addTableColumn:[[NSTableColumn alloc] initWithIdentifier:@"Title"]];
+	table.allowsMultipleSelection = YES;
+	EmptyView *empty = [[EmptyView alloc] initWithFrame:NSMakeRect(0, 0, 200, 100)];
+
+	AppController *app = [AppController alloc];   //not initialized: its -dealloc expects a launched app
+	if (!KeptControllers) KeptControllers = [NSMutableArray array];
+	[KeptControllers addObject:app];
+	[app setValue:notation forKey:@"notationController"];
+	[app setValue:table forKey:@"notesTableView"];
+	[app setValue:mixed forKey:@"mixedList"];
+	[app setValue:viewer forKey:@"siteViewer"];
+	[app setValue:empty forKey:@"editorStatusView"];
+	mixed.notes = [notation notesListDataSource];
+	mixed.sites = @[site, other];
+	table.dataSource = mixed;
+	[table reloadData];
+	XCTAssertEqual(mixed.noteRowCount, (NSUInteger)1);
+
+	[table selectRowIndexes:[NSIndexSet indexSetWithIndex:1] byExtendingSelection:NO];
+	[app processChangedSelectionForTable:table];
+	XCTAssertFalse([viewer isHidden]);
+	XCTAssertEqual(viewer.site, site);
+	XCTAssertTrue([empty isHidden], @"the Site replaces the empty view");
+	XCTAssertNotNil(viewer.webView);
+	XCTAssertEqual(opened.count, (NSUInteger)0, @"selecting a Site doesn't open the browser");
+
+	[table selectRowIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, 2)] byExtendingSelection:NO];
+	[app processChangedSelectionForTable:table];
+	XCTAssertTrue([viewer isHidden], @"several Sites show the empty view");
+	XCTAssertNil(viewer.webView);
+	XCTAssertFalse([empty isHidden]);
+
+	[table selectRowIndexes:[NSIndexSet indexSetWithIndex:2] byExtendingSelection:NO];
+	[app processChangedSelectionForTable:table];
+	XCTAssertEqual(viewer.site, other);
+
+	[table selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
+	[app processChangedSelectionForTable:table];
+	XCTAssertTrue([viewer isHidden], @"a note shows the editor");
+	XCTAssertNil(viewer.webView);
+	XCTAssertTrue([empty isHidden]);
+
+	[table selectRowIndexes:[NSIndexSet indexSetWithIndex:1] byExtendingSelection:NO];
+	[app processChangedSelectionForTable:table];
+	XCTAssertEqual(viewer.site, site);
+	[table deselectAll:nil];
+	[app processChangedSelectionForTable:table];
+	XCTAssertTrue([viewer isHidden], @"nothing selected shows the empty view");
+	XCTAssertFalse([empty isHidden]);
+	[NSObject cancelPreviousPerformRequestsWithTarget:notation];
 }
 
 @end

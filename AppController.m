@@ -52,6 +52,7 @@
 #import "NSFileManager+DirectoryLocations.h"
 #import "nvaDevConfig.h"
 #import "NVHereNowSites.h"
+#import "NVHereNowSiteViewer.h"
 
 #define NSApplicationPresentationAutoHideMenuBar (1 <<  2)
 #define NSApplicationPresentationHideMenuBar (1 <<  3)
@@ -260,6 +261,9 @@ static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
 		[splitSubview addSubview:editorStatusView positioned:NSWindowAbove relativeTo:splitSubview];
 		[editorStatusView setFrame:[textScrollView frame]];
 		[editorStatusView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+		siteViewer = [[NVHereNowSiteViewer alloc] initWithFrame:[textScrollView frame]];
+		[siteViewer setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+		[splitSubview addSubview:siteViewer positioned:NSWindowAbove relativeTo:editorStatusView];
 		
 		[notesTableView restoreColumns];
 		
@@ -1457,8 +1461,8 @@ terminateApp:
 		if ([self selectionContainsHereNowSite]) {
 			[self _setCurrentNote:nil];
 			[textView setString:@""];
-			[self setEmptyViewState:YES];
-			NVHereNowSite *site = [mixedList siteAtRow:selectedRow];
+			[self setEmptyViewState:YES];   //shows a single selected Site instead of the empty view
+			NVHereNowSite *site = numberSelected == 1 ? [mixedList siteAtRow:selectedRow] : nil;
 			[window setTitle:site ? [NSString stringWithFormat:@"%@ — here.now (read-only)%@", site.title, hereNowSites.stale ? @" — saved" : @""] : @"here.now Sites (read-only)"];
 			return;
 		}
@@ -1567,8 +1571,17 @@ terminateApp:
     
 	[self postTextUpdate];
     [self updateWordCount:![prefsController showWordCount]];
+	//with no note, a single selected Site is shown read-only in place of the empty view
+	NVHereNowSite *site = state ? [self singleSelectedHereNowSite] : nil;
 	[textView setHidden:state];
-	[editorStatusView setHidden:!state];
+	[editorStatusView setHidden:!state || site != nil];
+	if (site) {
+		//the viewer never takes focus, so the notes list or the search field keeps it
+		[siteViewer setListStale:hereNowSites.stale];
+		[siteViewer showSite:site];
+	} else {
+		[siteViewer hide];
+	}
 	[editorStatusView setShowsSignIn:state && [notesTableView numberOfRows] == 0 &&
 		[accountSession status] == NVSyncStatusSignedOut];
 	
@@ -3121,6 +3134,10 @@ terminateApp:
     return mixedList && [mixedList siteAtRow:[notesTableView selectedRow]] != nil;
 }
 
+- (NVHereNowSite *)singleSelectedHereNowSite {
+    return [notesTableView numberOfSelectedRows] == 1 ? [mixedList siteAtRow:[notesTableView selectedRow]] : nil;
+}
+
 - (void)installHereNowMenuItems {
     NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
     [menu addItem:[NSMenuItem separatorItem]];
@@ -3159,6 +3176,10 @@ terminateApp:
             else [notesTableView deselectAll:self];
         }
     }
+    [siteViewer setListStale:hereNowSites.stale];
+    //a refreshed row for the shown Site (renamed, say) updates the header without reloading the page
+    NVHereNowSite *shownSite = currentNote ? nil : [self singleSelectedHereNowSite];
+    if (shownSite && ![siteViewer isHidden]) [siteViewer showSite:shownSite];
     NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
     [[menu itemWithTag:30030] setTitle:[@"here.now: " stringByAppendingString:hereNowSites.status ?: @"Unknown"]];
 }
