@@ -8,10 +8,8 @@
 
 #import "PTKeyComboPanel.h"
 
-#import "PTHotKey.h"
 #import "PTKeyCombo.h"
 #import "PTKeyBroadcaster.h"
-#import "PTHotKeyCenter.h"
 
 @implementation PTKeyComboPanel
 
@@ -65,51 +63,23 @@ static id _sharedKeyComboPanel = nil;
      
 }
 
-- (void)chooseHotKeyDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void  *)contextInfo {
-	PTHotKey *hotKey = (PTHotKey *)contextInfo;
-	
-	[[self window] close];
-	
-	if (hotKey && returnCode == NSModalResponseOK) {
-        [hotKey setKeyCombo: [self keyCombo]];
-		[[PTHotKeyCenter sharedCenter] updateHotKey: hotKey];
-		if ([currentModalDelegate respondsToSelector:@selector(keyComboPanelEnded:)])
-			[currentModalDelegate keyComboPanelEnded:self];
-		else
-			NSLog(@"currentModalDelegate doesn't respond to keyComboPanelEnded:!");
-	}
-	
-	[hotKey release];
-	[currentModalDelegate release];
+- (void)chooseHotKeyDidEnd:(NSWindow *)sheet returnCode:(int)returnCode {
+    [[self window] close];
+    if (returnCode == NSModalResponseOK &&
+        [currentModalDelegate respondsToSelector:@selector(keyComboPanelEnded:)])
+        [currentModalDelegate keyComboPanelEnded:self];
+    [currentModalDelegate release];
+    currentModalDelegate = nil;
 }
 
-- (void)showSheetForHotkey:(PTHotKey*)hotKey forWindow:(NSWindow*)mainWindow modalDelegate:(id)target {
-	[[self window] makeFirstResponder:mKeyBcaster];
-	
-	[self setKeyCombo: [hotKey keyCombo]];
-	[self setKeyBindingName: [hotKey name]];
-	
-	currentModalDelegate = [target retain];
-	[hotKey retain];
-
-	[mainWindow beginSheet:[self window] completionHandler:^(NSModalResponse returnCode) {
-		[self chooseHotKeyDidEnd:[self window] returnCode:(int)returnCode contextInfo:hotKey];
-	}];
-}
-
-- (void)runModalForHotKey: (PTHotKey*)hotKey {
-	int resultCode;
-    
-    [self setKeyCombo: [hotKey keyCombo]];
-	[self setKeyBindingName: [hotKey name]];
-     
-    resultCode = [NSApp runModalForWindow: [self window]];
-	[[self window] orderOut:self];
-    
-	if (resultCode == NSModalResponseOK) {
-        [hotKey setKeyCombo: [self keyCombo]];
-		[[PTHotKeyCenter sharedCenter] updateHotKey: hotKey];
-	}
+- (void)showSheetForKeyCombo:(PTKeyCombo*)combo name:(NSString*)name forWindow:(NSWindow*)mainWindow modalDelegate:(id)delegate {
+    [[self window] makeFirstResponder:mKeyBcaster];
+    [self setKeyCombo:combo];
+    [self setKeyBindingName:name];
+    currentModalDelegate = [delegate retain];
+    [mainWindow beginSheet:[self window] completionHandler:^(NSModalResponse returnCode) {
+        [self chooseHotKeyDidEnd:[self window] returnCode:(int)returnCode];
+    }];
 }
 
 #pragma mark -
