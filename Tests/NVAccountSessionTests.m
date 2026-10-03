@@ -257,4 +257,45 @@
     XCTAssertEqualObjects([events.lastObject userInfo][NVAccountCredentialExpiredKey], @(NO));
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
 }
+
+- (void)testMissingRestoredCredentialReturnsToSignedOutWithoutExpiryPrompt {
+    [original setSyncEngine:nil];
+    [credentials removeTokenForAccount:@"old@example.com"];
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    [session restoreSignIn];
+    NSPredicate *restored = [NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        return ![(NVAccountSession *)object loadingCredentials];
+    }];
+    [self expectationForPredicate:restored evaluatedWithObject:session handler:nil];
+    [self waitForExpectationsWithTimeout:3 handler:nil];
+    XCTAssertNil([original syncEngine]);
+    XCTAssertEqual([session status], NVSyncStatusSignedOut);
+    XCTAssertEqual([events count], (NSUInteger)2);
+    XCTAssertEqualObjects([events.lastObject userInfo][NVAccountCredentialExpiredKey], @(NO));
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testRejectedCredentialFromActiveEnginePublishesOneExpiry {
+    NVSyncEngine *active = [original syncEngine];
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    [session syncEngine:active didChangeStatus:NVSyncStatusIdle];
+    [oldServer failNextRequestsWithCodes:@[@(NVSimplenoteErrorUnauthorized)]];
+    XCTAssertFalse([active syncOnceReturningError:NULL]);
+    NSPredicate *signedOut = [NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        return [(NVAccountSession *)object status] == NVSyncStatusSignedOut;
+    }];
+    [self expectationForPredicate:signedOut evaluatedWithObject:session handler:nil];
+    [self waitForExpectationsWithTimeout:3 handler:nil];
+    NSUInteger expiries = 0;
+    for (NSNotification *event in events)
+        if ([event.userInfo[NVAccountCredentialExpiredKey] boolValue]) expiries++;
+    XCTAssertEqual(expiries, (NSUInteger)1);
+    [session syncEngine:active didChangeStatus:NVSyncStatusSignedOut];
+    XCTAssertEqual([events count], (NSUInteger)3);
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
 @end
