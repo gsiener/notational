@@ -1,0 +1,10 @@
+Title: Dialect sample
+Author: Test author
+
+# Dialect heading
+
+<aside id="raw-note">Raw <strong>HTML</strong> note</aside>
+
+An abbreviation and a reference.[^1]
+
+[^1]: A dialect footnote.
