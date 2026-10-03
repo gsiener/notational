@@ -602,8 +602,15 @@ terminateApp:
 
 - (void)_forceRegeneratePreviewsForTitleColumn {
 	[notationController regeneratePreviewsForColumn:[notesTableView noteAttributeColumnForIdentifier:NoteTitleColumnString]
-								visibleFilteredRows:[notesTableView rowsInRect:[notesTableView visibleRect]] forceUpdate:YES];
+								visibleFilteredRows:[self visibleNoteRows] forceUpdate:YES];
     
+}
+
+- (NSRange)visibleNoteRows {
+	NSRange visible = [notesTableView rowsInRect:[notesTableView visibleRect]];
+	NSUInteger noteCount = [[notationController notesListDataSource] count];
+	if (visible.location == NSNotFound || visible.location >= noteCount) return NSMakeRange(noteCount, 0);
+	return NSMakeRange(visible.location, MIN(visible.length, noteCount - visible.location));
 }
 
 #pragma mark notes list and divider
@@ -1873,7 +1880,7 @@ terminateApp:
 - (void)tableViewColumnDidResize:(NSNotification *)aNotification {
 	NoteAttributeColumn *col = [[aNotification userInfo] objectForKey:@"NSTableColumn"];
 	if ([[col identifier] isEqualToString:NoteTitleColumnString]) {
-		[notationController regeneratePreviewsForColumn:col visibleFilteredRows:[notesTableView rowsInRect:[notesTableView visibleRect]] forceUpdate:NO];
+		[notationController regeneratePreviewsForColumn:col visibleFilteredRows:[self visibleNoteRows] forceUpdate:NO];
 		
 	 	[NSObject cancelPreviousPerformRequestsWithTarget:notesTableView selector:@selector(reloadDataIfNotEditing) object:nil];
 		[notesTableView performSelector:@selector(reloadDataIfNotEditing) withObject:nil afterDelay:0.0];
@@ -1898,11 +1905,19 @@ terminateApp:
 	if (!isFilteringFromTyping) {
 		if (someNotation == notationController) {
 			//deal with one notation at a time
-			
+			savedSelectedNotes = nil;
+			savedSelectedSiteIdentities = nil;
 			if ([notesTableView numberOfSelectedRows] > 0) {
 				NSIndexSet *indexSet = [notesTableView selectedRowIndexes];
-                
-				savedSelectedNotes = [someNotation notesAtIndexes:indexSet];
+				NSMutableArray *identities = [NSMutableArray array];
+				[indexSet enumerateIndexesUsingBlock:^(NSUInteger row, BOOL *stop) {
+					NVHereNowSite *site = [self->mixedList siteAtRow:(NSInteger)row];
+					if (site.identity) [identities addObject:site.identity];
+				}];
+				savedSelectedSiteIdentities = [identities copy];
+				NSMutableIndexSet *noteIndexes = [indexSet mutableCopy];
+				if (mixedList) [noteIndexes removeIndexesInRange:NSMakeRange(mixedList.noteRowCount, mixedList.count - mixedList.noteRowCount)];
+				if (noteIndexes.count) savedSelectedNotes = [someNotation notesAtIndexes:noteIndexes];
 			}
 			
 			listUpdateViewCtx = [notesTableView viewingLocation];
@@ -1923,12 +1938,18 @@ terminateApp:
 		//[notesTableView noteNumberOfRowsChanged];
 		
 		if (!isFilteringFromTyping) {
+			NSMutableIndexSet *restored = [NSMutableIndexSet indexSet];
 			if (savedSelectedNotes) {
 				NSIndexSet *indexes = [someNotation indexesOfNotes:savedSelectedNotes];
 				savedSelectedNotes = nil;
-				
-				[notesTableView selectRowIndexes:indexes byExtendingSelection:NO];
+				[restored addIndexes:indexes];
 			}
+			for (NSString *identity in savedSelectedSiteIdentities) {
+				NSUInteger siteRow = [mixedList rowForSiteIdentity:identity];
+				if (siteRow != NSNotFound) [restored addIndex:siteRow];
+			}
+			savedSelectedSiteIdentities = nil;
+			if (restored.count) [notesTableView selectRowIndexes:restored byExtendingSelection:NO];
 			
 			[notesTableView setViewingLocation:listUpdateViewCtx];
 		}
@@ -2942,10 +2963,26 @@ terminateApp:
 
 - (void)hereNowSitesChanged:(NSNotification *)notification {
     if (mixedList) {
+        NSMutableArray *identities = [NSMutableArray array];
+        NSMutableIndexSet *selectedNoteRows = [[notesTableView selectedRowIndexes] mutableCopy];
+        [selectedNoteRows removeIndexesInRange:NSMakeRange(mixedList.noteRowCount, mixedList.count - mixedList.noteRowCount)];
+        [[notesTableView selectedRowIndexes] enumerateIndexesUsingBlock:^(NSUInteger row, BOOL *stop) {
+            NVHereNowSite *site = [self->mixedList siteAtRow:(NSInteger)row];
+            if (site.identity) [identities addObject:site.identity];
+        }];
         mixedList.sites = hereNowSites.sites;
         mixedList.stale = hereNowSites.stale;
         [mixedList filterSitesForString:hereNowSearchQuery];
         [notesTableView reloadData];
+        if (identities.count) {
+            NSMutableIndexSet *rows = selectedNoteRows;
+            for (NSString *identity in identities) {
+                NSUInteger row = [mixedList rowForSiteIdentity:identity];
+                if (row != NSNotFound) [rows addIndex:row];
+            }
+            if (rows.count) [notesTableView selectRowIndexes:rows byExtendingSelection:NO];
+            else [notesTableView deselectAll:self];
+        }
     }
     NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
     [[menu itemWithTag:30030] setTitle:[@"here.now: " stringByAppendingString:hereNowSites.status ?: @"Unknown"]];

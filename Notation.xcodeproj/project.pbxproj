@@ -334,13 +334,10 @@
 		7531994172A106E0A77C503F /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
 		EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
 		4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */; };
-<<<<<<< HEAD
 		A30000000000000000000001 /* NVHereNowSites.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* NVHereNowSites.m */; };
 		A30000000000000000000002 /* NVHereNowSites.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* NVHereNowSites.m */; };
 		A30000000000000000000005 /* NVHereNowSitesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000006 /* NVHereNowSitesTests.m */; };
-=======
 		56708D8A7ACDD28F71804D92 /* PreviewLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */; };
->>>>>>> master
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -792,13 +789,10 @@
 		51D4FC1A5C566FFB63B24FA9 /* NVAccountSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVAccountSession.h; sourceTree = "<group>"; };
 		301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSession.m; sourceTree = "<group>"; };
 		DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSessionTests.m; sourceTree = "<group>"; };
-<<<<<<< HEAD
 		A30000000000000000000003 /* NVHereNowSites.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowSites.m; sourceTree = "<group>"; };
 		A30000000000000000000004 /* NVHereNowSites.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVHereNowSites.h; sourceTree = "<group>"; };
 		A30000000000000000000006 /* NVHereNowSitesTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowSitesTests.m; sourceTree = "<group>"; };
-=======
 		414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PreviewLifecycleTests.m; sourceTree = "<group>"; };
->>>>>>> master
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

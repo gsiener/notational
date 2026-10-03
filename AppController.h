@@ -101,6 +101,7 @@
 	
 	NoteObject *currentNote;
 	NSArray *savedSelectedNotes;
+	NSArray *savedSelectedSiteIdentities;
 	BOOL hasLaunched;
     PreviewController *previewController;
     IBOutlet NSMenuItem *previewToggler;

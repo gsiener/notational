@@ -11,14 +11,9 @@ Proposed records require a decision before implementation. Recording a proposal 
 | [0004](0004-shared-markup-rendering.md) | Shared Markdown rendering and HTML export | Accepted, retrospective |
 | [0005](0005-webkit-preview-and-background-rendering.md) | WebKit preview and background conversion | Accepted, retrospective |
 | [0006](0006-native-import-conversion.md) | Native HTML and TaskPaper conversion | Accepted, retrospective |
-<<<<<<< HEAD
-| [0007](0007-native-scroll-controls.md) | Replace custom scrollbar rendering | Proposed |
-| [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Proposed |
-| [0009](0009-here-now-read-only-sites.md) | Read-only here.now Sites in the Notes list | Accepted |
-=======
 | [0007](0007-native-scroll-controls.md) | Replace custom scrollbar rendering | Accepted, implemented |
 | [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Accepted |
->>>>>>> master
+| [0009](0009-here-now-read-only-sites.md) | Read-only here.now Sites in the Notes list | Accepted |
 
 ## Known gaps
 

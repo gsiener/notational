@@ -146,7 +146,7 @@ static NSError *SiteError(NSInteger code, NSString *message) {
     __block void (^page)(NSString *);
     page = ^(NSString *cursor) {
         typeof(self) owner = weakSelf;
-        if (!owner) return;
+        if (!owner || generation != owner->_generation) { page = nil; return; }
         NSString *path = @"/api/v1/publishes?scope=all&limit=100";
         if (cursor) {
             NSCharacterSet *unreserved = [NSCharacterSet characterSetWithCharactersInString:@"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"];
@@ -155,7 +155,7 @@ static NSError *SiteError(NSInteger code, NSString *message) {
         [owner->_transport getPath:path token:token completion:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 typeof(self) strongSelf = weakSelf;
-                if (!strongSelf || generation != strongSelf->_generation) return;
+                if (!strongSelf || generation != strongSelf->_generation) { page = nil; return; }
                 NSError *failure = error;
                 if (!failure && response.statusCode != 200) {
                     NSString *message = response.statusCode == 401 ? @"here.now key expired; reconnect to refresh Sites" :
@@ -194,6 +194,7 @@ static NSError *SiteError(NSInteger code, NSString *message) {
     NSArray *_visibleSites;
     NSArray *_retainedRows;
     NSString *_search;
+    NSUInteger _noteRowCount;
 }
 - (void)setNotes:(FastListDataSource *)notes { _notes = notes; [self rebuild]; }
 - (void)setSites:(NSArray *)sites { _sites = [sites copy]; [self rebuild]; }
@@ -201,7 +202,8 @@ static NSError *SiteError(NSInteger code, NSString *message) {
 - (void)rebuild {
     NSMutableArray *rows = [NSMutableArray array];
     const __unsafe_unretained id *notes = [_notes immutableObjects];
-    for (NSUInteger i = 0; i < [_notes count]; ++i) [rows addObject:notes[i]];
+    _noteRowCount = [_notes count];
+    for (NSUInteger i = 0; i < _noteRowCount; ++i) [rows addObject:notes[i]];
     NSMutableArray *visible = [NSMutableArray array];
     for (NVHereNowSite *site in _sites) if (!_search.length || [site.searchText localizedCaseInsensitiveContainsString:_search]) [visible addObject:site];
     _visibleSites = visible;
@@ -209,11 +211,20 @@ static NSError *SiteError(NSInteger code, NSString *message) {
     _retainedRows = rows; // FastListDataSource keeps unsafe pointers.
     [self fillArrayFromArray:rows];
 }
+- (NSUInteger)noteRowCount { return _noteRowCount; }
 - (NVHereNowSite *)siteAtRow:(NSInteger)row {
-    NSInteger offset = row - (NSInteger)[_notes count];
+    NSInteger offset = row - (NSInteger)_noteRowCount;
     return offset >= 0 && offset < (NSInteger)_visibleSites.count ? _visibleSites[offset] : nil;
 }
-- (BOOL)selectionContainsSite:(NSIndexSet *)indexes { return indexes.lastIndex != NSNotFound && indexes.lastIndex >= [_notes count]; }
+- (NSUInteger)rowForSiteIdentity:(NSString *)identity {
+    if (!identity.length) return NSNotFound;
+    for (NSUInteger i = 0; i < _visibleSites.count; ++i) {
+        NVHereNowSite *site = _visibleSites[i];
+        if ([site.identity isEqualToString:identity]) return _noteRowCount + i;
+    }
+    return NSNotFound;
+}
+- (BOOL)selectionContainsSite:(NSIndexSet *)indexes { return indexes.lastIndex != NSNotFound && indexes.lastIndex >= _noteRowCount; }
 - (id)tableView:(NSTableView *)table objectValueForTableColumn:(NSTableColumn *)column row:(NSInteger)row {
     NVHereNowSite *site = [self siteAtRow:row];
     if (!site) return [_notes tableView:table objectValueForTableColumn:column row:row];

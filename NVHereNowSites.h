@@ -33,9 +33,11 @@ extern NSString *const NVHereNowSitesDidChangeNotification;
 @property(strong) FastListDataSource *notes;
 @property(copy) NSArray<NVHereNowSite *> *sites;
 @property(assign) BOOL stale;
+@property(readonly) NSUInteger noteRowCount;
 - (void)filterSitesForString:(NSString *)search;
 - (BOOL)selectionContainsSite:(NSIndexSet *)indexes;
 - (NVHereNowSite *)siteAtRow:(NSInteger)row;
+- (NSUInteger)rowForSiteIdentity:(NSString *)identity;
 @end
 
 @interface NVHereNowHTTPTransport : NSObject <NVHereNowPageTransport>
