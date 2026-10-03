@@ -15,6 +15,7 @@
 @class ODBEditor;
 @interface NoteObject (ExternalEditing)
 -(void)odbEditor:(ODBEditor *)editor didModifyFile:(NSString *)path newFileLocation:(NSString *)newPath context:(NSDictionary *)context;
+-(void)odbEditor:(ODBEditor *)editor didClosefile:(NSString *)path context:(NSDictionary *)context;
 @end
 
 @interface RecordingNoteDelegate : NSObject <NVNoteDelegate>
@@ -88,6 +89,52 @@
 	XCTAssertEqualObjects([[note contentString] string], @"edited in another app");
 	XCTAssertTrue([delegate.events containsObject:@"contents"], @"%@", delegate.events);
 	XCTAssertTrue([delegate.events containsObject:@"write"], @"%@", delegate.events);
+}
+
+- (void)testExternalAtomicReplacementImportsTheCurrentPath {
+	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"original") title:@"Title" delegate:delegate labels:nil];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"external.txt"];
+	[@"before" writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:NULL];
+	[@"replacement" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	[note odbEditor:nil didModifyFile:path newFileLocation:nil context:nil];
+	XCTAssertEqualObjects([[note contentString] string], @"replacement");
+	XCTAssertTrue([delegate.events containsObject:@"write"]);
+}
+
+- (void)testExternalSaveAsStillImportsOriginalPath {
+	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"original") title:@"Title" delegate:delegate labels:nil];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"external.txt"];
+	NSString *newPath = [self.temporaryDirectory stringByAppendingPathComponent:@"renamed.txt"];
+	[@"original file" writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:NULL];
+	[@"saved as" writeToFile:newPath atomically:NO encoding:NSUTF8StringEncoding error:NULL];
+	[note odbEditor:nil didModifyFile:path newFileLocation:newPath context:nil];
+	XCTAssertEqualObjects([[note contentString] string], @"original file");
+	XCTAssertTrue([delegate.events containsObject:@"write"]);
+}
+
+- (void)testExternalDeletionDoesNotEraseNoteAndCloseCleansUpFile {
+	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"original") title:@"Title" delegate:delegate labels:nil];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"external.txt"];
+	[delegate.events removeAllObjects];
+	[note odbEditor:nil didModifyFile:path newFileLocation:nil context:nil];
+	XCTAssertEqualObjects([[note contentString] string], @"original");
+	XCTAssertFalse([delegate.events containsObject:@"write"]);
+	[@"temporary" writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:NULL];
+	[note odbEditor:nil didClosefile:path context:nil];
+	XCTAssertFalse([[NSFileManager defaultManager] fileExistsAtPath:path]);
+}
+
+- (void)testExternalSaveAfterConcurrentLocalEditCurrentlyReplacesLocalBody {
+	RecordingNoteDelegate *delegate = [[RecordingNoteDelegate alloc] init];
+	NoteObject *note = [[NoteObject alloc] initWithNoteBody:NVTestBody(@"base") title:@"Title" delegate:delegate labels:nil];
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"external.txt"];
+	[@"external change" writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:NULL];
+	[note setContentString:NVTestBody(@"local change")];
+	[note odbEditor:nil didModifyFile:path newFileLocation:nil context:nil];
+	XCTAssertEqualObjects([[note contentString] string], @"external change");
 }
 
 #pragma mark Changes from Simplenote

@@ -147,7 +147,9 @@ static ODBEditor	*_sharedODBEditor;
 		goto beepReturn;
 	}
 	
-	return [self editFile:path inEditor:ed options:[NSDictionary dictionaryWithObject:titleOfNote(aNote) forKey:ODBEditorCustomPathKey] forClient:aNote context:context];
+	BOOL opened = [self editFile:path inEditor:ed options:[NSDictionary dictionaryWithObject:titleOfNote(aNote) forKey:ODBEditorCustomPathKey] forClient:aNote context:context];
+	if (!opened) [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+	return opened;
 beepReturn:
 	NSBeep();
 	return NO;
@@ -256,7 +258,7 @@ beepReturn:
 	if (customPath != nil)
 		[appleEvent setParamDescriptor: [NSAppleEventDescriptor descriptorWithString: customPath] forKeyword: keyFileCustomPath];
 	
-	AESendMessage([appleEvent aeDesc], &reply, kAEWaitReply, kAEDefaultTimeout);
+	status = AESendMessage([appleEvent aeDesc], &reply, kAEWaitReply, kAEDefaultTimeout);
 	
 	if (status == noErr) {
 		replyDescriptor = [[[NSAppleEventDescriptor alloc] initWithAEDescNoCopy: &reply] autorelease];
@@ -363,4 +365,3 @@ beepReturn:
 }
 
 @end
-
