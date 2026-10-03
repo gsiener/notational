@@ -1,21 +1,26 @@
 # Native Markdown compatibility, issue 41
 
 - Date: 2026-10-03
-- Baseline: `17d9f92` on `gsiener/issue-41-markdown`
+- Starting baseline: `17d9f92`; current feature branch includes a merge of `origin/master`
+- MultiMarkdown source: pinned submodule `b12f292cfc7dde50efd6f2b3cd9d9155f817f313`
 - Probe host: macOS 27.0.1, Xcode 27.0; project deployment target: macOS 12.0
 - Decision: **keep MultiMarkdown**. Foundation's direct parse and HTML export is not semantically compatible.
 
 ## Reproduce the semantic matrix
 
-From the repository root, run:
+From the repository root, initialize and build the pinned tool in a checkout-local build folder, then run:
 
 ```sh
-python3 docs/research/markdown-compatibility.py
+git submodule update --init --recursive MultiMarkdown-4
+mkdir -p build/Issue41MultiMarkdown
+rsync -a --exclude .git MultiMarkdown-4/ build/Issue41MultiMarkdown/
+env -u CFLAGS -u LDFLAGS make -C build/Issue41MultiMarkdown multimarkdown
+python3 docs/research/markdown-compatibility.py --mmd build/Issue41MultiMarkdown/multimarkdown
 ```
 
-The script builds the Objective-C probe in a temporary directory and parses HTML with Python's `HTMLParser`. It checks elements and attributes, rather than byte-for-byte HTML. The MultiMarkdown columns for the three existing fixtures come from the checked-in golden outputs in `Tests/Fixtures/Markup`. Those outputs are reference artifacts, not a fresh run of the binary. The TaskPaper case runs `NVTaskPaperMarkdown` before the Foundation parser, matching the app's pre-pass. The runner asserts that each golden contains its stated semantics, so a broken reference cannot silently produce a passing comparison.
+The script builds the Objective-C probe in a temporary directory and feeds each fixture to the live MultiMarkdown executable and Foundation parser. It parses both HTML results with Python's `HTMLParser` and checks elements and attributes rather than byte-for-byte HTML. The TaskPaper case runs `NVTaskPaperMarkdown` once and gives its output to both renderers, matching the app's pre-pass. The runner checks the live output against each semantic requirement and notes any byte difference from the checked-in golden files. None differed in this run.
 
-| Input and requirement | MultiMarkdown golden | Foundation direct export |
+| Input and requirement | MultiMarkdown live | Foundation direct export |
 | --- | --- | --- |
 | MultiMarkdown: heading with `id` | yes | no |
 | MultiMarkdown: nested lists | yes | no |
@@ -29,12 +34,15 @@ The script builds the Objective-C probe in a temporary directory and parses HTML
 | TaskPaper: `nvalt://find/` tag links | yes | no |
 | TaskPaper: done-task styling | yes | no |
 | TaskPaper: emitted style element | yes | yes |
-| Additional dialect input: metadata outside body | reference unavailable | no |
-| Additional dialect input: raw `<aside>` element | reference unavailable | no |
+| Dialect: title and author metadata in document head | yes | no |
+| Dialect: metadata removed from body | yes | no |
+| Dialect: heading anchor | yes | no |
+| Dialect: raw `<aside>` element | yes | no |
+| Dialect: footnote and backlink | yes | no |
 
-The final two rows are **native observations only**. The submodule is uninitialized in this isolated checkout (`git submodule status` begins with `-`), and no built MultiMarkdown binary is present. Pass `--mmd /path/to/multimarkdown` to the runner after building it to obtain live dialect results. A live run should also compare representative real notes with permission from their owner, especially notes that depend on metadata, raw HTML, and template scripts.
+For the dialect input, live MultiMarkdown emitted `<!DOCTYPE html>`, `<title>Dialect sample</title>`, `<meta name="author" content="Test author"/>`, `<h1 id="dialectheading">`, the original `<aside id="raw-note">`, and a footnote target with return link. The corresponding Foundation export retained `Title:` and `Author:` as body paragraphs and produced none of those elements. This is fixture evidence, not evidence of how often people use these features. [Issue 47](https://github.com/gsiener/notational/issues/47) owns the separate product decision about which behaviors remain required; this investigation does not narrow support.
 
-Validation on this host: the semantic runner completed with its reference assertions; targeted `NVMarkupRendererTests` and `NVTaskPaperMarkdownTests` completed with `xcodebuild test` using `build/DerivedDataIssue41`. The first sandboxed XCTest attempt could not reach `testmanagerd`; the permitted run outside the sandbox exited successfully. Xcode reported an unrelated CoreDevice/CoreSimulator version warning.
+Validation on this host after the master merge: the live semantic runner completed all 17 requirements and found no byte differences in the three existing golden fixtures. Targeted `NVMarkupRendererTests` and `NVTaskPaperMarkdownTests` completed using `build/DerivedDataIssue41`; the `.xcresult` summary reports 28 passed, 0 failed, and 0 skipped. Xcode reported a CoreDevice/CoreSimulator version warning, but the macOS test run passed. The standalone runner is the evidence for live converter output, including TaskPaper, because the XCTest golden tests can return early when their configured converter path is unavailable.
 
 ## What a replacement would have to do
 
@@ -44,4 +52,4 @@ The probe parsed the MultiMarkdown fixture and reported 14 presentation-intent r
 
 ## Evidence limits and next gate
 
-The probe was built and run on macOS 27.0.1. The Xcode project targets macOS 12.0, but the current SDK and host are not a macOS 12 runtime. This proves neither API runtime availability nor behavior parity on macOS 12. A replacement proposal needs the same semantic matrix on a macOS 12 machine or VM, live MultiMarkdown results for the additional dialect input, and preview/Save HTML checks with the bundled and a custom template. Because the existing direct path fails many requirements, there is no reason to change runtime selection, remove the submodule, or alter build wiring now.
+The probe and live MultiMarkdown tool were built and run on macOS 27.0.1. The Xcode project targets macOS 12.0, but the current SDK and host are not a macOS 12 runtime. This proves neither Foundation API runtime availability nor behavior parity on macOS 12. A replacement proposal needs the same semantic matrix on a macOS 12 machine or VM, representative notes provided with owner permission, and manual preview/Save HTML checks with the bundled and a custom template. Because the existing direct path fails many requirements, there is no reason to change runtime selection, remove the submodule, or alter build wiring now.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Compare HTML semantics from the checked-in MultiMarkdown goldens and Foundation.
+"""Compare HTML semantics from live MultiMarkdown and Foundation.
 
-Run from the repository root: python3 docs/research/markdown-compatibility.py
-Pass --mmd /path/to/multimarkdown to include the additional dialect fixture.
+Run from the repository root:
+python3 docs/research/markdown-compatibility.py --mmd build/Issue41MultiMarkdown/multimarkdown
 """
 
 import argparse
@@ -60,23 +60,27 @@ CHECKS = {
     "TaskPaper tag links": lambda s: s.linked_to("nvalt://find/@today") and s.linked_to("nvalt://find/@done"),
     "TaskPaper done styling": lambda s: "del" in s.tags and s.has("em", **{"class": "tag"}),
     "TaskPaper style": lambda s: "style" in s.tags,
+    "metadata in document head": lambda s: s.has("meta", name="author", content="Test author") and "title" in s.tags,
     "metadata removed from body": lambda s: not any("Title:" in p or "Author:" in p for p in s.paragraphs),
+    "dialect heading anchor": lambda s: s.has("h1", id="dialectheading"),
     "raw HTML element": lambda s: s.has("aside", id="raw-note"),
+    "dialect footnote": lambda s: s.has("li", id="fn:1") and s.linked_to("#fnref:1"),
 }
 
 CASES = {
     "multimarkdown": list(CHECKS)[:8],
     "markdown": ["ordinary link"],
     "taskpaper": ["TaskPaper tag links", "TaskPaper done styling", "TaskPaper style"],
-    "dialect": ["metadata removed from body", "raw HTML element"],
+    "dialect": ["metadata in document head", "metadata removed from body",
+                "dialect heading anchor", "raw HTML element", "dialect footnote"],
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mmd", type=Path, help="built MultiMarkdown executable for the additional dialect fixture")
+    parser.add_argument("--mmd", required=True, type=Path, help="built MultiMarkdown executable")
     args = parser.parse_args()
-    if args.mmd and not args.mmd.is_file():
+    if not args.mmd.is_file():
         parser.error("--mmd must name a built executable")
     with tempfile.TemporaryDirectory(prefix="notational-markdown-") as scratch:
         probe = Path(scratch) / "probe"
@@ -88,29 +92,26 @@ def main():
         for case, checks in CASES.items():
             source = FIXTURES / f"{case}.txt" if case != "dialect" else ROOT / "docs/research/markdown-dialect.txt"
             output = Path(scratch) / f"{case}.html"
+            preprocessed = Path(scratch) / f"{case}.md"
             command = [str(probe), str(source), str(output)]
             if case == "taskpaper":
-                command.append("--taskpaper")
+                command.extend(["--taskpaper", str(preprocessed)])
             subprocess.run(command, check=True, capture_output=True, text=True)
             native = Semantics(output.read_text())
             golden = FIXTURES / f"{case}.html"
-            if golden.exists():
-                reference = Semantics(golden.read_text())
-                label = "golden"
-            elif args.mmd:
-                rendered = subprocess.run([str(args.mmd)], input=source.read_text(), text=True,
-                                          capture_output=True, check=True).stdout
-                reference = Semantics(rendered)
-                label = "live"
-            else:
-                reference = None
-                label = "unavailable"
+            rendered = subprocess.run([str(args.mmd.resolve())],
+                                      input=(preprocessed if case == "taskpaper" else source).read_text(),
+                                      text=True, capture_output=True, check=True).stdout
+            reference = Semantics(rendered)
+            label = "live"
+            if golden.exists() and rendered != golden.read_text():
+                print(f"<!-- {case}: live output differs byte-for-byte from checked-in golden -->")
             for name in checks:
-                expected = "yes" if reference and CHECKS[name](reference) else ("no" if reference else "not measured")
+                expected = "yes" if CHECKS[name](reference) else "no"
                 actual = "yes" if CHECKS[name](native) else "no"
                 print(f"| {case} | {name} | {expected} ({label}) | {actual} |")
-                if reference and not CHECKS[name](reference):
-                    raise AssertionError(f"Reference fixture lacks expected semantic requirement: {case}: {name}")
+                if not CHECKS[name](reference):
+                    raise AssertionError(f"MultiMarkdown output lacks expected semantic requirement: {case}: {name}")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,15 @@
 #import <Cocoa/Cocoa.h>
 #import "../../NVTaskPaperMarkdown.h"
 int main(int argc, const char **argv) { @autoreleasepool {
-    if (argc < 3 || argc > 4) { fprintf(stderr, "usage: apple-markdown-probe input.txt output.html [--taskpaper]\n"); return 2; }
+    if (argc != 3 && argc != 5) { fprintf(stderr, "usage: apple-markdown-probe input.txt output.html [--taskpaper preprocessed.md]\n"); return 2; }
     NSString *text = [NSString stringWithContentsOfFile:[NSString stringWithUTF8String:argv[1]] encoding:NSUTF8StringEncoding error:NULL];
     if (!text) { fprintf(stderr, "cannot read fixture\n"); return 2; }
-    if (argc == 4) {
+    if (argc == 5) {
         if (strcmp(argv[3], "--taskpaper")) { fprintf(stderr, "unknown option\n"); return 2; }
         text = [NVTaskPaperMarkdown markdownFromTaskPaper:text];
+        if (![text writeToFile:[NSString stringWithUTF8String:argv[4]] atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
+            fprintf(stderr, "cannot write preprocessed Markdown\n"); return 2;
+        }
     }
     NSError *error = nil;
     NSAttributedStringMarkdownParsingOptions *options = [[NSAttributedStringMarkdownParsingOptions alloc] init];
