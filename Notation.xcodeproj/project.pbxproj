@@ -334,6 +334,7 @@
 		7531994172A106E0A77C503F /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
 		EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */; };
 		4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */; };
+		56708D8A7ACDD28F71804D92 /* PreviewLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -785,6 +786,7 @@
 		51D4FC1A5C566FFB63B24FA9 /* NVAccountSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVAccountSession.h; sourceTree = "<group>"; };
 		301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSession.m; sourceTree = "<group>"; };
 		DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVAccountSessionTests.m; sourceTree = "<group>"; };
+		414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PreviewLifecycleTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1307,6 +1309,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */,
 				A44100010000000000000006 /* NVActivationShortcutTests.m */,
 				DECEB29C215838D9760E28BC /* NVAccountSessionTests.m */,
 				69F967FE19CA7FF5734ECE73 /* LinkingEditorCopyTests.m */,
@@ -1661,6 +1664,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56708D8A7ACDD28F71804D92 /* PreviewLifecycleTests.m in Sources */,
 				A44100010000000000000005 /* NVActivationShortcutTests.m in Sources */,
 				4B6C5C206BF26EB189C9E434 /* NVAccountSessionTests.m in Sources */,
 				EEC0EDA842A38E0E394A051C /* NVAccountSession.m in Sources */,
