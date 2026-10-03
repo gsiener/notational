@@ -13,12 +13,13 @@ Proposed records require a decision before implementation. Recording a proposal 
 | [0006](0006-native-import-conversion.md) | Native HTML and TaskPaper conversion | Accepted, retrospective |
 | [0007](0007-native-scroll-controls.md) | Replace custom scrollbar rendering | Accepted, implemented |
 | [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Accepted |
+| [0009](0009-here-now-read-only-sites.md) | Read-only here.now Sites in the Notes list | Accepted |
 
 ## Known gaps
 
 ADR 0001 records the intended design. These implementation gaps remain open:
 
-- Remote updates clear undo history. [Issue 39](https://github.com/gsiener/notational/issues/39) tracks undo preservation.
+- Remote updates preserve bounded text undo history for the selected editor. Updates to other notes still clear stale undo actions; see the [issue 39 report](../research/remote-undo-issue-39.md) for limits.
 - FrozenNotation, WALController, and related legacy types remain for migration and compatibility tests. Their presence does not restore the old live-storage design.
 
 The [Apple-library dependency audit](../research/apple-library-dependency-audit.md) records candidates, compatibility limits, and validation work.
