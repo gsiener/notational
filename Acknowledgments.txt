@@ -458,7 +458,7 @@ http://www.opensource.org/licenses/bsd-license.php
 --
 
 ETTransparentScroller
-The main window uses a scroller class are based on the BWTransparentScroller from BWToolKit
+Earlier versions used a main-window scroller class based on BWTransparentScroller from BWToolKit
 http://www.brandonwalkin.com/bwtoolkit/
 (modifications by Elasticthreads on 10/19/2010)
 
@@ -466,7 +466,7 @@ see BWToolkit above
 --
 
 BTTransparentScroller
-The Markdown preview pane uses a scroller class are based on the BWTransparentScroller from BWToolKit
+Earlier versions used a Markdown-preview scroller class based on BWTransparentScroller from BWToolKit
 http://www.brandonwalkin.com/bwtoolkit/
 (but modified by Brett Terpstra on 12/8/10 and again by Elasticthreads on 03/10/11)
 

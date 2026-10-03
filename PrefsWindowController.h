@@ -20,7 +20,6 @@
 @interface PrefsWindowController : NSObject 
 <NSWindowDelegate, NSToolbarDelegate>
 {
-    IBOutlet NSButton *useETScrollbarsOnLionButton;
     IBOutlet NSTextField *bodyTextFontField;
     IBOutlet NSMatrix *tabKeyRadioMatrix;
     IBOutlet NSPopUpButton *tableTextMenuButton;
@@ -60,7 +59,6 @@
 }
 - (void)showWindow:(id)sender;
 
-- (IBAction)changedUseETScrollbarsOnLion:(id)sender;
 - (IBAction)changedBackgroundTextColorWell:(id)sender;
 - (IBAction)changedForegroundTextColorWell:(id)sender;
 - (IBAction)changedHighlightSearchTerms:(id)sender;	
