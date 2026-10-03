@@ -2,10 +2,12 @@
 
 A native Apple Silicon fork of [nvALT](https://brettterpstra.com/projects/nvalt/) (itself a fork of Notational Velocity), by way of [@n8henrie's fork](https://github.com/n8henrie/nvalt).
 
-- **Native arm64**, no Rosetta, no third-party libraries beyond what macOS ships
+- **Native arm64**, no Rosetta, and only system-linked libraries; bundled source dependencies are documented in the [dependency audit](docs/research/apple-library-dependency-audit.md)
 - **Simplenote is the source of truth**: notes live in a local SQLite copy of your Simplenote account and sync over the Simperium API (sign in with an emailed code under *Notational → Simplenote Account…*). Works without signing in too, as a local-only notes app. See [ADR 0001](docs/adr/0001-simplenote-backed-storage.md).
 - On first launch it migrates once from an old nvALT installation (old files are never modified) and copies nvALT's look-and-feel preferences.
 - Not affiliated with Simplenote/Automattic; third-party clients can be blocked by Simplenote at any time.
+
+The [architecture decision records](docs/adr/README.md) explain the app’s design and distinguish accepted decisions from proposed changes.
 
 To build locally you only need Xcode:
 
