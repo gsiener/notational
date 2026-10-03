@@ -32,10 +32,10 @@
 	//a normal app with a menu bar, whatever the machine's saved preferences say
 	//closing the main window would otherwise quit the app (the default)
 	app.launchArguments = @[@"-ShowDockIcon", @"YES", @"-StatusBarItem", @"NO", @"-ConfirmNoteDeletion", @"NO",
-							 @"-QuitWhenClosingMainWindow", @"NO", @"-SuppressSignInPrompt", @"YES"];
+							 @"-QuitWhenClosingMainWindow", @"NO"];
 	[app launch];
 	XCTAssertTrue([app.windows[@"Notational"] waitForExistenceWithTimeout:20], @"main window never appeared");
-	[self dismissAccountWindow];
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists, @"local-only launch opened the account window");
 }
 
 - (void)tearDown {
@@ -44,12 +44,10 @@
 	[super tearDown];
 }
 
-//never signed in, the app asks for a Simplenote account; close that window
+//Close the account window after an explicit request.
 - (void)dismissAccountWindow {
 	XCUIElement *account = app.windows[@"Simplenote Account"];
-	//it can be shown again right after launch, so keep closing it until it stays closed
-	for (int attempt = 0; attempt < 4 && [account waitForExistenceWithTimeout:attempt ? 2 : 5]; attempt++) {
-		//its own close button: ⌘W would go to whichever window is key
+	if ([account waitForExistenceWithTimeout:2]) {
 		[account.buttons[XCUIIdentifierCloseWindow] click];
 		[self waitForGone:account];
 	}
@@ -103,6 +101,15 @@
 }
 
 #pragma mark Flows
+
+- (void)testLocalOnlyLaunchOffersExplicitSignIn {
+	XCUIElement *signIn = [self mainWindow].buttons[@"Sign In to Simplenote…"];
+	XCTAssertTrue([signIn waitForExistenceWithTimeout:5]);
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
+	[signIn click];
+	XCTAssertTrue([app.windows[@"Simplenote Account"] waitForExistenceWithTimeout:5]);
+	[self dismissAccountWindow];
+}
 
 - (void)testSettingsOpenAndClose {
 	for (int i = 0; i < 3; i++) {
@@ -177,7 +184,7 @@
 	[app terminate];
 	[app launch];
 	XCTAssertTrue([[self mainWindow] waitForExistenceWithTimeout:20], @"main window never reappeared");
-	[self dismissAccountWindow];
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
 }
 
 //the list's size along the divider's axis: width beside the editor, height above it
@@ -226,7 +233,7 @@
 	[app terminate];
 	[app launch];
 	XCTAssertTrue([[self mainWindow] waitForExistenceWithTimeout:20]);
-	[self dismissAccountWindow];
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
 	XCTAssertTrue([[self rowTitled:@"Survives relaunch"] waitForExistenceWithTimeout:5], @"note was lost across a relaunch");
 }
 

@@ -3,6 +3,7 @@
 #import "NVNotesStore.h"
 
 static NSString *const AccountKey = @"simplenoteAccount";
+NSString *const NVAccountCredentialExpiredKey = @"credentialExpired";
 static NSError *TransitionError(NSString *message) {
     return [NSError errorWithDomain:@"NVAccountSession" code:1
                           userInfo:@{NSLocalizedDescriptionKey: message}];
@@ -12,8 +13,22 @@ static NSError *TransitionError(NSString *message) {
     id<NVAccountCredentials> credentials;
     NVSyncEngine *(^engineFactory)(NVNotesStore *, NSString *);
     NSUInteger generation;
+    NVSyncStatus currentStatus;
 }
 @synthesize notation = _notation, loadingCredentials = _loadingCredentials;
+- (NVSyncStatus)status { return currentStatus; }
+
+- (void)publishStatus:(NVSyncStatus)status expired:(BOOL)expired {
+    if (currentStatus == status) return;
+    currentStatus = status;
+    [[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification
+        object:_notation userInfo:@{NVSyncStatusKey: @(status), NVAccountCredentialExpiredKey: @(expired)}];
+}
+
+- (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
+    if (engine != [_notation syncEngine]) return;
+    [self publishStatus:status expired:status == NVSyncStatusSignedOut];
+}
 
 - (instancetype)initWithNotation:(NotationController *)notation
                     credentials:(id<NVAccountCredentials>)aCredentials
@@ -22,6 +37,8 @@ static NSError *TransitionError(NSString *message) {
         _notation = notation;
         credentials = aCredentials;
         engineFactory = [factory copy];
+        notation.accountSession = self;
+        currentStatus = NVSyncStatusSignedOut;
     }
     return self;
 }
@@ -31,6 +48,7 @@ static NSError *TransitionError(NSString *message) {
     if (!account) return;
     NSUInteger request = ++generation;
     _loadingCredentials = YES;
+    [self publishStatus:NVSyncStatusSyncing expired:NO];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSString *token = [self->credentials tokenForAccount:account];
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -41,18 +59,19 @@ static NSError *TransitionError(NSString *message) {
                 [self->_notation setSyncEngine:engine];
                 [engine start];
             }
-            [[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification
-                object:self->_notation userInfo:@{NVSyncStatusKey: @([self->_notation syncEngine] ? NVSyncStatusSyncing : NVSyncStatusSignedOut)}];
+            [self publishStatus:[self->_notation syncEngine] ? NVSyncStatusSyncing : NVSyncStatusSignedOut expired:NO];
         });
     });
 }
 
 - (void)signOut {
+	NSError *writeError = nil;
+	if (![_notation flushAllNoteChangesReturningError:&writeError]) { NSLog(@"NVAccountSession: %@", writeError); return; }
     ++generation;
     _loadingCredentials = NO;
     [_notation setSyncEngine:nil];
-    [_notation flushAllNoteChanges];
     [credentials removeTokenForAccount:[[_notation notesStore] metadataValueForKey:AccountKey]];
+    [self publishStatus:NVSyncStatusSignedOut expired:NO];
 }
 
 - (void)signInAs:(NSString *)email token:(NSString *)token
@@ -61,7 +80,8 @@ static NSError *TransitionError(NSString *message) {
     NVNotesStore *store = [_notation notesStore];
     NSString *previous = [store metadataValueForKey:AccountKey];
     BOOL switching = previous && [previous caseInsensitiveCompare:email] != NSOrderedSame;
-    [_notation flushAllNoteChanges];
+	NSError *writeError = nil;
+	if (![_notation flushAllNoteChangesReturningError:&writeError]) { completion(NO, writeError); return; }
     NVAccountSwitchChoice choice = switching && [[store pendingNotes] count] ? choose() : NVAccountSwitchDiscard;
     if (choice == NVAccountSwitchCancel) { completion(NO, nil); return; }
     NSUInteger request = ++generation;
@@ -71,7 +91,8 @@ static NSError *TransitionError(NSString *message) {
         if (request != self->generation) { completion(NO, nil); return; }
         if (error) { completion(NO, error); return; }
         // Recheck edits made while the network request was in flight.
-        [self->_notation flushAllNoteChanges];
+		NSError *flushError = nil;
+		if (![self->_notation flushAllNoteChangesReturningError:&flushError]) { completion(NO, flushError); return; }
         if (choice == NVAccountSwitchSync && [[store pendingNotes] count]) {
             completion(NO, TransitionError(NSLocalizedString(@"Some changes are still unsynced. Retry or explicitly discard them to switch accounts.", nil)));
             return;
@@ -81,20 +102,35 @@ static NSError *TransitionError(NSString *message) {
             return;
         }
         if (switching) {
-            // Retire and flush the old controller BEFORE clearing its shared store.
+            // Quiesce writes, then clear the replica. Keep the old controller usable if reset fails.
+            NVSyncEngine *oldEngine = [self->_notation syncEngine];
             [self->_notation setSyncEngine:nil];
-            [self->_notation closeAllResources];
-            [store removeAllNotes];
-            [store setSyncPoint:nil];
-            [store setMetadataValue:email forKey:AccountKey];
+			NSError *closeError = nil;
+			if (![self->_notation prepareForAccountResetReturningError:&closeError]) {
+				[self->_notation setSyncEngine:oldEngine];
+				[oldEngine start];
+				[self->credentials removeTokenForAccount:email];
+				completion(NO, closeError); return;
+			}
+			NSError *storeError = nil;
+			if (![store resetForAccount:email error:&storeError]) {
+				[self->_notation setSyncEngine:oldEngine];
+				[oldEngine start];
+				[self->credentials removeTokenForAccount:email];
+				completion(NO, storeError); return;
+			}
+            [self->_notation retireAfterAccountReset];
             self->_notation = [[NotationController alloc] initWithNotesStore:store];
+            self->_notation.accountSession = self;
             [self->credentials removeTokenForAccount:previous];
         } else {
-            [store setMetadataValue:email forKey:AccountKey];
+			NSError *storeError = nil;
+			if (![store setMetadataValue:email forKey:AccountKey error:&storeError]) { completion(NO, storeError); return; }
         }
         NVSyncEngine *engine = self->engineFactory(store, token);
         [self->_notation setSyncEngine:engine];
         [engine start];
+        [self publishStatus:NVSyncStatusSyncing expired:NO];
         completion(YES, nil);
     };
     if (choice != NVAccountSwitchSync) { finish(nil); return; }

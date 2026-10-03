@@ -19,6 +19,9 @@ typedef NS_ENUM(NSInteger, NVAccountSwitchChoice) {
                   engineFactory:(NVSyncEngine *(^)(NVNotesStore *, NSString *))factory;
 @property (nonatomic, readonly) NotationController *notation;
 @property (nonatomic, readonly) BOOL loadingCredentials;
+@property (nonatomic, readonly) NVSyncStatus status;
+extern NSString *const NVAccountCredentialExpiredKey;
+- (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status;
 - (void)restoreSignIn;
 - (void)signOut;
 // Called only after authentication. The choice is requested only for another account's pending edits.

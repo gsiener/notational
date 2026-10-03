@@ -24,6 +24,7 @@
 #import "NotationController.h"
 #import "NVNotesStore.h"
 #import "NVSyncEngine.h"
+#import "NVAccountSession.h"
 #import "NVNoteRecord.h"
 #import "NoteObject_NVRecord.h"
 #import "NSCollection_utils.h"
@@ -62,6 +63,7 @@
 		lastCheckedDateInHours = hoursFromAbsoluteTime(CFAbsoluteTimeGetCurrent());
 		
 		unwrittenNotes = [[NSMutableSet alloc] init];
+		failedTrashEdits = [[NSMutableDictionary alloc] init];
     }
     return self;
 }
@@ -130,8 +132,7 @@
 
 - (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
     if (engine != syncEngine || resourcesClosed) return;
-	[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:self
-													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:NVSyncStatusKey]];
+    [self.accountSession syncEngine:engine didChangeStatus:status];
 }
 
 //NVSyncEngineDelegate, on the main thread
@@ -199,36 +200,69 @@
 }
 
 - (void)flushAllNoteChanges {
-	[self synchronizeNoteChanges:changeWritingTimer];
+	NSError *error = nil;
+	if (![self flushAllNoteChangesReturningError:&error]) NSLog(@"NotationController: %@", error);
+}
+
+- (BOOL)flushAllNoteChangesReturningError:(NSError **)error {
+	BOOL saved = [self writeUnwrittenNotesReturningError:error];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(synchronizeNoteChanges:) object:nil];
 	if ([notationPrefs preferencesChanged]) {
-		[notesStore setMetadataValue:[NVKeyedArchivedData(notationPrefs) base64EncodedStringWithOptions:0]
-							  forKey:@"notationSettings"];
-		[notationPrefs setPreferencesAreStored];
+		NSError *settingsError = nil;
+		if ([notesStore setMetadataValue:[NVKeyedArchivedData(notationPrefs) base64EncodedStringWithOptions:0]
+							  forKey:@"notationSettings" error:&settingsError]) [notationPrefs setPreferencesAreStored];
+		else { if (error) *error = settingsError; saved = NO; }
 	}
 	[notesStore waitUntilWritten];
+	return saved;
 }
 
 - (void)synchronizeNoteChanges:(NSTimer*)timer {
-	if ([unwrittenNotes count] > 0) {
-		NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[unwrittenNotes count]];
-		for (NoteObject *note in unwrittenNotes) [edits addObject:[note noteRecordRepresentation]];
-		[notesStore saveLocalEdits:edits];
-		[unwrittenNotes removeAllObjects];
-		[syncEngine syncNow];
-		[self scheduleUpdateListForAttribute:NoteDateModifiedColumnString];
-	}
+	NSError *error = nil;
+	if (![self writeUnwrittenNotesReturningError:&error]) NSLog(@"NotationController: %@", error);
 	if (changeWritingTimer) {
 		[changeWritingTimer invalidate];
 		changeWritingTimer = nil;
 	}
 }
 
+- (BOOL)writeUnwrittenNotesReturningError:(NSError **)error {
+	if ([unwrittenNotes count] > 0 || [failedTrashEdits count] > 0) {
+		NSArray *writing = [unwrittenNotes allObjects];
+		NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[writing count]];
+		[edits addObjectsFromArray:[failedTrashEdits allValues]];
+		for (NoteObject *note in writing) [edits addObject:[note noteRecordRepresentation]];
+		if (![notesStore saveLocalEdits:edits error:error]) return NO;
+		[unwrittenNotes minusSet:[NSSet setWithArray:writing]];
+		[failedTrashEdits removeAllObjects];
+		[syncEngine syncNow];
+		[self scheduleUpdateListForAttribute:NoteDateModifiedColumnString];
+	}
+	return YES;
+}
+
 - (void)closeAllResources {
-    if (resourcesClosed) return;
-    resourcesClosed = YES;
+	NSError *error = nil;
+	if (![self closeAllResourcesReturningError:&error]) NSLog(@"NotationController: %@", error);
+}
+
+- (BOOL)closeAllResourcesReturningError:(NSError **)error {
+    if (resourcesClosed) return YES;
 	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
-	[self flushAllNoteChanges];
+	if (![self flushAllNoteChangesReturningError:error]) return NO;
+	resourcesClosed = YES;
+	[syncEngine stop];
+	[allNotes makeObjectsPerformSelector:@selector(disconnectLabels)];
+	return YES;
+}
+
+- (BOOL)prepareForAccountResetReturningError:(NSError **)error {
+	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
+	return [self flushAllNoteChangesReturningError:error];
+}
+
+- (void)retireAfterAccountReset {
+	resourcesClosed = YES;
 	[syncEngine stop];
 	[allNotes makeObjectsPerformSelector:@selector(disconnectLabels)];
 }
@@ -436,6 +470,8 @@
 //the gatekeepers!
 - (void)_addNote:(NoteObject*)aNoteObject {
     [aNoteObject setDelegate:self];	
+	//Undo of a failed trash supersedes that pending deletion.
+	[failedTrashEdits removeObjectForKey:[aNoteObject noteRecordID]];
 	
     [self _insertNote:aNoteObject];
 }
@@ -479,8 +515,11 @@
 	NVNoteRecord *trashed = [aNoteObject noteRecordRepresentation];
 	[trashed setDeleted:YES];
 	[trashed setModificationDate:[[NSDate date] timeIntervalSince1970]];
-	[notesStore saveLocalEdit:trashed];
-	[syncEngine syncNow];
+	NSError *trashError = nil;
+	if (![notesStore saveLocalEdits:@[trashed] error:&trashError]) {
+		[failedTrashEdits setObject:trashed forKey:[trashed noteID]];
+		NSLog(@"NotationController: %@", trashError);
+	} else [syncEngine syncNow];
 	
 	//force-write any cached note changes before the removal
 	[self synchronizeNoteChanges:nil];
@@ -925,5 +964,3 @@
 }
 
 @end
-
-

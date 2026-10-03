@@ -5,9 +5,8 @@
 //  The Notes store: a SQLite replica of the user's Simplenote account, plus local
 //  notes not yet pushed. See docs/adr/0001-simplenote-backed-storage.md.
 //
-//  All SQLite access happens on the store's own serial queue. Writes are queued and
-//  return immediately; reads wait for queued writes, so callers always see their own
-//  changes. Records passed in and out are copies.
+//  All SQLite access happens on the store's own serial queue. Writes return after
+//  commit or rollback; records passed in and out are copies.
 //
 
 #import <Foundation/Foundation.h>
@@ -57,25 +56,36 @@ extern NSString *const NVNotesStoreErrorDomain;
 - (void)saveLocalEdit:(NVNoteRecord *)record;
 //the same for each record, committed together
 - (void)saveLocalEdits:(NSArray *)records;
+//Returns only after the whole batch commits or rolls back.
+- (BOOL)saveLocalEdits:(NSArray *)records error:(NSError **)error;
+//Imports edits and metadata (including an import marker) as one durable batch.
+- (BOOL)saveLocalEdits:(NSArray *)records metadata:(NSDictionary *)metadata error:(NSError **)error;
 
 #pragma mark Sync
 
 //Runs block on the store's queue inside one SQLite transaction, blocking the caller.
 //Everything the block does commits together; other store operations wait.
+//Use the error variant when the caller must distinguish rollback from commit.
 - (void)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block;
+- (BOOL)performTransaction:(void (^)(id<NVNotesStoreTransaction> transaction))block error:(NSError **)error;
 
 - (void)removeAllNotes;
+- (BOOL)removeAllNotesReturningError:(NSError **)error;
+//Clears the replica and changes its owner in one commit during account switching.
+- (BOOL)resetForAccount:(NSString *)account error:(NSError **)error;
 
 //the account change version the replica is up to date with; nil before the first full sync
 @property (nonatomic, copy) NSString *syncPoint;
 
 - (NSString *)metadataValueForKey:(NSString *)key;
 - (void)setMetadataValue:(NSString *)value forKey:(NSString *)key;
+- (BOOL)setMetadataValue:(NSString *)value forKey:(NSString *)key error:(NSError **)error;
 
 #pragma mark Lifecycle
 
-//blocks until every queued write has been committed
+//Waits for earlier queued work. Writes already return after commit or rollback.
 - (void)waitUntilWritten;
+- (BOOL)closeReturningError:(NSError **)error;
 - (void)close;
 
 @end

@@ -16,6 +16,7 @@
 #import "NVSimplenoteAccountWindowController.h"
 #import "TitlebarButton.h"
 #import "NVAccountSession.h"
+#import "EmptyView.h"
 
 static NSString *const AccountKey = @"simplenoteAccount";
 static NSString *const ClientIDKey = @"clientID";
@@ -56,15 +57,20 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	NVLegacyImportResult result = [importer read];
 	switch (result) {
 		case NVLegacyImportRead: {
-			[store saveLocalEdits:[importer recoveredNotes]];
+			NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithObject:@"1" forKey:LegacyImportKey];
 			//carry over the settings that still apply
 			if (![store metadataValueForKey:NotationSettingsKey]) {
 				NotationPrefs *prefs = [[NotationPrefs alloc] init];
 				if ([importer bodyFont]) [prefs setBaseBodyFont:[importer bodyFont]];
 				if ([importer textColor]) [prefs setForegroundTextColor:[importer textColor]];
 				[prefs setConfirmsFileDeletion:[importer confirmsDeletion]];
-				[store setMetadataValue:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
-								 forKey:NotationSettingsKey];
+				[metadata setObject:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
+						 forKey:NotationSettingsKey];
+			}
+			NSError *writeError = nil;
+			if (![store saveLocalEdits:[importer recoveredNotes] metadata:metadata error:&writeError]) {
+				NSLog(@"Legacy import could not be saved: %@", writeError);
+				return;
 			}
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",
 				  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes], (unsigned long)[[importer recoveredNotes] count]);
@@ -88,7 +94,10 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 		case NVLegacyImportNothingFound:
 			break;
 	}
-	[store setMetadataValue:@"1" forKey:LegacyImportKey];
+	if (result == NVLegacyImportRead) return;
+	NSError *markerError = nil;
+	if (![store setMetadataValue:@"1" forKey:LegacyImportKey error:&markerError])
+		NSLog(@"Legacy import marker could not be saved: %@", markerError);
 }
 
 - (NSString *)clientIDForStore:(NVNotesStore *)store {
@@ -155,11 +164,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(simplenoteSyncStatusChanged:)
 												 name:NVSyncStatusDidChangeNotification object:nil];
 	
-	//never signed in: notes come from Simplenote, so say so instead of showing an empty list
-	//(UI tests launch with -SuppressSignInPrompt YES; the menu item still opens the window)
-	if (![[notationController notesStore] metadataValueForKey:AccountKey] &&
-		![[NSUserDefaults standardUserDefaults] boolForKey:@"SuppressSignInPrompt"])
-		[self performSelector:@selector(showSimplenoteAccount:) withObject:nil afterDelay:0.3];
+	[editorStatusView setShowsSignIn:[accountSession status] == NVSyncStatusSignedOut && [notesTableView numberOfRows] == 0];
 }
 
 - (IBAction)showSimplenoteAccount:(id)sender {
@@ -173,14 +178,14 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 - (void)simplenoteSyncStatusChanged:(NSNotification *)notification {
 	NVSyncStatus status = (NVSyncStatus)[[[notification userInfo] objectForKey:NVSyncStatusKey] intValue];
 	[accountWindow refresh];
+	[editorStatusView setShowsSignIn:status == NVSyncStatusSignedOut && [notesTableView numberOfRows] == 0];
 	switch (status) {
 		case NVSyncStatusSyncing: [titleBarButton setStatusIconType:SynchronizingIcon]; break;
 		case NVSyncStatusOffline:
 		case NVSyncStatusSignedOut: [titleBarButton setStatusIconType:AlertIcon]; break;
 		default: [titleBarButton setStatusIconType:NoIcon]; break;
 	}
-	if (status == NVSyncStatusSignedOut) {
-		//the token stopped working: ask to sign in again
+	if ([[[notification userInfo] objectForKey:NVAccountCredentialExpiredKey] boolValue]) {
 		[self showSimplenoteAccount:nil];
 	}
 }
@@ -192,9 +197,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 }
 
 - (NVSyncStatus)simplenoteSyncStatus {
-	NVSyncEngine *engine = [notationController syncEngine];
-	if (!engine && [accountSession loadingCredentials]) return NVSyncStatusSyncing;
-	return engine ? [engine status] : NVSyncStatusSignedOut;
+	return [accountSession status];
 }
 
 - (NSError *)simplenoteLastError {

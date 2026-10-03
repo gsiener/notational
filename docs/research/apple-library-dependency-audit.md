@@ -118,8 +118,8 @@ Environment: macOS 27.0.1 (26A434), Xcode 27.0 (27A266a).
 The probe uses full Markdown syntax and the existing `Tests/Fixtures/Markup/multimarkdown.txt` fixture.
 
 ```sh
-xcrun clang -Werror -fobjc-arc -framework Cocoa docs/research/apple-markdown-probe.m -o /tmp/notational-markdown-probe
-/tmp/notational-markdown-probe Tests/Fixtures/Markup/multimarkdown.txt
+xcrun clang -Werror -fobjc-arc -framework Cocoa docs/research/apple-markdown-probe.m NVTaskPaperMarkdown.m -o /tmp/notational-markdown-probe
+/tmp/notational-markdown-probe Tests/Fixtures/Markup/multimarkdown.txt /tmp/notational-apple-markdown.html
 ```
 
 The resulting file is `/tmp/notational-apple-markdown.html`.
@@ -130,6 +130,7 @@ This tests the direct parse/export combination, not every possible Foundation-ba
 A custom serializer could interpret presentation attributes, but it would become new app-owned code and still need missing dialect behavior.
 Check footnotes, metadata, heading anchors, raw HTML, typography, tables, custom templates, and Save HTML before removing MultiMarkdown.
 The macOS 12 deployment target also needs its own compatibility run.
+The [issue 41 semantic matrix](native-markdown-compatibility.md) reproduces the direct-export gaps across MultiMarkdown, plain Markdown, and TaskPaper fixtures and records the remaining dialect and macOS 12 limits.
 
 [ADR 0004](../adr/0004-shared-markup-rendering.md) records the existing shared-renderer decision and this replacement constraint.
 

@@ -161,10 +161,20 @@
 @interface NVFailingSimplenoteService : NVFakeSimplenoteService
 @property (atomic, assign) NSInteger getFailureCode;
 @property (atomic, copy) NSString *tooLargeNoteID;
+@property (atomic, assign) NSInteger postFailureCode;
+@property (atomic, assign) BOOL failSecondIndexPage;
 @end
 
 @implementation NVFailingSimplenoteService
-@synthesize getFailureCode, tooLargeNoteID;
+@synthesize getFailureCode, tooLargeNoteID, postFailureCode, failSecondIndexPage;
+
+- (NVIndexPage *)indexPageAfterMark:(NSString *)mark limit:(NSUInteger)limit includeData:(BOOL)includeData error:(NSError **)error {
+	if (mark && [self failSecondIndexPage]) {
+		if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:NVSimplenoteErrorNetwork userInfo:nil];
+		return nil;
+	}
+	return [super indexPageAfterMark:mark limit:limit includeData:includeData error:error];
+}
 
 - (NSDictionary *)noteWithID:(NSString *)noteID version:(NSInteger *)version error:(NSError **)error {
 	if ([self getFailureCode]) {
@@ -178,6 +188,10 @@
 						 version:(NSInteger *)newVersion error:(NSError **)error {
 	if ([noteID isEqualToString:[self tooLargeNoteID]]) {
 		if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:NVSimplenoteErrorTooLarge userInfo:nil];
+		return nil;
+	}
+	if ([self postFailureCode]) {
+		if (error) *error = [NSError errorWithDomain:NVSimplenoteErrorDomain code:[self postFailureCode] userInfo:nil];
 		return nil;
 	}
 	return [super postNoteWithID:noteID data:data baseVersion:baseVersion version:newVersion error:error];
@@ -224,6 +238,45 @@
 	//pages of 3: 4 index requests, no per-note fetches
 	XCTAssertEqual([[server requestCounts] countForObject:@"index"], (NSUInteger)4);
 	XCTAssertEqual([[server requestCounts] countForObject:@"get"], (NSUInteger)0);
+}
+
+- (void)testCommittedPullIsDeliveredWhenLaterPushFails {
+	server = [[NVFailingSimplenoteService alloc] init];
+	NVTestMachine *mac = [self machine:@"mac"];
+	XCTAssertTrue([mac sync]);
+	[mac createNoteWithContent:@"local pending"];
+	NSString *remoteID = [server remoteCreateNoteWithContent:@"remote committed" tags:nil];
+	[(NVFailingSimplenoteService *)server setPostFailureCode:NVSimplenoteErrorNetwork];
+	NSError *error = nil;
+	XCTAssertFalse([mac->engine syncOnceReturningError:&error]);
+	[mac drainCallbacks];
+	XCTAssertNotNil(error);
+	XCTAssertEqualObjects([[mac note:remoteID] content], @"remote committed");
+	XCTAssertNotNil([mac->store syncPoint]);
+	BOOL delivered = NO;
+	for (NSArray *batch in mac->updates)
+		for (NVNoteRecord *record in batch) if ([[record noteID] isEqualToString:remoteID]) delivered = YES;
+	XCTAssertTrue(delivered);
+}
+
+- (void)testFirstCommittedIndexPageIsDeliveredWhenNextPageFails {
+	server = [[NVFailingSimplenoteService alloc] init];
+	NSMutableArray *ids = [NSMutableArray array];
+	for (NSUInteger i = 0; i < 5; i++) [ids addObject:[server remoteCreateNoteWithContent:[NSString stringWithFormat:@"remote %lu", (unsigned long)i] tags:nil]];
+	[(NVFailingSimplenoteService *)server setFailSecondIndexPage:YES];
+	NVTestMachine *mac = [self machine:@"mac"];
+	NSError *error = nil;
+	XCTAssertFalse([mac->engine syncOnceReturningError:&error]);
+	[mac drainCallbacks];
+	XCTAssertNotNil(error);
+	XCTAssertEqual([mac->store noteCount], (NSUInteger)3);
+	XCTAssertNil([mac->store syncPoint]);
+	NSUInteger delivered = 0;
+	for (NSArray *batch in mac->updates) delivered += [batch count];
+	XCTAssertEqual(delivered, (NSUInteger)3);
+	[(NVFailingSimplenoteService *)server setFailSecondIndexPage:NO];
+	XCTAssertTrue([mac sync]);
+	XCTAssertEqual([mac->store noteCount], (NSUInteger)5);
 }
 
 - (void)testCatchUpAppliesRemoteCreatesEditsTrashAndPurges {

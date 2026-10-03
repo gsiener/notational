@@ -85,6 +85,20 @@
 	XCTAssertEqualObjects([self evaluate:@"document.documentElement.outerHTML"], updated);
 }
 
+- (void)testInPlaceUpdateKeepsScrollPosition {
+	[renderer setBundledTemplateFolder:self.temporaryDirectory];
+	[@"<html><body><div id='scroll' style='height: 100px; overflow: auto'><div id='content'>{%content%}</div></div></body></html>"
+	 writeToFile:[self.temporaryDirectory stringByAppendingPathComponent:@"template.html"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+	NSString *tall = @"<div style='height: 2000px'>top</div><p>first</p><div style='height: 2000px'>bottom</div>";
+	[self load:[renderer pageForHTML:tall title:@"Note"]];
+	[self evaluate:@"document.getElementById('scroll').scrollTop = 500; true"];
+	double before = [[self evaluate:@"document.getElementById('scroll').scrollTop"] doubleValue];
+	XCTAssertGreaterThan(before, 0.0);
+	NSString *inner = @"<div style='height: 2000px'>top</div><p>changed</p><div style='height: 4000px'>bottom</div>";
+	XCTAssertEqualObjects([self evaluate:[PreviewController scriptReplacingContentOfElement:@"content" withHTML:inner]], @YES);
+	XCTAssertEqualWithAccuracy([[self evaluate:@"document.getElementById('scroll').scrollTop"] doubleValue], before, 1.0);
+}
+
 - (void)testATemplateWhoseScriptsRanIsLoadedAgain {
 	[renderer setBundledTemplateFolder:self.temporaryDirectory];
 	[@"<html><body><div id=\"c\">{%content%}</div><script>document.title = 'ran';</script></body></html>"
