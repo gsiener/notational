@@ -339,6 +339,9 @@
 		A30000000000000000000002 /* NVHereNowSites.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* NVHereNowSites.m */; };
 		A30000000000000000000005 /* NVHereNowSitesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000006 /* NVHereNowSitesTests.m */; };
 		56708D8A7ACDD28F71804D92 /* PreviewLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */; };
+		5E05D1158C2300CED9042BF8 /* NVHereNowSiteViewer.m in Sources */ = {isa = PBXBuildFile; fileRef = 48C94F588130119D1F11C3B8 /* NVHereNowSiteViewer.m */; };
+		43AEE9A0AE939D8719E664BF /* NVHereNowSiteViewer.m in Sources */ = {isa = PBXBuildFile; fileRef = 48C94F588130119D1F11C3B8 /* NVHereNowSiteViewer.m */; };
+		78339CF4AD763AD055331254 /* NVHereNowSiteViewerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A15373A99D3CB85B38E1FAB3 /* NVHereNowSiteViewerTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -795,6 +798,9 @@
 		A30000000000000000000004 /* NVHereNowSites.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVHereNowSites.h; sourceTree = "<group>"; };
 		A30000000000000000000006 /* NVHereNowSitesTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowSitesTests.m; sourceTree = "<group>"; };
 		414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PreviewLifecycleTests.m; sourceTree = "<group>"; };
+		8471DA0F30BE6C78C0D79BBB /* NVHereNowSiteViewer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVHereNowSiteViewer.h; sourceTree = "<group>"; };
+		48C94F588130119D1F11C3B8 /* NVHereNowSiteViewer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowSiteViewer.m; sourceTree = "<group>"; };
+		A15373A99D3CB85B38E1FAB3 /* NVHereNowSiteViewerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowSiteViewerTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -840,6 +846,8 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				48C94F588130119D1F11C3B8 /* NVHereNowSiteViewer.m */,
+				8471DA0F30BE6C78C0D79BBB /* NVHereNowSiteViewer.h */,
 				301DC0C5EFFA200CC13100E2 /* NVAccountSession.m */,
 				51D4FC1A5C566FFB63B24FA9 /* NVAccountSession.h */,
 				A30000000000000000000003 /* NVHereNowSites.m */,
@@ -1319,6 +1327,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				A15373A99D3CB85B38E1FAB3 /* NVHereNowSiteViewerTests.m */,
 				35AB041F9AE250A3D8C828E8 /* AppControllerRemoteUndoTests.m */,
 				414142BC9B1BDFF2C3F0F338 /* PreviewLifecycleTests.m */,
 				A44100010000000000000006 /* NVActivationShortcutTests.m */,
@@ -1584,6 +1593,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5E05D1158C2300CED9042BF8 /* NVHereNowSiteViewer.m in Sources */,
 				7531994172A106E0A77C503F /* NVAccountSession.m in Sources */,
 				A30000000000000000000001 /* NVHereNowSites.m in Sources */,
 				8FFAD8E7900E8A481FEF4200 /* NVSplitView.m in Sources */,
@@ -1677,6 +1687,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78339CF4AD763AD055331254 /* NVHereNowSiteViewerTests.m in Sources */,
+				43AEE9A0AE939D8719E664BF /* NVHereNowSiteViewer.m in Sources */,
 				BBF1EEFC5A970B9B03F40E40 /* AppControllerRemoteUndoTests.m in Sources */,
 				56708D8A7ACDD28F71804D92 /* PreviewLifecycleTests.m in Sources */,
 				A44100010000000000000005 /* NVActivationShortcutTests.m in Sources */,
