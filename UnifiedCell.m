@@ -106,6 +106,11 @@
 	noteObject = obj;
 }
 
+- (void)setFallbackDateModifiedString:(NSString*)modified createdString:(NSString*)created {
+	fallbackDateModifiedString = [modified copy];
+	fallbackDateCreatedString = [created copy];
+}
+
 - (void)setPreviewIsHidden:(BOOL)value {
 	previewIsHidden = value;
 }
@@ -185,7 +190,8 @@ NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL w
 			showDateCreated = YES;
 		}
 		
-		NSString *dateStr = (showDateCreated ? dateCreatedStringOfNote : dateModifiedStringOfNote)(tv, noteObject, NSNotFound);
+		NSString *dateStr = noteObject ? (showDateCreated ? dateCreatedStringOfNote : dateModifiedStringOfNote)(tv, noteObject, NSNotFound) :
+			(showDateCreated ? fallbackDateCreatedString : fallbackDateModifiedString);
         CGFloat dateLength=70.0;
         if (dateStr.length>8) {
             dateLength+=(((CGFloat)dateStr.length-8.0)*2);
@@ -193,7 +199,7 @@ NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL w
 		[dateStr drawInRect:NSMakeRect(NSMaxX(cellFrame) - dateLength-4.0, NSMinY(cellFrame), dateLength, fontHeight) withAttributes:baseAttrs];
 	}
 
-	if (ColumnIsSet(NoteLabelsColumn, columnsBitmap) && [labelsOfNote(noteObject) length]) {
+	if (noteObject && ColumnIsSet(NoteLabelsColumn, columnsBitmap) && [labelsOfNote(noteObject) length]) {
 		NSRect rect = [self nv_tagsRectForFrame:cellFrame];
 		rect.origin.y += fontHeight;
 		rect = [controlView centerScanRect:rect];
@@ -205,7 +211,7 @@ NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL w
 		[NSGraphicsContext restoreGraphicsState];
 	}
 	
-	if ([tv currentEditor] && [self isHighlighted]) {
+	if (noteObject && [tv currentEditor] && [self isHighlighted]) {
 		//needed because the body text is normally not drawn while editing
 		NSMutableAttributedString *cloneStr = [[self attributedStringValue] mutableCopy];
 		[cloneStr addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[self font], NSFontAttributeName, textColor, 

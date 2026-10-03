@@ -22,6 +22,7 @@
 @interface UnifiedCell : NSTextFieldCell {
 	NoteObject *noteObject;
 	BOOL previewIsHidden;
+	NSString *fallbackDateModifiedString, *fallbackDateCreatedString;
 }
 
 
@@ -36,5 +37,7 @@ NSAttributedString *AttributedStringForSelection(NSAttributedString *str, BOOL w
 - (NSMutableDictionary*)baseTextAttributes;
 - (NoteObject*)noteObject;
 - (void)setNoteObject:(NoteObject*)obj;
+//the dates drawn for a row with no Note (a here.now Site), formatted as a Note's are
+- (void)setFallbackDateModifiedString:(NSString*)modified createdString:(NSString*)created;
 
 @end

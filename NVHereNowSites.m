@@ -1,5 +1,10 @@
 #import "NVHereNowSites.h"
 #import "NoteAttributeColumn.h"
+#import "NoteObject.h"
+#import "GlobalPrefs.h"
+#import "UnifiedCell.h"
+#import "LabelColumnCell.h"
+#import "NSString_NV.h"
 #import <Security/Security.h>
 
 NSString *const NVHereNowSitesDidChangeNotification = @"NVHereNowSitesDidChange";
@@ -52,6 +57,18 @@ static BOOL SaveKey(NSString *key) {
         status = SecItemAdd((__bridge CFDictionaryRef)item, NULL);
     }
     return status == errSecSuccess;
+}
+// here.now sends RFC 3339 times, with or without fractional seconds.
+static NSDate *SiteDate(id value) {
+    if (![value isKindOfClass:[NSString class]] || ![value length]) return nil;
+    static NSISO8601DateFormatter *plain, *fractional;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        plain = [NSISO8601DateFormatter new];
+        fractional = [NSISO8601DateFormatter new];
+        fractional.formatOptions = NSISO8601DateFormatWithInternetDateTime | NSISO8601DateFormatWithFractionalSeconds;
+    });
+    return [fractional dateFromString:value] ?: [plain dateFromString:value];
 }
 static NSError *SiteError(NSInteger code, NSString *message) {
     return [NSError errorWithDomain:@"NVHereNowSites" code:code userInfo:@{NSLocalizedDescriptionKey: message}];
@@ -132,6 +149,9 @@ static NSError *SiteError(NSInteger code, NSString *message) {
         NSString *workspaceName = [workspace isKindOfClass:[NSDictionary class]] && [workspace[@"displayName"] isKindOfClass:[NSString class]] ? workspace[@"displayName"] : nil;
         site.scopeLabel = workspaceName.length ? workspaceName : ([ownership isEqual:@"shared"] ? @"Shared" : @"Personal");
         site.URL = url;
+        // contentUpdatedAt moves only when the live content changes, like a Note's modification date;
+        // updatedAt also moves on settings changes, so it is only a fallback. The list has no creation time.
+        site.modifiedDate = SiteDate(row[@"contentUpdatedAt"]) ?: SiteDate(row[@"updatedAt"]);
         site.searchText = [[@[site.title, slug, rawURL, site.scopeLabel] componentsJoinedByString:@" "] lowercaseString];
         [result addObject:site];
     }
@@ -190,48 +210,171 @@ static NSError *SiteError(NSInteger code, NSString *message) {
 }
 @end
 
+typedef NS_ENUM(NSInteger, NVMixedSortKind) { NVMixedSortNone, NVMixedSortTitle, NVMixedSortLabels, NVMixedSortModified, NVMixedSortCreated };
+
+static NVMixedSortKind SortKindForKey(NSString *key) {
+    if ([key isEqualToString:NoteDateModifiedColumnString]) return NVMixedSortModified;
+    if ([key isEqualToString:NoteDateCreatedColumnString]) return NVMixedSortCreated;
+    if ([key isEqualToString:NoteTitleColumnString]) return NVMixedSortTitle;
+    if ([key isEqualToString:NoteLabelsColumnString]) return NVMixedSortLabels;
+    return NVMixedSortNone;
+}
+//as compareTitleString and compareLabelString compare
+static NSInteger CompareCaseInsensitive(NSString *a, NSString *b) {
+    return (NSInteger)CFStringCompare((__bridge CFStringRef)(a ?: @""), (__bridge CFStringRef)(b ?: @""), kCFCompareCaseInsensitive);
+}
+static BOOL SiteSortTime(NVHereNowSite *site, NVMixedSortKind kind, CFAbsoluteTime *time) {
+    NSDate *date = kind == NVMixedSortModified ? site.modifiedDate : kind == NVMixedSortCreated ? site.createdDate : nil;
+    if (date) *time = [date timeIntervalSinceReferenceDate];
+    return date != nil;
+}
+// Negative when the Site is listed before the Note. It mirrors the Notes' sort: the column's comparator
+// (dates truncated to whole seconds, as compareDateModified does), then the title, both flipped when
+// reversed. A Site with no date for a date sort, and any tie, lists after the Note.
+static NSInteger CompareSiteToNote(NVHereNowSite *site, NoteObject *note, NVMixedSortKind kind, BOOL reversed) {
+    NSInteger result = 0;
+    switch (kind) {
+        case NVMixedSortNone: return 1;
+        case NVMixedSortModified:
+        case NVMixedSortCreated: {
+            CFAbsoluteTime time;
+            if (!SiteSortTime(site, kind, &time)) return 1;
+            result = (NSInteger)(time - (kind == NVMixedSortModified ? modifiedDateOfNote(note) : createdDateOfNote(note)));
+            break;
+        }
+        case NVMixedSortLabels: result = CompareCaseInsensitive(@"", labelsOfNote(note)); break;   //Sites have no tags
+        case NVMixedSortTitle: break;
+    }
+    if (!result) result = CompareCaseInsensitive(site.title, titleOfNote(note));
+    if (!result) return 1;
+    return reversed ? -result : result;
+}
+// Sites among themselves, by the same rules; undated Sites list last in either direction, otherwise ties keep API order.
+static NSComparisonResult CompareSites(NVHereNowSite *a, NVHereNowSite *b, NVMixedSortKind kind, BOOL reversed) {
+    if (kind == NVMixedSortNone) return NSOrderedSame;
+    NSInteger result = 0;
+    if (kind == NVMixedSortModified || kind == NVMixedSortCreated) {
+        CFAbsoluteTime timeA = 0, timeB = 0;
+        BOOL datedA = SiteSortTime(a, kind, &timeA), datedB = SiteSortTime(b, kind, &timeB);
+        if (datedA != datedB) return datedA ? NSOrderedAscending : NSOrderedDescending;
+        if (datedA) result = (NSInteger)(timeA - timeB);
+    }
+    if (!result) result = CompareCaseInsensitive(a.title, b.title);
+    if (reversed) result = -result;
+    return result < 0 ? NSOrderedAscending : result > 0 ? NSOrderedDescending : NSOrderedSame;
+}
+static NSString *SiteDateString(NSDate *date) {
+    return date ? [NSString relativeDateStringWithAbsoluteTime:[date timeIntervalSinceReferenceDate]] : @"";
+}
+
 @implementation NVHereNowMixedList {
-    NSArray *_visibleSites;
-    NSArray *_retainedRows;
+    NSArray *_rows;               //Notes and Sites; also keeps alive what FastListDataSource borrows
     NSString *_search;
     NSUInteger _noteRowCount;
+    NSMutableData *_noteIndexForRow, *_rowForNoteIndex;
 }
 - (void)setNotes:(FastListDataSource *)notes { _notes = notes; [self rebuild]; }
 - (void)setSites:(NSArray *)sites { _sites = [sites copy]; [self rebuild]; }
 - (void)filterSitesForString:(NSString *)search { _search = [search copy]; [self rebuild]; }
+- (void)setSortKey:(NSString *)sortKey reversed:(BOOL)reversed { _sortKey = [sortKey copy]; _reverseSort = reversed; [self rebuild]; }
+- (void)setNotes:(FastListDataSource *)notes sortKey:(NSString *)sortKey reversed:(BOOL)reversed search:(NSString *)search {
+    _notes = notes; _sortKey = [sortKey copy]; _reverseSort = reversed; _search = [search copy];
+    [self rebuild];
+}
 - (void)rebuild {
-    NSMutableArray *rows = [NSMutableArray array];
-    const __unsafe_unretained id *notes = [_notes immutableObjects];
-    _noteRowCount = [_notes count];
-    for (NSUInteger i = 0; i < _noteRowCount; ++i) [rows addObject:notes[i]];
     NSMutableArray *visible = [NSMutableArray array];
     for (NVHereNowSite *site in _sites) if (!_search.length || [site.searchText localizedCaseInsensitiveContainsString:_search]) [visible addObject:site];
-    _visibleSites = visible;
-    [rows addObjectsFromArray:visible];
-    _retainedRows = rows; // FastListDataSource keeps unsafe pointers.
+    NVMixedSortKind kind = SortKindForKey(_sortKey);
+    BOOL reversed = _reverseSort;
+    NSArray *sites = [visible sortedArrayWithOptions:NSSortStable usingComparator:^NSComparisonResult(id a, id b) { return CompareSites(a, b, kind, reversed); }];
+
+    const __unsafe_unretained id *notes = [_notes immutableObjects];
+    NSUInteger noteCount = [_notes count], rowCount = noteCount + sites.count, site = 0;
+    NSMutableArray *rows = [NSMutableArray arrayWithCapacity:rowCount];
+    _noteIndexForRow = [NSMutableData dataWithLength:rowCount * sizeof(NSUInteger)];
+    _rowForNoteIndex = [NSMutableData dataWithLength:noteCount * sizeof(NSUInteger)];
+    NSUInteger *noteIndexForRow = _noteIndexForRow.mutableBytes, *rowForNoteIndex = _rowForNoteIndex.mutableBytes;
+    for (NSUInteger i = 0; i <= noteCount; ++i) {
+        //each Site goes before the first Note it sorts ahead of; the rest follow the last Note
+        while (site < sites.count && (i == noteCount || CompareSiteToNote(sites[site], notes[i], kind, reversed) < 0)) {
+            noteIndexForRow[rows.count] = NSNotFound;
+            [rows addObject:sites[site++]];
+        }
+        if (i == noteCount) break;
+        rowForNoteIndex[i] = rows.count;
+        noteIndexForRow[rows.count] = i;
+        [rows addObject:notes[i]];
+    }
+    _noteRowCount = noteCount;
+    _rows = rows; // FastListDataSource keeps unsafe pointers.
     [self fillArrayFromArray:rows];
 }
 - (NSUInteger)noteRowCount { return _noteRowCount; }
+- (BOOL)rowInRange:(NSInteger)row { return row >= 0 && (NSUInteger)row < _rows.count; }
 - (NVHereNowSite *)siteAtRow:(NSInteger)row {
-    NSInteger offset = row - (NSInteger)_noteRowCount;
-    return offset >= 0 && offset < (NSInteger)_visibleSites.count ? _visibleSites[offset] : nil;
+    if (![self rowInRange:row]) return nil;
+    id object = _rows[(NSUInteger)row];
+    return [object isKindOfClass:[NVHereNowSite class]] ? object : nil;
 }
+- (id)noteAtRow:(NSInteger)row { return [self noteIndexForRow:row] == NSNotFound ? nil : _rows[(NSUInteger)row]; }
+- (NSUInteger)noteIndexForRow:(NSInteger)row {
+    return [self rowInRange:row] ? ((const NSUInteger *)_noteIndexForRow.bytes)[row] : NSNotFound;
+}
+- (NSUInteger)rowForNoteIndex:(NSUInteger)noteIndex {
+    return noteIndex < _noteRowCount ? ((const NSUInteger *)_rowForNoteIndex.bytes)[noteIndex] : NSNotFound;
+}
+- (NSUInteger)rowForNote:(id)note {
+    if (!note) return NSNotFound;
+    NSUInteger row = [self indexOfObjectIdenticalTo:note];
+    return row != NSNotFound && [self noteIndexForRow:(NSInteger)row] != NSNotFound ? row : NSNotFound;
+}
+- (NSArray *)notesAtRows:(NSIndexSet *)rows {
+    NSMutableArray *notes = [NSMutableArray arrayWithCapacity:rows.count];
+    [rows enumerateIndexesUsingBlock:^(NSUInteger row, BOOL *stop) {
+        id note = [self noteAtRow:(NSInteger)row];
+        if (note) [notes addObject:note];
+    }];
+    return notes;
+}
+- (NSIndexSet *)rowsForNotes:(NSArray *)notes {
+    NSMutableIndexSet *rows = [NSMutableIndexSet indexSet];
+    for (id note in notes) {
+        NSUInteger row = [self rowForNote:note];
+        if (row != NSNotFound) [rows addIndex:row];
+    }
+    return rows;
+}
+//callers that treat the list as a FastListDataSource of Notes never receive a Site
+- (NSArray *)objectsAtFilteredIndexes:(NSIndexSet *)indexSet { return [self notesAtRows:indexSet]; }
 - (NSUInteger)rowForSiteIdentity:(NSString *)identity {
     if (!identity.length) return NSNotFound;
-    for (NSUInteger i = 0; i < _visibleSites.count; ++i) {
-        NVHereNowSite *site = _visibleSites[i];
-        if ([site.identity isEqualToString:identity]) return _noteRowCount + i;
+    for (NSUInteger row = 0; row < _rows.count; ++row) {
+        NVHereNowSite *site = _rows[row];
+        if ([site isKindOfClass:[NVHereNowSite class]] && [site.identity isEqualToString:identity]) return row;
     }
     return NSNotFound;
 }
-- (BOOL)selectionContainsSite:(NSIndexSet *)indexes { return indexes.lastIndex != NSNotFound && indexes.lastIndex >= _noteRowCount; }
+- (BOOL)selectionContainsSite:(NSIndexSet *)indexes {
+    return [indexes indexPassingTest:^BOOL(NSUInteger row, BOOL *stop) { return [self siteAtRow:(NSInteger)row] != nil; }] != NSNotFound;
+}
 - (id)tableView:(NSTableView *)table objectValueForTableColumn:(NSTableColumn *)column row:(NSInteger)row {
     NVHereNowSite *site = [self siteAtRow:row];
-    if (!site) return [_notes tableView:table objectValueForTableColumn:column row:row];
-    if ([[column identifier] isEqual:@"Title"]) return [NSString stringWithFormat:@"◈ %@  (here.now · %@ · read-only%@)", site.title, site.scopeLabel ?: @"Personal", self.stale ? @" · saved" : @""];
+    if (!site) return [self rowInRange:row] ? [super tableView:table objectValueForTableColumn:column row:row] : nil;
+    //the shared cells still hold the last Note drawn; clear it so a Site row draws no Note's date or tags
+    id cell = [column dataCellForRow:row];
+    if ([cell isKindOfClass:[UnifiedCell class]]) {
+        [cell setNoteObject:nil];
+        [cell setFallbackDateModifiedString:SiteDateString(site.modifiedDate) createdString:SiteDateString(site.createdDate)];
+    } else if ([cell isKindOfClass:[LabelColumnCell class]]) {
+        [cell setNoteObject:nil];
+    }
+    NSString *identifier = [column identifier];
+    if ([identifier isEqual:NoteTitleColumnString]) return [NSString stringWithFormat:@"◈ %@  (here.now · %@ · read-only%@)", site.title, site.scopeLabel ?: @"Personal", self.stale ? @" · saved" : @""];
+    if ([identifier isEqual:NoteDateModifiedColumnString]) return SiteDateString(site.modifiedDate);
+    if ([identifier isEqual:NoteDateCreatedColumnString]) return SiteDateString(site.createdDate);
     return @"";
 }
 - (void)tableView:(NSTableView *)table setObjectValue:(id)value forTableColumn:(NSTableColumn *)column row:(NSInteger)row {
-    if (![self siteAtRow:row]) [_notes tableView:table setObjectValue:value forTableColumn:column row:row];
+    if ([self noteAtRow:row]) [super tableView:table setObjectValue:value forTableColumn:column row:row];
 }
 @end
