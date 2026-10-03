@@ -220,6 +220,17 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	[removedNoteIDs addObject:noteID];
 }
 
+//Notifications are staged while the store transaction runs. Restore the prior
+//stage if SQLite rolls back, without losing earlier committed pages or pushes.
+- (BOOL)_performNotifyingTransaction:(void (^)(id<NVNotesStoreTransaction>))block error:(NSError **)error {
+	NSDictionary *priorUpdates = [updatedNotes copy];
+	NSSet *priorRemovals = [removedNoteIDs copy];
+	if ([store performTransaction:block error:error]) return YES;
+	[updatedNotes setDictionary:priorUpdates];
+	[removedNoteIDs setSet:priorRemovals];
+	return NO;
+}
+
 - (void)_deliverChanges {
 	if (![updatedNotes count] && ![removedNoteIDs count]) return;
 	NSArray *records = [updatedNotes allValues];
@@ -297,7 +308,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	if (!changes) {
 		if (IsSimplenoteError(failure, NVSimplenoteErrorUnknownChangeVersion)) {
 			NSLog(@"NVSyncEngine: sync point no longer known to the server; re-indexing");
-			[store setSyncPoint:nil];
+			if (![store setMetadataValue:nil forKey:@"syncPoint" error:error]) return NO;
 			return [self _fullSyncReturningError:error];
 		}
 		if (error) *error = failure;
@@ -334,7 +345,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 		return NO;
 	}
 	
-	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		for (NSString *noteID in order) {
 			NVRemoteChange *change = [latest objectForKey:noteID];
 			if ([change removed]) {
@@ -346,8 +357,8 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 				if (note) [self _applyRemoteNote:noteID data:[note data] version:[note version] transaction:t];
 			}
 		}
-	}];
-	[store setSyncPoint:[[changes lastObject] changeVersion]];
+	} error:error]) return NO;
+	if (![store setMetadataValue:[[changes lastObject] changeVersion] forKey:@"syncPoint" error:error]) return NO;
 	return YES;
 }
 
@@ -370,7 +381,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 			if (![note data] && [note noteID]) [bare addObject:[note noteID]];
 		NSMutableDictionary *fetched = [NSMutableDictionary dictionary];
 		[self _fetchNotes:bare into:fetched ignoringFailures:YES];
-		[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 			for (NVRemoteNote *note in [page notes]) {
 				[seen addObject:[note noteID]];
 				NSDictionary *data = [note data];
@@ -383,17 +394,17 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 				}
 				[self _applyRemoteNote:[note noteID] data:data version:version transaction:t];
 			}
-		}];
+		} error:error]) return NO;
 		mark = [page nextMark];
 	} while (mark);
 
 	//notes the server no longer has (purged while we weren't looking)
-	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		for (NSString *noteID in [t confirmedNoteIDs]) {
 			if (![seen containsObject:noteID]) [self _applyRemoteRemovalOfNote:noteID transaction:t];
 		}
-	}];
-	[store setSyncPoint:startingChangeVersion];
+	} error:error]) return NO;
+	if (![store setMetadataValue:startingChangeVersion forKey:@"syncPoint" error:error]) return NO;
 	return YES;
 }
 
@@ -457,8 +468,9 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 			if (![outcome isKindOfClass:[NVPushOutcome class]]) continue; //not sent: an earlier one failed
 			NVNoteRecord *record = [pending objectAtIndex:i];
 			if ([outcome result]) {
-				[self _applyPushOf:record outcome:outcome];
-				pushedAny = YES;
+				NSError *writeError = nil;
+				if ([self _applyPushOf:record outcome:outcome error:&writeError]) pushedAny = YES;
+				else if (!failure) failure = writeError;
 			} else if (IsSimplenoteError([outcome error], NVSimplenoteErrorTooLarge)) {
 				NSLog(@"NVSyncEngine: note %@ is too large for Simplenote", [record noteID]);
 			} else if (!failure) {
@@ -506,11 +518,11 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	return outcome;
 }
 
-- (void)_applyPushOf:(NVNoteRecord *)pushed outcome:(NVPushOutcome *)outcome {
+- (BOOL)_applyPushOf:(NVNoteRecord *)pushed outcome:(NVPushOutcome *)outcome error:(NSError **)error {
 	NSDictionary *result = [outcome result];
 	NSInteger newVersion = [outcome version];
 	NSString *pushedContent = [[outcome sent] objectForKey:@"content"];
-	[store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	return [self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		NVNoteRecord *record = [t noteWithID:[pushed noteID]];
 		if (!record) return;
 		[record setServerData:result];
@@ -537,7 +549,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 		}
 		[record setPending:YES];
 		[t putNote:record];
-	}];
+	} error:error];
 }
 
 @end

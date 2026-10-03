@@ -6,6 +6,7 @@
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
 #import "NVFakeSimplenoteService.h"
+#include <sqlite3.h>
 
 @interface MemoryAccountCredentials : NSObject <NVAccountCredentials>
 @property NSMutableDictionary *tokens;
@@ -92,6 +93,44 @@
     XCTAssertTrue([self switchChoosing:NVAccountSwitchDiscard error:NULL]);
     [self assertOldNoteCannotReachNewAccount];
     XCTAssertEqualObjects([oldServer currentDataOfNote:noteID][@"content"], @"Old note\noriginal");
+}
+
+- (void)testAccountSwitchStopsWhenDirtyEditCannotPersist {
+	[self edit];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_edit BEFORE UPDATE ON notes BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([self switchChoosing:NVAccountSwitchDiscard error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqual([session notation], original);
+	XCTAssertNotNil([store noteWithID:noteID]);
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_edit", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([original flushAllNoteChangesReturningError:&error], @"%@", error);
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Old note\nunsaved");
+	sqlite3_close(other);
+}
+
+- (void)testFailedResetPreservesOldSessionAndCanRetry {
+	[self edit];
+	NVSyncEngine *oldEngine = [original syncEngine];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_reset BEFORE DELETE ON notes BEGIN SELECT RAISE(FAIL, 'reset rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([self switchChoosing:NVAccountSwitchDiscard error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqual([session notation], original);
+	XCTAssertEqual([original syncEngine], oldEngine);
+	XCTAssertEqualObjects([store metadataValueForKey:@"simplenoteAccount"], @"old@example.com");
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Old note\nunsaved");
+	XCTAssertNotNil([original noteForRecordID:noteID]);
+	XCTAssertEqualObjects([credentials tokenForAccount:@"old@example.com"], @"old-token");
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_reset", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([self switchChoosing:NVAccountSwitchDiscard error:&error], @"%@", error);
+	sqlite3_close(other);
 }
 - (void)testSyncAndSwitchSendsDirtyEditsOnlyToOldAccount {
     [self edit];
