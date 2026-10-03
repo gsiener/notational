@@ -236,6 +236,16 @@
 - (void)testCancellingSwitchDoesNotCancelCredentialRestoration {
     [self edit];
     [original setSyncEngine:nil];
+    // Observe the restoration handoff itself, rather than polling on a timer.
+    // Keep this expectation separate from switchChoosing:'s transition wait.
+    XCTestExpectation *restored = [[XCTestExpectation alloc] initWithDescription:@"restored engine"];
+    NVFakeSimplenoteService *server = oldServer;
+    session = [[NVAccountSession alloc] initWithNotation:original credentials:credentials
+        engineFactory:^NVSyncEngine *(NVNotesStore *aStore, NSString *token) {
+            XCTAssertEqualObjects(token, @"old-token");
+            dispatch_async(dispatch_get_main_queue(), ^{ [restored fulfill]; });
+            return [[ManualAccountEngine alloc] initWithStore:aStore service:server];
+        }];
     credentials.readStarted = dispatch_semaphore_create(0);
     credentials.allowRead = dispatch_semaphore_create(0);
     [session restoreSignIn];
@@ -243,11 +253,8 @@
     XCTAssertFalse([self switchChoosing:NVAccountSwitchCancel error:NULL]);
     XCTAssertTrue([session loadingCredentials]);
     dispatch_semaphore_signal(credentials.allowRead);
-    NSPredicate *restored = [NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
-        return ![(NVAccountSession *)object loadingCredentials];
-    }];
-    [self expectationForPredicate:restored evaluatedWithObject:session handler:nil];
-    [self waitForExpectationsWithTimeout:3 handler:nil];
+    [self waitForExpectations:@[restored] timeout:5];
+    XCTAssertFalse([session loadingCredentials]);
     XCTAssertNotNil([original syncEngine]);
     XCTAssertEqualObjects([store metadataValueForKey:@"simplenoteAccount"], @"old@example.com");
 }
