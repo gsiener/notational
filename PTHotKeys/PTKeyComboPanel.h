@@ -10,7 +10,6 @@
 
 @class PTKeyBroadcaster;
 @class PTKeyCombo;
-@class PTHotKey;
 
 @interface PTKeyComboPanel : NSWindowController
 {
@@ -27,9 +26,8 @@
 
 + (id)sharedPanel;
 
-- (void)showSheetForHotkey:(PTHotKey*)hotKey forWindow:(NSWindow*)mainWindow modalDelegate:(id)target;
+- (void)showSheetForKeyCombo:(PTKeyCombo*)combo name:(NSString*)name forWindow:(NSWindow*)mainWindow modalDelegate:(id)target;
 
-- (void)runModalForHotKey: (PTHotKey*)hotKey;
 
 - (void)setKeyCombo: (PTKeyCombo*)combo;
 - (PTKeyCombo*)keyCombo;

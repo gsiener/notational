@@ -39,4 +39,13 @@
 	XCTAssertEqualObjects([self importedContentOfFile:@"Shopping list.txt" text:@"eggs\nmilk"], @"Shopping list\neggs\nmilk");
 }
 
+- (void)testInvalidBlorIsNotImportedAsTextAndOriginalIsPreserved {
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"NotationalDatabase.blor"];
+	NSData *original = [@"short invalid Blor" dataUsingEncoding:NSUTF8StringEncoding];
+	XCTAssertTrue([original writeToFile:path atomically:YES]);
+	AlienNoteImporter *importer = [[AlienNoteImporter alloc] initWithStoragePath:path];
+	XCTAssertNil([importer notesInFile:path]);
+	XCTAssertEqualObjects([NSData dataWithContentsOfFile:path], original);
+}
+
 @end

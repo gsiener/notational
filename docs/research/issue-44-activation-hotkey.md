@@ -1,0 +1,9 @@
+# Issue 44: activation shortcut implementation
+
+The issue-44 branch replaces the generic `PTHotKeyCenter` and `PTHotKey` machinery with the app-specific `NVActivationShortcut`. `PTKeyCombo`, the localized recorder, key names, and stored `AppActivationKeyCode`/`AppActivationModifiers` format remain. The active shortcut uses Carbon `RegisterEventHotKey`; no global monitor or new permission is involved.
+
+Registration is atomic from the user's perspective: install the handler first, register the replacement, then unregister the old key. A collision returns failure while leaving the old registration, saved settings, and preferences display intact. Clear unregisters and saves `-1/-1`. Every successful registration gets a new ID, and the handler checks the current ID and live registration before dispatching the app's existing toggle action.
+
+Production Objective-C changes: 129 lines added, 507 removed, counting new owner and caller changes but excluding Xcode project wiring, tests, and documentation. Net reduction: 378 lines. The four removed files alone account for 423 lines; the new owner is 92 lines. No recorder or localization resources were removed.
+
+Verification: `Notation Develop` macOS build passed with checkout-local DerivedData after initializing `MultiMarkdown-4` and `greg`. `NotationTests/NVActivationShortcutTests` passed in a targeted Xcode run. Five tests passed: real registration, collision and rollback, clear, stale-event rejection, multiple owners, deallocation, preferences persistence, and recorder completion callbacks. `git diff --check` passed. The test does not synthesize OS focus transitions. Manual checks remain for activation while another app is focused and while Notational is focused, plus hide/show/focus, recorder cancel/clear, and visible collision feedback in a dedicated interactive session.
