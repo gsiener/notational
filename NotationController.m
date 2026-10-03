@@ -256,6 +256,17 @@
 	return YES;
 }
 
+- (BOOL)prepareForAccountResetReturningError:(NSError **)error {
+	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
+	return [self flushAllNoteChangesReturningError:error];
+}
+
+- (void)retireAfterAccountReset {
+	resourcesClosed = YES;
+	[syncEngine stop];
+	[allNotes makeObjectsPerformSelector:@selector(disconnectLabels)];
+}
+
 - (void)updateTitlePrefixConnections {
 	//used to auto-complete titles to the first, shortest title of the same prefix--
 	//to prevent auto-completing "Chicago Brauhaus" before "Chicago" when search string is "Chi", for example.
@@ -459,6 +470,8 @@
 //the gatekeepers!
 - (void)_addNote:(NoteObject*)aNoteObject {
     [aNoteObject setDelegate:self];	
+	//Undo of a failed trash supersedes that pending deletion.
+	[failedTrashEdits removeObjectForKey:[aNoteObject noteRecordID]];
 	
     [self _insertNote:aNoteObject];
 }

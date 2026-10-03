@@ -220,6 +220,17 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	[removedNoteIDs addObject:noteID];
 }
 
+//Notifications are staged while the store transaction runs. Restore the prior
+//stage if SQLite rolls back, without losing earlier committed pages or pushes.
+- (BOOL)_performNotifyingTransaction:(void (^)(id<NVNotesStoreTransaction>))block error:(NSError **)error {
+	NSDictionary *priorUpdates = [updatedNotes copy];
+	NSSet *priorRemovals = [removedNoteIDs copy];
+	if ([store performTransaction:block error:error]) return YES;
+	[updatedNotes setDictionary:priorUpdates];
+	[removedNoteIDs setSet:priorRemovals];
+	return NO;
+}
+
 - (void)_deliverChanges {
 	if (![updatedNotes count] && ![removedNoteIDs count]) return;
 	NSArray *records = [updatedNotes allValues];
@@ -238,11 +249,6 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	[self _setStatus:NVSyncStatusSyncing];
 	NSError *failure = nil;
 	BOOL ok = [self _pullReturningError:&failure] && [self _pushReturningError:&failure];
-	if (!ok) {
-		//A failed store transaction may have staged UI notifications before rollback.
-		[updatedNotes removeAllObjects];
-		[removedNoteIDs removeAllObjects];
-	}
 	[self _deliverChanges];
 
 	lastError = failure;
@@ -339,7 +345,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 		return NO;
 	}
 	
-	if (![store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		for (NSString *noteID in order) {
 			NVRemoteChange *change = [latest objectForKey:noteID];
 			if ([change removed]) {
@@ -375,7 +381,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 			if (![note data] && [note noteID]) [bare addObject:[note noteID]];
 		NSMutableDictionary *fetched = [NSMutableDictionary dictionary];
 		[self _fetchNotes:bare into:fetched ignoringFailures:YES];
-		if (![store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 			for (NVRemoteNote *note in [page notes]) {
 				[seen addObject:[note noteID]];
 				NSDictionary *data = [note data];
@@ -393,7 +399,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	} while (mark);
 
 	//notes the server no longer has (purged while we weren't looking)
-	if (![store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	if (![self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		for (NSString *noteID in [t confirmedNoteIDs]) {
 			if (![seen containsObject:noteID]) [self _applyRemoteRemovalOfNote:noteID transaction:t];
 		}
@@ -516,7 +522,7 @@ static void PerformConcurrently(NSUInteger count, BOOL (^work)(NSUInteger index)
 	NSDictionary *result = [outcome result];
 	NSInteger newVersion = [outcome version];
 	NSString *pushedContent = [[outcome sent] objectForKey:@"content"];
-	return [store performTransaction:^(id<NVNotesStoreTransaction> t) {
+	return [self _performNotifyingTransaction:^(id<NVNotesStoreTransaction> t) {
 		NVNoteRecord *record = [t noteWithID:[pushed noteID]];
 		if (!record) return;
 		[record setServerData:result];

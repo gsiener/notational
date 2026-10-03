@@ -430,13 +430,21 @@ static void Done(sqlite3_stmt *stmt) {
 }
 
 - (BOOL)saveLocalEdits:(NSArray *)records error:(NSError **)error {
+	return [self saveLocalEdits:records metadata:nil error:error];
+}
+
+- (BOOL)saveLocalEdits:(NSArray *)records metadata:(NSDictionary *)metadata error:(NSError **)error {
 	NSMutableArray *edits = [NSMutableArray arrayWithCapacity:[records count]];
 	for (NVNoteRecord *record in records) [edits addObject:[record copy]];
-	if (![edits count]) return YES;
+	NSDictionary *values = [metadata copy];
+	if (![edits count] && ![values count]) return YES;
 	return [self performTransaction:^(id<NVNotesStoreTransaction> transaction) {
 		for (NVNoteRecord *edit in edits) {
 			if (transactionError) break;
 			[self _saveLocalEdit:edit];
+		}
+		if (!transactionError) for (NSString *key in values) {
+			if (![self _setMetadataValue:[values objectForKey:key] forKey:key]) break;
 		}
 	} error:error];
 }

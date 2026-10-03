@@ -79,6 +79,8 @@
 - (void)flushAllNoteChanges;
 - (BOOL)flushAllNoteChangesReturningError:(NSError **)error;
 - (BOOL)closeAllResourcesReturningError:(NSError **)error;
+- (BOOL)prepareForAccountResetReturningError:(NSError **)error;
+- (void)retireAfterAccountReset;
 - (void)flushEverything;
 
 

@@ -56,22 +56,20 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 	NVLegacyImportResult result = [importer read];
 	switch (result) {
 		case NVLegacyImportRead: {
-			NSError *writeError = nil;
-			if (![store saveLocalEdits:[importer recoveredNotes] error:&writeError]) {
-				NSLog(@"Legacy note import could not be saved: %@", writeError);
-				return;
-			}
+			NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithObject:@"1" forKey:LegacyImportKey];
 			//carry over the settings that still apply
 			if (![store metadataValueForKey:NotationSettingsKey]) {
 				NotationPrefs *prefs = [[NotationPrefs alloc] init];
 				if ([importer bodyFont]) [prefs setBaseBodyFont:[importer bodyFont]];
 				if ([importer textColor]) [prefs setForegroundTextColor:[importer textColor]];
 				[prefs setConfirmsFileDeletion:[importer confirmsDeletion]];
-				if (![store setMetadataValue:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
-								 forKey:NotationSettingsKey error:&writeError]) {
-					NSLog(@"Legacy settings import could not be saved: %@", writeError);
-					return;
-				}
+				[metadata setObject:[NVKeyedArchivedData(prefs) base64EncodedStringWithOptions:0]
+						 forKey:NotationSettingsKey];
+			}
+			NSError *writeError = nil;
+			if (![store saveLocalEdits:[importer recoveredNotes] metadata:metadata error:&writeError]) {
+				NSLog(@"Legacy import could not be saved: %@", writeError);
+				return;
 			}
 			NSLog(@"Migrated from old nvALT database: %lu notes, %lu already in Simplenote, %lu recovered",
 				  (unsigned long)[importer totalNotes], (unsigned long)[importer syncedNotes], (unsigned long)[[importer recoveredNotes] count]);
@@ -95,6 +93,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 		case NVLegacyImportNothingFound:
 			break;
 	}
+	if (result == NVLegacyImportRead) return;
 	NSError *markerError = nil;
 	if (![store setMetadataValue:@"1" forKey:LegacyImportKey error:&markerError])
 		NSLog(@"Legacy import marker could not be saved: %@", markerError);

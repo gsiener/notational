@@ -84,18 +84,24 @@ static NSError *TransitionError(NSString *message) {
             return;
         }
         if (switching) {
-            // Retire and flush the old controller BEFORE clearing its shared store.
+            // Quiesce writes, then clear the replica. Keep the old controller usable if reset fails.
+            NVSyncEngine *oldEngine = [self->_notation syncEngine];
             [self->_notation setSyncEngine:nil];
 			NSError *closeError = nil;
-			if (![self->_notation closeAllResourcesReturningError:&closeError]) {
+			if (![self->_notation prepareForAccountResetReturningError:&closeError]) {
+				[self->_notation setSyncEngine:oldEngine];
+				[oldEngine start];
 				[self->credentials removeTokenForAccount:email];
 				completion(NO, closeError); return;
 			}
 			NSError *storeError = nil;
 			if (![store resetForAccount:email error:&storeError]) {
+				[self->_notation setSyncEngine:oldEngine];
+				[oldEngine start];
 				[self->credentials removeTokenForAccount:email];
 				completion(NO, storeError); return;
 			}
+            [self->_notation retireAfterAccountReset];
             self->_notation = [[NotationController alloc] initWithNotesStore:store];
             [self->credentials removeTokenForAccount:previous];
         } else {

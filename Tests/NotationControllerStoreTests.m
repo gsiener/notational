@@ -155,6 +155,30 @@
 	sqlite3_close(other);
 }
 
+- (void)testUndoSupersedesFailedTrashBeforeRetry {
+	NSString *noteID = [server remoteCreateNoteWithContent:@"Plan\nbody" tags:nil];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	NoteObject *note = [self noteTitled:@"Plan"];
+	[controller setUndoManager:[[NSUndoManager alloc] init]];
+	[[controller undoManager] beginUndoGrouping];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_trash BEFORE UPDATE ON notes BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	[controller removeNote:note];
+	[[controller undoManager] endUndoGrouping];
+	XCTAssertNil([controller noteForRecordID:noteID]);
+	XCTAssertFalse([[store noteWithID:noteID] deleted]);
+	[[controller undoManager] undo];
+	XCTAssertNotNil([controller noteForRecordID:noteID]);
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_trash", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertTrue([controller flushAllNoteChangesReturningError:&error], @"%@", error);
+	XCTAssertFalse([[store noteWithID:noteID] deleted]);
+	sqlite3_close(other);
+}
+
 - (void)testRemoteEditUpdatesTheNoteWithoutEchoing {
 	NSString *noteID = [server remoteCreateNoteWithContent:@"Plan\nstep one" tags:nil];
 	XCTAssertTrue([engine syncOnceReturningError:NULL]);

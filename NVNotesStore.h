@@ -58,6 +58,8 @@ extern NSString *const NVNotesStoreErrorDomain;
 - (void)saveLocalEdits:(NSArray *)records;
 //Returns only after the whole batch commits or rolls back.
 - (BOOL)saveLocalEdits:(NSArray *)records error:(NSError **)error;
+//Imports edits and metadata (including an import marker) as one durable batch.
+- (BOOL)saveLocalEdits:(NSArray *)records metadata:(NSDictionary *)metadata error:(NSError **)error;
 
 #pragma mark Sync
 
