@@ -16,6 +16,9 @@
 #import "NVTheme.h"
 
 @implementation EmptyView
+{
+    NSButton *signInButton;
+}
 
 - (id)initWithFrame:(NSRect)frameRect {
 	if ((self = [super initWithFrame:frameRect]) != nil) {
@@ -53,6 +56,21 @@
 		
 		lastNotesNumber = notesNumber;
 	}
+}
+
+- (void)setShowsSignIn:(BOOL)showsSignIn {
+    if (!signInButton) {
+        signInButton = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 170, 32)];
+        [signInButton setTitle:NSLocalizedString(@"Sign In to Simplenote…", nil)];
+        [signInButton setBezelStyle:NSBezelStyleRounded];
+        [signInButton setTarget:NSApp.delegate];
+        [signInButton setAction:@selector(showSimplenoteAccount:)];
+        [signInButton setAutoresizingMask:NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin | NSViewMaxYMargin];
+        [self addSubview:signInButton];
+    }
+    [signInButton setFrameOrigin:NSMakePoint((NSWidth(self.bounds) - NSWidth(signInButton.frame))/2,
+                                           (NSHeight(self.bounds) - NSHeight(signInButton.frame))/2 - 24)];
+    [signInButton setHidden:!showsSignIn];
 }
 
 //- (void)resetCursorRects {

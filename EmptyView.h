@@ -22,6 +22,7 @@
 }
 
 - (void)setLabelStatus:(NSInteger)notesNumber;
+- (void)setShowsSignIn:(BOOL)showsSignIn;
 //- (void)setBackgroundColor:(NSColor *)inColor;
 
 @end

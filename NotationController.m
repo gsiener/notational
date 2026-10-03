@@ -24,6 +24,7 @@
 #import "NotationController.h"
 #import "NVNotesStore.h"
 #import "NVSyncEngine.h"
+#import "NVAccountSession.h"
 #import "NVNoteRecord.h"
 #import "NoteObject_NVRecord.h"
 #import "NSCollection_utils.h"
@@ -131,8 +132,7 @@
 
 - (void)syncEngine:(NVSyncEngine *)engine didChangeStatus:(NVSyncStatus)status {
     if (engine != syncEngine || resourcesClosed) return;
-	[[NSNotificationCenter defaultCenter] postNotificationName:NVSyncStatusDidChangeNotification object:self
-													  userInfo:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:status] forKey:NVSyncStatusKey]];
+    [self.accountSession syncEngine:engine didChangeStatus:status];
 }
 
 //NVSyncEngineDelegate, on the main thread

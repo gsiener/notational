@@ -31,7 +31,7 @@
 @class NoteBookmark;
 @class GlobalPrefs;
 
-@class NVNotesStore, NVSyncEngine;
+@class NVNotesStore, NVSyncEngine, NVAccountSession;
 
 @interface NotationController : NSObject <NVNoteDelegate> {
     BOOL resourcesClosed;
@@ -73,6 +73,7 @@
 - (NVNotesStore *)notesStore;
 - (void)setSyncEngine:(NVSyncEngine *)engine;
 - (NVSyncEngine *)syncEngine;
+@property (nonatomic, weak) NVAccountSession *accountSession;
 - (NoteObject *)noteForRecordID:(NSString *)recordID;
 
 - (id)init;
