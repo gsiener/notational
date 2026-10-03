@@ -160,6 +160,6 @@ enum { NVDefaultReveal = 0, NVDoNotChangeScrollPosition = 1, NVOrderFrontWindow 
 
 - (void)contentsUpdatedForNote:(NoteObject*)aNoteObject;
 - (void)titleUpdatedForNote:(NoteObject*)aNoteObject;
-- (void)rowShouldUpdate:(NSInteger)affectedRow;
+- (void)rowShouldUpdate:(NSInteger)affectedNoteIndex;   //an index into the notes data source, not a table row
 
 @end

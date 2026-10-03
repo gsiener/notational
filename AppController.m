@@ -369,7 +369,7 @@ void outletObjectAwoke(id sender) {
 	[self installSimplenoteMenuItem];
 	hereNowSites = [[NVHereNowSites alloc] initWithTransport:[NVHereNowHTTPTransport new] cacheURL:[NSURL fileURLWithPath:siteCache]];
 	mixedList = [NVHereNowMixedList new];
-	mixedList.notes = [notationController notesListDataSource];
+	[self rebuildMixedList];
 	[notesTableView setDataSource:mixedList];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(hereNowSitesChanged:) name:NVHereNowSitesDidChangeNotification object:hereNowSites];
 	[self installHereNowMenuItems];
@@ -447,7 +447,7 @@ terminateApp:
 		}
 		[notationController setSortColumn:[notesTableView noteAttributeColumnForIdentifier:[prefsController sortedTableColumnKey]]];
 		if (mixedList) {
-			mixedList.notes = [notationController notesListDataSource];
+			[self rebuildMixedList];
 			[notesTableView setDataSource:mixedList];
 		} else [notesTableView setDataSource:[notationController notesListDataSource]];
 		[notesTableView setLabelsListSource:[notationController labelsListDataSource]];
@@ -554,7 +554,7 @@ terminateApp:
             
         }
     } else if (selector == @selector(editNoteExternally:)) {
-        return (numberSelected > 0) && [[menuItem representedObject] canEditAllNotes:[notationController notesAtIndexes:[notesTableView selectedRowIndexes]]];
+        return (numberSelected > 0) && [[menuItem representedObject] canEditAllNotes:[self selectedNotes]];
 	}else if (selector == @selector(previewNoteWithMarked:)){
         BOOL gotMarked=[[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marky"] isFileURL] || [[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2"] isFileURL]
             || [[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2.beta"] isFileURL]
@@ -613,11 +613,23 @@ terminateApp:
     
 }
 
+//the indexes into the notes data source of the Notes in the visible rows
 - (NSRange)visibleNoteRows {
 	NSRange visible = [notesTableView rowsInRect:[notesTableView visibleRect]];
 	NSUInteger noteCount = [[notationController notesListDataSource] count];
-	if (visible.location == NSNotFound || visible.location >= noteCount) return NSMakeRange(noteCount, 0);
-	return NSMakeRange(visible.location, MIN(visible.length, noteCount - visible.location));
+	if (visible.location == NSNotFound || !visible.length) return NSMakeRange(noteCount, 0);
+	if (!mixedList) {
+		if (visible.location >= noteCount) return NSMakeRange(noteCount, 0);
+		return NSMakeRange(visible.location, MIN(visible.length, noteCount - visible.location));
+	}
+	NSUInteger first = NSNotFound, last = NSNotFound;
+	for (NSUInteger row = visible.location; row < NSMaxRange(visible); ++row) {
+		NSUInteger noteIndex = [mixedList noteIndexForRow:(NSInteger)row];
+		if (noteIndex == NSNotFound || noteIndex >= noteCount) continue;
+		if (first == NSNotFound) first = noteIndex;
+		last = noteIndex;
+	}
+	return first == NSNotFound ? NSMakeRange(noteCount, 0) : NSMakeRange(first, last - first + 1);
 }
 
 #pragma mark notes list and divider
@@ -792,14 +804,14 @@ terminateApp:
 
 - (IBAction)deleteNote:(id)sender {
 	if ([self selectionContainsHereNowSite]) return;
-	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-	if ([indexes count] > 0) {
+	NSArray *notes = [self selectedNotes];
+	if ([notes count] > 0) {
 		
 		if ([prefsController confirmNoteDeletion]) {
 			NSString *warningSingleFormatString = NSLocalizedString(@"Delete the note titled quotemark%@quotemark?", @"alert title when asked to delete a note");
 			NSString *warningMultipleFormatString = NSLocalizedString(@"Delete %d notes?", @"alert title when asked to delete multiple notes");
 			NSString *warnString = currentNote ? [NSString stringWithFormat:warningSingleFormatString, titleOfNote(currentNote)] :
-			[NSString stringWithFormat:warningMultipleFormatString, [indexes count]];
+			[NSString stringWithFormat:warningMultipleFormatString, [notes count]];
 			
             NSAlert *alert=[NSAlert new];
             alert.messageText=warnString;
@@ -809,32 +821,35 @@ terminateApp:
             [alert setShowsSuppressionButton:YES];
             [alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
                 if (returnCode == NSAlertFirstButtonReturn) {
-                    [notationController removeNotesAtIndexes:indexes];
+                    [self removeListedNotes:notes];
                 }
             }];
             
 		} else {
             //just delete the notes outright
-            [notationController removeNotesAtIndexes:indexes];
+            [self removeListedNotes:notes];
 		}
 	}
 }
 
+//as -[NotationController removeNotesAtIndexes:] did, for Notes picked by row
+- (void)removeListedNotes:(NSArray *)notes {
+	if ([notes count] > 1) [notationController removeNotes:notes];
+	else if ([notes count] == 1) [notationController removeNote:[notes lastObject]];
+}
+
 - (IBAction)copyNoteLink:(id)sender {
 	if ([self selectionContainsHereNowSite]) return;
-	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
+	NSArray *notes = [self selectedNotes];
 	
-	if ([indexes count] == 1) {
-		[[[[[notationController notesAtIndexes:indexes] lastObject]
-		   uniqueNoteLink] absoluteString] copyItemToPasteboard:nil];
+	if ([notes count] == 1) {
+		[[[[notes lastObject] uniqueNoteLink] absoluteString] copyItemToPasteboard:nil];
 	}
 }
 
 - (IBAction)exportNote:(id)sender {
 	if ([self selectionContainsHereNowSite]) return;
-	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-	
-	NSArray *notes = [notationController notesAtIndexes:indexes];
+	NSArray *notes = [self selectedNotes];
 	
 	[notationController synchronizeNoteChanges:nil];
 	[[ExporterManager sharedManager] exportNotes:notes forWindow:window];
@@ -844,14 +859,14 @@ terminateApp:
     if ([self selectionContainsHereNowSite]) return;
     ExternalEditor *ed = [sender representedObject];
     if ([ed isKindOfClass:[ExternalEditor class]]) {
-        NSIndexSet *indexes = [notesTableView selectedRowIndexes];
+        NSArray *notes = [self selectedNotes];
         if (kCGEventFlagMaskAlternate == ((NSUInteger)CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSEventModifierFlagDeviceIndependentFlagsMask)) {
             //allow changing the default editor directly from Notes menu
             [[ExternalEditorListController sharedInstance] setDefaultEditor:ed];
         }
         //save queued changes first so the temporary copy the editor opens is current
         [notationController synchronizeNoteChanges:nil];
-        [[notationController notesAtIndexes:indexes] makeObjectsPerformSelector:@selector(editExternallyUsingEditor:) withObject:ed];
+        [notes makeObjectsPerformSelector:@selector(editExternallyUsingEditor:) withObject:ed];
     } else {
         NSBeep();
     }
@@ -864,18 +879,16 @@ terminateApp:
         NSBeep();
         NSLog(@"Marked not found");
     } else {
-        NSIndexSet *indexes = [notesTableView selectedRowIndexes];
+        NSArray *notes = [self selectedNotes];
         //save queued changes first so the temporary copy Marked opens is current
         [notationController synchronizeNoteChanges:nil];
-        [[notationController notesAtIndexes:indexes] makeObjectsPerformSelector:@selector(previewUsingMarked)];
+        [notes makeObjectsPerformSelector:@selector(previewUsingMarked)];
     }
 }
 
 - (IBAction)printNote:(id)sender {
     if ([self selectionContainsHereNowSite]) return;
-	NSIndexSet *indexes = [notesTableView selectedRowIndexes];
-	
-	[MultiplePageView printNotes:[notationController notesAtIndexes:indexes] forWindow:window];
+	[MultiplePageView printNotes:[self selectedNotes] forWindow:window];
 }
 
 - (IBAction)tagNote:(id)sender {
@@ -1089,7 +1102,7 @@ terminateApp:
 		[notesTableView deselectAll:sender];//thiss
 		[notationController filterNotesFromString:@""];
 		hereNowSearchQuery = @"";
-		if (mixedList) { [mixedList filterSitesForString:hereNowSearchQuery]; [notesTableView reloadData]; }
+		if (mixedList) { [self rebuildMixedList]; [notesTableView reloadData]; }
 		//was here
         [self setDualFieldIsVisible:YES];
         //		[self _expandToolbar];
@@ -1309,7 +1322,7 @@ terminateApp:
 		
 		BOOL didFilter = [notationController filterNotesFromString:fieldString];
 		hereNowSearchQuery = [fieldString copy];
-		if (mixedList) { [mixedList filterSitesForString:fieldString]; [notesTableView reloadData]; }
+		if (mixedList) { [self rebuildMixedList]; [notesTableView reloadData]; }
 		
 		if ([fieldString length] > 0) {
 //             [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFindContextShouldReset" object:self];
@@ -1321,11 +1334,12 @@ terminateApp:
 			//lastLengthReplaced depends on textView:shouldChangeTextInRange:replacementString: being sent before controlTextDidChange: runs
 			if ([prefsController autoCompleteSearches] && preferredNoteIndex != NSNotFound && ([field lastLengthReplaced] > 0)) {
 				
-				[notesTableView selectRowAndScroll:preferredNoteIndex];
+				NSUInteger preferredRow = [self rowForNote:[notationController noteObjectAtFilteredIndex:preferredNoteIndex]];
+				[notesTableView selectRowAndScroll:(NSInteger)preferredRow];
 				
 				if (didFilter) {
 					//current selection may be at the same row, but note at that row may have changed
-					[self displayContentsForNoteAtIndex:preferredNoteIndex];
+					[self displayContentsForNoteAtRow:(NSInteger)preferredRow];
 				}
 				
 				NSAssert(currentNote != nil, @"currentNote must not--cannot--be nil!");
@@ -1476,7 +1490,7 @@ terminateApp:
 			if (!isFilteringFromTyping && !isCreatingANote)
 				[field setSnapbackString:typedString];
 			
-			if ([self displayContentsForNoteAtIndex:(NSUInteger)selectedRow]) {
+			if ([self displayContentsForNoteAtRow:selectedRow]) {
 				
 				[[field cell] setShowsClearButton:YES];
 				
@@ -1594,8 +1608,9 @@ terminateApp:
 	}
 }
 
-- (BOOL)displayContentsForNoteAtIndex:(NSUInteger)noteIndex {
-	NoteObject *note = [notationController noteObjectAtFilteredIndex:noteIndex];
+- (BOOL)displayContentsForNoteAtRow:(NSInteger)row {
+	NoteObject *note = [self noteAtRow:row];
+	if (!note) return NO;   //a Site row, or no row
 	if (note != currentNote) {
 		[self setEmptyViewState:NO];
 		[field setShowsDocumentIcon:YES];
@@ -1629,7 +1644,8 @@ terminateApp:
 		//[textView setAutomaticallySelectedRange:NSMakeRange(0,0)];
 		
 		//highlight terms--delay this, too
-		if ((unsigned)noteIndex != [notationController preferredSelectedNoteIndex])
+		NSUInteger preferredNoteIndex = [notationController preferredSelectedNoteIndex];
+		if (preferredNoteIndex == NSNotFound || note != [notationController noteObjectAtFilteredIndex:preferredNoteIndex])
 			firstFoundTermRange = [textView highlightTermsTemporarilyReturningFirstRange:typedString avoidHighlight:
 								   ![prefsController highlightSearchTerms]];
 		
@@ -1641,7 +1657,6 @@ terminateApp:
 		[textView setAutomaticallySelectedRange:noteSelectionRange];
 		[textView scrollRangeToVisible:noteSelectionRange];
 		
-		//NSString *words = noteIndex != [notationController preferredSelectedNoteIndex] ? typedString : nil;
 		//[textView setFutureSelectionRange:noteSelectionRange highlightingWords:words];
 		
         [self updateRTL];
@@ -1916,13 +1931,13 @@ terminateApp:
 
 - (NSUInteger)revealNote:(NoteObject*)note options:(NSUInteger)opts {
 	if (note) {
-		NSUInteger selectedNoteIndex = [notationController indexInFilteredListForNoteIdenticalTo:note];
+		NSUInteger selectedNoteIndex = [self rowForNote:note];
 		
 		if (selectedNoteIndex == NSNotFound) {
 			NSLog(@"Note was not visible--showing all notes and trying again");
 			[self cancelOperation:nil];
 			
-			selectedNoteIndex = [notationController indexInFilteredListForNoteIdenticalTo:note];
+			selectedNoteIndex = [self rowForNote:note];
 		}
 		
 		if (selectedNoteIndex != NSNotFound) {
@@ -1958,11 +1973,11 @@ terminateApp:
 
 - (void)notation:(NotationController*)notation revealNotes:(NSArray*)notes {
 	
-	NSIndexSet *indexes = [notation indexesOfNotes:notes];
+	NSIndexSet *indexes = [self rowsForNotes:notes];
 	if ([notes count] != [indexes count]) {
 		[self cancelOperation:nil];
 		
-		indexes = [notation indexesOfNotes:notes];
+		indexes = [self rowsForNotes:notes];
 	}
 	if ([indexes count]) {
 		[notesTableView selectRowIndexes:indexes byExtendingSelection:NO];
@@ -1989,7 +2004,7 @@ terminateApp:
 			[field setStringValue:string];
 			[notationController filterNotesFromString:string];
 			hereNowSearchQuery = [string copy];
-			if (mixedList) { [mixedList filterSitesForString:string]; [notesTableView reloadData]; }
+			if (mixedList) { [self rebuildMixedList]; [notesTableView reloadData]; }
 		}
 	}
 }
@@ -2074,9 +2089,8 @@ terminateApp:
 					if (site.identity) [identities addObject:site.identity];
 				}];
 				savedSelectedSiteIdentities = [identities copy];
-				NSMutableIndexSet *noteIndexes = [indexSet mutableCopy];
-				if (mixedList) [noteIndexes removeIndexesInRange:NSMakeRange(mixedList.noteRowCount, mixedList.count - mixedList.noteRowCount)];
-				if (noteIndexes.count) savedSelectedNotes = [someNotation notesAtIndexes:noteIndexes];
+				NSArray *notes = [self notesAtRows:indexSet];
+				if (notes.count) savedSelectedNotes = notes;
 			}
 			
 			listUpdateViewCtx = [notesTableView viewingLocation];
@@ -2088,10 +2102,7 @@ terminateApp:
 	
 	if (someNotation == notationController) {
 		//deal with one notation at a time
-		if (mixedList) {
-			mixedList.notes = [notationController notesListDataSource];
-			[mixedList filterSitesForString:hereNowSearchQuery];
-		}
+		[self rebuildMixedList];
         
 		[notesTableView reloadData];
 		//[notesTableView noteNumberOfRowsChanged];
@@ -2099,9 +2110,9 @@ terminateApp:
 		if (!isFilteringFromTyping) {
 			NSMutableIndexSet *restored = [NSMutableIndexSet indexSet];
 			if (savedSelectedNotes) {
-				NSIndexSet *indexes = [someNotation indexesOfNotes:savedSelectedNotes];
+				NSIndexSet *rows = [self rowsForNotes:savedSelectedNotes];
 				savedSelectedNotes = nil;
-				[restored addIndexes:indexes];
+				[restored addIndexes:rows];
 			}
 			for (NSString *identity in savedSelectedSiteIdentities) {
 				NSUInteger siteRow = [mixedList rowForSiteIdentity:identity];
@@ -2168,7 +2179,10 @@ terminateApp:
 	}
 }
 
-- (void)rowShouldUpdate:(NSInteger)affectedRow {
+- (void)rowShouldUpdate:(NSInteger)affectedNoteIndex {
+	//NotationController counts only Notes; find that Note's row among the Sites
+	NSInteger affectedRow = (NSInteger)[self rowForNote:[notationController noteObjectAtFilteredIndex:(NSUInteger)affectedNoteIndex]];
+	if (affectedRow == (NSInteger)NSNotFound) return;
 	NSRect rowRect = [notesTableView rectOfRow:affectedRow];
 	NSRect visibleRect = [notesTableView visibleRect];
 	
@@ -2377,7 +2391,7 @@ terminateApp:
 	if (mixedList && [mixedList selectionContainsSite:selDexes]) return @[];
 	NSArray *retArray =[NSArray array];
     
-	NSEnumerator *noteEnum = [[notationController notesAtIndexes:selDexes] objectEnumerator];
+	NSEnumerator *noteEnum = [[self notesAtRows:selDexes] objectEnumerator];
 	NoteObject *aNote;
 	aNote = [noteEnum nextObject];
 	NSString *existTags = labelsOfNote(aNote);
@@ -2425,7 +2439,7 @@ terminateApp:
     NSArray *commonLabs=tagEditor.commonTags;
     if (![newTags isEqualToArray:commonLabs]) {
         
-        NSArray *selNotes = [notationController notesAtIndexes:[notesTableView selectedRowIndexes]];
+        NSArray *selNotes = [self selectedNotes];
         if (!selNotes||([selNotes count]==0)) {
             return;
         }
@@ -3126,6 +3140,36 @@ terminateApp:
         return returnArray;
     }
     
+#pragma mark rows and notes
+
+//Site rows sit among the Notes, so a notes-list row is never an index into the notes data source:
+//map rows through these
+- (void)rebuildMixedList {
+    [mixedList setNotes:[notationController notesListDataSource] sortKey:[prefsController sortedTableColumnKey]
+               reversed:[prefsController tableIsReverseSorted] search:hereNowSearchQuery];
+}
+
+- (NoteObject *)noteAtRow:(NSInteger)row {
+    if (mixedList) return [mixedList noteAtRow:row];
+    return row >= 0 ? [notationController noteObjectAtFilteredIndex:(NSUInteger)row] : nil;
+}
+
+- (NSArray *)notesAtRows:(NSIndexSet *)rows {
+    return mixedList ? [mixedList notesAtRows:rows] : [notationController notesAtIndexes:rows];
+}
+
+- (NSArray *)selectedNotes {
+    return [self notesAtRows:[notesTableView selectedRowIndexes]];
+}
+
+- (NSUInteger)rowForNote:(NoteObject *)note {
+    return mixedList ? [mixedList rowForNote:note] : [notationController indexInFilteredListForNoteIdenticalTo:note];
+}
+
+- (NSIndexSet *)rowsForNotes:(NSArray *)notes {
+    return mixedList ? [mixedList rowsForNotes:notes] : [notationController indexesOfNotes:notes];
+}
+
 - (BOOL)selectionContainsHereNowSite {
     return mixedList && [mixedList selectionContainsSite:[notesTableView selectedRowIndexes]];
 }
@@ -3156,24 +3200,24 @@ terminateApp:
 - (void)hereNowSitesChanged:(NSNotification *)notification {
     if (mixedList) {
         NSMutableArray *identities = [NSMutableArray array];
-        NSMutableIndexSet *selectedNoteRows = [[notesTableView selectedRowIndexes] mutableCopy];
-        [selectedNoteRows removeIndexesInRange:NSMakeRange(mixedList.noteRowCount, mixedList.count - mixedList.noteRowCount)];
+        NSArray *selectedNotes = [self selectedNotes];
         [[notesTableView selectedRowIndexes] enumerateIndexesUsingBlock:^(NSUInteger row, BOOL *stop) {
             NVHereNowSite *site = [self->mixedList siteAtRow:(NSInteger)row];
             if (site.identity) [identities addObject:site.identity];
         }];
         mixedList.sites = hereNowSites.sites;
         mixedList.stale = hereNowSites.stale;
-        [mixedList filterSitesForString:hereNowSearchQuery];
+        [self rebuildMixedList];
         [notesTableView reloadData];
-        if (identities.count) {
-            NSMutableIndexSet *rows = selectedNoteRows;
+        //Sites can now sit between Notes, so even a Notes-only selection may have moved rows
+        if (identities.count || selectedNotes.count) {
+            NSMutableIndexSet *rows = [[self rowsForNotes:selectedNotes] mutableCopy];
             for (NSString *identity in identities) {
                 NSUInteger row = [mixedList rowForSiteIdentity:identity];
                 if (row != NSNotFound) [rows addIndex:row];
             }
-            if (rows.count) [notesTableView selectRowIndexes:rows byExtendingSelection:NO];
-            else [notesTableView deselectAll:self];
+            if (!rows.count) [notesTableView deselectAll:self];
+            else if (![rows isEqualToIndexSet:[notesTableView selectedRowIndexes]]) [notesTableView selectRowIndexes:rows byExtendingSelection:NO];
         }
     }
     [siteViewer setListStale:hereNowSites.stale];

@@ -57,6 +57,13 @@ static id<NSDraggingSource> NVNoteFileDragSource(void) {
 	return source;
 }
 
+//the Notes in rows, which can hold here.now Sites between them
+static NSArray *NotesAtRows(NSTableView *table, NSIndexSet *rows) {
+	id source = [table dataSource];
+	if ([source isKindOfClass:[NVHereNowMixedList class]]) return [(NVHereNowMixedList *)source notesAtRows:rows];
+	return [(FastListDataSource *)source objectsAtFilteredIndexes:rows];
+}
+
 @implementation NotesTableView
 
 //there's something wrong with this initialization under panther, I think
@@ -751,7 +758,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	
 	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, @selector(printNote:), target, -1);
 	
-	NSArray *notes = [(FastListDataSource*)[self dataSource] objectsAtFilteredIndexes:[self selectedRowIndexes]];
+	NSArray *notes = NotesAtRows(self, [self selectedRowIndexes]);
 	[notes addMenuItemsForURLsInNotes:theMenu];
 	
 	return theMenu;
@@ -829,7 +836,7 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 		}
 		if ([(AppController *)[NSApp delegate] selectionContainsHereNowSite]) return;
 		
-        NSArray *notes = [(FastListDataSource*)[self dataSource] objectsAtFilteredIndexes:selectedRows];
+        NSArray *notes = NotesAtRows(self, selectedRows);
 		NSMutableArray *paths = [NSMutableArray arrayWithCapacity:[notes count]];
 		unsigned int i;
 		for (i=0;i<[notes count]; i++) {

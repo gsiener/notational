@@ -161,7 +161,13 @@ void outletObjectAwoke(id sender);
 - (void)contentsUpdatedForNote:(NoteObject*)aNoteObject;
 - (void)flagsChanged:(NSEvent *)theEvent;
 - (NSUInteger)revealNote:(NoteObject*)note options:(NSUInteger)opts;
-- (BOOL)displayContentsForNoteAtIndex:(NSUInteger)noteIndex;
+- (BOOL)displayContentsForNoteAtRow:(NSInteger)row;
+//notes-list rows hold Sites among the Notes: map rows and Notes through these
+- (NoteObject *)noteAtRow:(NSInteger)row;
+- (NSArray *)notesAtRows:(NSIndexSet *)rows;
+- (NSArray *)selectedNotes;
+- (NSUInteger)rowForNote:(NoteObject *)note;
+- (NSIndexSet *)rowsForNotes:(NSArray *)notes;
 - (void)processChangedSelectionForTable:(NSTableView*)table;
 - (void)setEmptyViewState:(BOOL)state;
 - (void)cancelOperation:(id)sender;
