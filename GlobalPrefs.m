@@ -31,9 +31,8 @@
 #import "AttributedPlainText.h"
 #import "FastListDataSource.h"
 #import "NotesTableView.h"
-#import "PTHotKey.h"
+#import "NVActivationShortcut.h"
 #import "PTKeyCombo.h"
-#import "PTHotKeyCenter.h"
 #import "NSString_NV.h"
 #include "BufferUtils.h"
 
@@ -311,24 +310,12 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 - (void)setAppActivationKeyCombo:(PTKeyCombo*)aCombo sender:(id)sender {
 	if (aCombo) {
 		appActivationKeyCombo = aCombo;
-		
-		[[self appActivationHotKey] setKeyCombo:appActivationKeyCombo];
 	
 		[defaults setInteger:[aCombo keyCode] forKey:AppActivationKeyCodeKey];
 		[defaults setInteger:[aCombo modifiers] forKey:AppActivationModifiersKey];
 		
 		SEND_CALLBACKS();
 	}
-}
-
-- (PTHotKey*)appActivationHotKey {
-	if (!appActivationHotKey) {
-		appActivationHotKey = [[PTHotKey alloc] init];
-		[appActivationHotKey setName:HotKeyAppToFrontName];
-		[appActivationHotKey setKeyCombo:[self appActivationKeyCombo]];
-	}
-	
-	return appActivationHotKey;
 }
 
 - (PTKeyCombo*)appActivationKeyCombo {
@@ -339,15 +326,16 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 	return appActivationKeyCombo;
 }
 
+- (BOOL)trySetAppActivationKeyCombo:(PTKeyCombo*)combo target:(id)target selector:(SEL)selector {
+    if (!appActivationShortcut) appActivationShortcut = [[NVActivationShortcut alloc] init];
+    if (![appActivationShortcut registerKeyCombo:combo target:target action:selector]) return NO;
+    [self setAppActivationKeyCombo:combo sender:self];
+    return YES;
+}
+
 - (BOOL)registerAppActivationKeystrokeWithTarget:(id)target selector:(SEL)selector {
-	PTHotKey *hotKey = [self appActivationHotKey];
-	
-	[hotKey setTarget:target];
-	[hotKey setAction:selector];
-	
-	[[PTHotKeyCenter sharedCenter] unregisterHotKeyForName:HotKeyAppToFrontName];
-	
-	return [[PTHotKeyCenter sharedCenter] registerHotKey:hotKey];
+    if (!appActivationShortcut) appActivationShortcut = [[NVActivationShortcut alloc] init];
+    return [appActivationShortcut registerKeyCombo:[self appActivationKeyCombo] target:target action:selector];
 }
 
 - (void)setPastePreservesStyle:(BOOL)value sender:(id)sender {

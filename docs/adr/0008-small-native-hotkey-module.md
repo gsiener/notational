@@ -1,27 +1,18 @@
 # ADR 0008: Reduce PTHotKeys to the app's shortcut needs
 
-- Status: proposed
-- Date: 2026-10-02
+- Status: accepted and implemented
+- Date: 2026-10-03
 
-## Context and proposal
+## Decision
 
-[PTHotKeys](../../PTHotKeys) contains ten Objective-C files, totaling 964 lines including comments and declarations.
-Its registration code already calls Apple's RegisterEventHotKey.
-The opportunity is to remove general-purpose wrapper code, not replace an external keyboard runtime.
+Use one app-owned `NVActivationShortcut` to register the activation key with Carbon `RegisterEventHotKey`. Keep `PTKeyCombo`, the localized `PTKeyComboPanel`, `PTKeyBroadcaster`, and key-name resources. Remove `PTHotKeyCenter` and `PTHotKey` from the project and source tree. Do not use a global event monitor or add accessibility permissions.
 
-Replace the bundled framework with a small app-owned module for activation shortcut registration and editing.
-Keep Apple's global-hotkey registration and a native AppKit recording control.
-Preserve stored shortcuts, display names, collision reporting, clearing, and focus behavior.
+The owner installs its Carbon event handler before registration. For reassignment it registers the replacement before unregistering the current key, so collision failure leaves the previous registration active. Each registration has a new identifier; queued events from an old registration are ignored after clear or reassignment. Preferences write the saved key code and modifiers, and update the displayed value, only after successful registration. The recorder passes the chosen combination to preferences on OK and leaves it alone on cancel. Clear continues to use `-1/-1`.
 
-## Rejected shortcut
+## Evidence and limits
 
-Do not substitute NSEvent global monitoring without a separate behavior decision.
-Apple says keyboard monitoring requires accessibility access, and global monitors cannot modify events.
-Monitoring is not the same operation as registering a shortcut.
+The removed registry and object files contain 423 lines. The new owner contains 92 lines. Across production Objective-C files including callers, `git diff --numstat` plus the new owner shows 129 added and 507 removed lines: a net reduction of 378 lines. Project wiring changes are excluded from this source measurement. The retained combo/recorder files and localized resources preserve key naming and UI behavior.
 
-This proposal removes bundled source, not the Carbon framework dependency.
-Before implementation, compare the replacement's size and behavior with the current code and localized shortcut panel.
-If equivalent behavior needs comparable code, retain PTHotKeys rather than create another general-purpose framework.
+A checkout-local macOS app build and targeted XCTest pass after initializing MultiMarkdown-4 and its `greg` submodule. Five targeted tests exercise real Carbon registration, collision rollback, clear, stale-event rejection, multiple owners, deallocation, preferences persistence, and recorder completion callbacks. The full Address Sanitizer suite passed after integration into master. Manual verification remains for another app focused, Notational focused, and actual window hide/show/focus behavior in a dedicated interactive session. The maintainer authorized direct integration with these validation limits recorded.
 
-References: [current registration](../../PTHotKeys/PTHotKeyCenter.m) and
-[Apple event-monitor documentation](https://developer.apple.com/documentation/appkit/nsevent/addglobalmonitorforevents%28matching%3Ahandler%3A%29).
+`NSEvent` global monitoring was rejected because it cannot replace registration semantics and may require accessibility access for keyboard monitoring.
