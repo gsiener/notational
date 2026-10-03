@@ -224,6 +224,10 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
     return [[self window] isVisible];
 }
 
+- (id)currentPreviewSource {
+    return [[NSApplication sharedApplication] delegate];
+}
+
 -(void)togglePreview:(id)sender
 {
 
@@ -239,7 +243,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
     } else {
         if (self.isPreviewOutdated) {
             // TODO high coupling; too many assumptions on architecture:
-            [self performSelector:@selector(preview:) withObject:[[NSApplication sharedApplication] delegate] afterDelay:0.0];
+            [self performSelector:@selector(preview:) withObject:[self currentPreviewSource] afterDelay:0.0];
         }
         [tabView selectTabViewItem:[tabView tabViewItemAtIndex:0]];
         [tabSwitcher setTitle:@"View Source"];
@@ -313,7 +317,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
         [elementID isEqualToString:pageContentElementID] && [[renderer templateKey] isEqual:pageTemplateKey]) {
         [preview evaluateJavaScript:[[self class] scriptReplacingContentOfElement:elementID withHTML:content] completionHandler:^(id result, NSError *error) {
             if ([result isKindOfClass:[NSNumber class]] && [result boolValue]) return;
-            if (generation == renderGeneration)
+            if (generation == renderGeneration && !self.isPreviewSticky && [[self window] isVisible])
                 [self loadPageForHTML:processedString ofNote:note title:noteTitle sameNote:sameNote generation:generation];
         }];
         return;
@@ -327,7 +331,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
     //the same note again: keep the reader's place (the page is replaced, so ask where it was first)
     NSString *scrollScript = @"(document.scrollingElement || document.body).scrollTop";
     [preview evaluateJavaScript:sameNote ? scrollScript : @"0" completionHandler:^(id result, NSError *error) {
-        if (generation != renderGeneration) return;
+        if (generation != renderGeneration || self.isPreviewSticky || ![[self window] isVisible]) return;
         NSString *previewString = processedString;
         if (sameNote && [result respondsToSelector:@selector(doubleValue)] && [result doubleValue] > 0) {
             previewString = [processedString stringByAppendingFormat:@"\n<script id=\"%@\">window.addEventListener('load', function() { (document.scrollingElement || document.body).scrollTop = %f; });</script>", RestoreScrollScriptID, [result doubleValue]];
@@ -370,7 +374,7 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
     [stickyPreviewButton setAction:@selector(makePreviewSticky:)];
     [saveButton setEnabled:YES];
     self.isPreviewOutdated = YES;
-    [self performSelector:@selector(preview:) withObject:[[NSApplication sharedApplication] delegate] afterDelay:0.0];
+    [self performSelector:@selector(preview:) withObject:[self currentPreviewSource] afterDelay:0.0];
     [[self window] setHidesOnDeactivate:YES];
 }
 
