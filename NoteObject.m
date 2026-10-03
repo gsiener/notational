@@ -883,7 +883,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	linksNeedDetecting = NO;
 	contentCacheNeedsUpdate = YES;
 	[self updateContentCacheCStringIfNecessary];
-	[undoManager removeAllActions];
 	
 	BOOL retitled = [self _setTitleString:newTitle];
 	[self updateTablePreviewString];

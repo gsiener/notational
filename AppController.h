@@ -95,6 +95,11 @@
     BOOL isEditing;
 	
 	NoteObject *currentNote;
+	//Selected editor snapshots replace AppKit's range-based actions after a remote merge.
+	NoteObject *editorUndoNote;
+	NSMutableArray *editorUndoStates;
+	NSInteger editorUndoIndex;
+	BOOL applyingRemoteOrRebasedText;
 	NSArray *savedSelectedNotes;
 	BOOL hasLaunched;
     PreviewController *previewController;
