@@ -273,6 +273,7 @@ beepReturn:
 	
 	if (status == noErr) {
 		if (reply.descriptorType == typeNull) return NO;
+		// initWithAEDescNoCopy takes ownership; its autorelease disposes the reply.
 		replyDescriptor = [[[NSAppleEventDescriptor alloc] initWithAEDescNoCopy: &reply] autorelease];
 		errorDescriptor = [replyDescriptor paramDescriptorForKeyword: keyErrorNumber];
 		
