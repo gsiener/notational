@@ -34,6 +34,13 @@
 									 @"5.000000, 0.000000, 995.000000, 600.000000, NO, NO"]));
 }
 
+- (void)testCollapsedStackedListKeepsExpandedHeight {
+	NSArray *frames = [NVSplitView savedFramesFromLegacyState:@"2 -175 625" vertical:NO
+														  size:NSMakeSize(700, 808) dividerThickness:8];
+	XCTAssertEqualObjects(frames, (@[@"0.000000, 0.000000, 700.000000, 175.000000, YES, NO",
+									 @"0.000000, 8.000000, 700.000000, 800.000000, NO, NO"]));
+}
+
 - (void)testListWiderThanTheWindowLeavesRoomForTheEditor {
 	NSArray *frames = [NVSplitView savedFramesFromLegacyState:@"2 900 100" vertical:YES
 														  size:NSMakeSize(500, 400) dividerThickness:8];
@@ -95,6 +102,22 @@
 	XCTAssertFalse([NVSplitView migrateLegacyStateNamed:@"central" toAutosaveName:@"central H" vertical:NO
 												   size:NSMakeSize(900, 600) dividerThickness:8 defaults:defaults]);
 	XCTAssertNil([defaults objectForKey:@"NSSplitView Subview Frames central H"]);
+}
+
+- (void)testMigrationPreservesIndependentCollapsedDimensionsForBothOrientations {
+	NSUserDefaults *defaults = [self freshDefaults];
+	[defaults setObject:@"2 -230 570" forKey:@"RBSplitView V central"];
+	[defaults setObject:@"2 -150 350" forKey:@"RBSplitView H central"];
+	XCTAssertTrue([NVSplitView migrateLegacyStateNamed:@"central" toAutosaveName:@"central V" vertical:YES
+												 size:NSMakeSize(808, 508) dividerThickness:8 defaults:defaults]);
+	XCTAssertTrue([NVSplitView migrateLegacyStateNamed:@"central" toAutosaveName:@"central H" vertical:NO
+												 size:NSMakeSize(808, 508) dividerThickness:8 defaults:defaults]);
+	NSArray *sideBySide = [defaults arrayForKey:@"NSSplitView Subview Frames central V"];
+	NSArray *stacked = [defaults arrayForKey:@"NSSplitView Subview Frames central H"];
+	XCTAssertEqualObjects(sideBySide[0], @"0.000000, 0.000000, 230.000000, 508.000000, YES, NO");
+	XCTAssertEqualObjects(stacked[0], @"0.000000, 0.000000, 808.000000, 150.000000, YES, NO");
+	XCTAssertEqualObjects(sideBySide[1], @"8.000000, 0.000000, 800.000000, 508.000000, NO, NO");
+	XCTAssertEqualObjects(stacked[1], @"0.000000, 8.000000, 808.000000, 500.000000, NO, NO");
 }
 
 - (void)testMigrationIgnoresGarbageAndMissingState {
