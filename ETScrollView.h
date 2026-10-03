@@ -1,21 +1,10 @@
 //
-//  ETScrollView.m
+//  ETScrollView.h
 //  Notation
 //
-//  Created by elasticthreads on 3/14/11.
-//
 
-#import <Foundation/Foundation.h>
+#import <Cocoa/Cocoa.h>
 
-
-
-@interface ETScrollView : NSScrollView {
-    Class scrollerClass;
-}
-
-//- (void)setNeedsOverlayTiling:(BOOL)overlay;
-//- (void)setScrollerClassWithString:(NSString *)scrollerClassName;
-- (void)changeUseETScrollbarsOnLion;
-- (void)settingChangedForSelectorString:(NSString*)selectorString;
-
+@interface ETScrollView : NSScrollView
++ (NSScrollerKnobStyle)knobStyleForBackgroundColor:(NSColor *)color;
 @end

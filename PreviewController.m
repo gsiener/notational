@@ -11,7 +11,6 @@
 #import "AppController_Preview.h"
 #import "NVMarkupRenderer.h"
 #import "NoteObject.h"
-#import "BTTransparentScroller.h"
 #import "NSFileManager+DirectoryLocations.h"
 
 #define kDefaultMarkupPreviewVisible @"markupPreviewVisible"
@@ -92,7 +91,6 @@ static NSString *const RestoreScrollScriptID = @"nv-restore-scroll";
     [scrlView setScrollsDynamically:YES];
     [scrlView setHorizontalScrollElasticity:NSScrollElasticityNone];
     [scrlView setVerticalScrollElasticity:NSScrollElasticityAutomatic];
-    [scrlView setScrollerStyle:NSScrollerStyleOverlay];
 }
 
 //the "Cocoa" object custom templates can call, e.g. Cocoa.log("…"), as they could with the old WebView

@@ -2,58 +2,32 @@
 //  ETScrollView.m
 //  Notation
 //
-//  Created by elasticthreads on 3/14/11.
-//
 
 #import "ETScrollView.h"
-#import "ETOverlayScroller.h"
-#import "GlobalPrefs.h"
 
 @implementation ETScrollView
 
++ (NSScrollerKnobStyle)knobStyleForBackgroundColor:(NSColor *)color {
+    NSColor *rgb = [color colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+    CGFloat red, green, blue, alpha;
+    [rgb getRed:&red green:&green blue:&blue alpha:&alpha];
+    CGFloat brightness = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    return brightness < 0.5 ? NSScrollerKnobStyleLight : NSScrollerKnobStyleDark;
+}
 
-+ (BOOL)isCompatibleWithResponsiveScrolling{
++ (BOOL)isCompatibleWithResponsiveScrolling {
+    // Selection and editor hit testing still require a separate parity review.
     return NO;
 }
 
-
-- (void)awakeFromNib{
+- (void)awakeFromNib {
+    [super awakeFromNib];
     if ([self.documentView isKindOfClass:[NSTableView class]]) {
-        scrollerClass=NSClassFromString(@"ETOverlayScroller");
         [self setAutohidesScrollers:YES];
-    }else{
-        scrollerClass=NSClassFromString(@"ETTransparentScroller");
     }
-    [[GlobalPrefs defaultPrefs] registerForSettingChange:@selector(setUseETScrollbarsOnLion:sender:) withTarget:self];
     [self setHorizontalScrollElasticity:NSScrollElasticityNone];
     [self setVerticalScrollElasticity:NSScrollElasticityAllowed];
-    [self changeUseETScrollbarsOnLion];
+    // The nib supplies an NSScroller. AppKit chooses its style from system settings.
 }
-
-
-- (void)settingChangedForSelectorString:(NSString*)selectorString{
-    if ([selectorString isEqualToString:SEL_STR(setUseETScrollbarsOnLion:sender:)]){
-        [self changeUseETScrollbarsOnLion];
-    }
-}
-
-- (void)changeUseETScrollbarsOnLion{
-    id theScroller;
-    if ([[GlobalPrefs defaultPrefs]useETScrollbarsOnLion]) {
-        theScroller=[[scrollerClass alloc]init];
-        [theScroller setFillBackground:NO];
-    }else{
-        theScroller=[[NSScroller alloc]init];
-    }
-    NSScrollerStyle style=[[theScroller class] preferredScrollerStyle];
-    [self setVerticalScroller:theScroller];
-
-    [theScroller setScrollerStyle:style];
-    [self setScrollerStyle:style];
-    [self tile];
-    [self reflectScrolledClipView:[self contentView]];
-    //    [self flashScrollers];
-}
-
 
 @end
