@@ -147,10 +147,6 @@
 	
 }
 
-- (IBAction)changedUseETScrollbarsOnLion:(id)sender{
-    [prefsController setUseETScrollbarsOnLion:[useETScrollbarsOnLionButton state] sender:self];
-}
-
 - (IBAction)changedBackgroundTextColorWell:(id)sender {
 	[prefsController setBackgroundTextColor:[backgroundColorWell color] sender:self];
 }
@@ -355,8 +351,6 @@
 	[window setToolbarStyle:NSWindowToolbarStylePreference];
 	
 	[window setShowsToolbarButton:NO];
-    [useETScrollbarsOnLionButton setState:[prefsController useETScrollbarsOnLion]];
-    [useETScrollbarsOnLionButton setHidden:NO];
     [self switchViews:nil];  //select last selected pane by default
     
 }

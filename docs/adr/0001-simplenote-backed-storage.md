@@ -23,7 +23,7 @@ The maintainer treats **Simplenote as the source of truth** across several Macs.
 8. **The open note is protected while typing:** pushes repeat until the user pauses; merged text is applied as a minimal range edit that preserves the selection and undo.
 9. **Field mapping:** title/body are derived from verbatim `content` and recombined with the note's original separator (unchanged notes round-trip byte for byte); labels ↔ `tags`; every other field (`systemTags`, `shareURL`, `publishURL`, future fields) is preserved untouched.
 10. **Migration:** first launch downloads the whole account. The old database and journal are left untouched as a backup; any notes in them that were never synced or have unpushed edits are imported as new notes tagged `nvalt-recovered`. Still-relevant settings (body font, text color, delete confirmation, secure text entry) move to app preferences.
-11. **Timing policy stays in `NotationController`** (existing debounce timers); the store itself is synchronous from its caller's point of view.
+11. **Timing policy stays in `NotationController`** (existing debounce timers). Store writes return after commit or rollback with an error outcome; the controller retains dirty notes after failure and retries their latest contents on the next flush.
 
 ## Consequences
 

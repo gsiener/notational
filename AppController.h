@@ -99,6 +99,12 @@
 	NoteObject *editorUndoNote;
 	NSMutableArray *editorUndoStates;
 	NSInteger editorUndoIndex;
+	NSMapTable *editorUndoByNote;
+	NSMutableArray *editorUndoRecentNotes;
+	BOOL editorUndoGroupClosed;
+	BOOL observingEditorUndoGroups;
+	BOOL editorUndoNeedsRebuild;
+	BOOL rebuildingEditorUndoActions;
 	BOOL applyingRemoteOrRebasedText;
 	NSArray *savedSelectedNotes;
 	BOOL hasLaunched;

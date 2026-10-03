@@ -7,6 +7,11 @@
 #import "NVTestSupport.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
+#include <sqlite3.h>
+
+@interface NVNotesStore (FailureTests)
+- (void)failNextCommitForTesting;
+@end
 
 @interface NVNotesStoreTests : NVTestCase {
 	NSString *path;
@@ -95,6 +100,94 @@
 	XCTAssertEqual([stored confirmedVersion], (NSInteger)1);
 	XCTAssertEqualObjects([[stored serverData] objectForKey:@"content"], @"v1");
 	XCTAssertEqual([[store pendingNotes] count], (NSUInteger)1);
+}
+
+- (void)testFailedBatchRollsBackAndCanBeRetried {
+	NVNotesStore *store = [self openStore];
+	NVNoteRecord *a = [self serverRecord:@"a" content:@"old" version:1];
+	NVNoteRecord *b = [self serverRecord:@"b" content:@"old" version:1];
+	[self put:@[a, b] into:store];
+	sqlite3 *other = NULL;
+	XCTAssertEqual(sqlite3_open([path fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_b BEFORE UPDATE ON notes WHEN NEW.id = 'b' BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	[a setContent:@"new a"]; [b setContent:@"new b"];
+	NSError *error = nil;
+	XCTAssertFalse(([store saveLocalEdits:@[a, b] error:&error]));
+	XCTAssertNotNil(error);
+	XCTAssertEqualObjects([[store noteWithID:@"a"] content], @"old");
+	XCTAssertEqualObjects([[store noteWithID:@"b"] content], @"old");
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_b", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue(([store saveLocalEdits:@[a, b] error:&error]), @"%@", error);
+	XCTAssertEqualObjects([[store noteWithID:@"b"] content], @"new b");
+	sqlite3_close(other);
+}
+
+- (void)testFailedCommitRollsBackAndCloseReportsFailure {
+	NVNotesStore *store = [self openStore];
+	NVNoteRecord *note = [self serverRecord:@"a" content:@"old" version:1];
+	[self put:@[note] into:store];
+	[note setContent:@"new"];
+	[store failNextCommitForTesting];
+	NSError *error = nil;
+	XCTAssertFalse([store saveLocalEdits:@[note] error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqualObjects([[store noteWithID:@"a"] content], @"old");
+	XCTAssertTrue([store closeReturningError:&error], @"%@", error);
+	store = [self openStore];
+	XCTAssertEqualObjects([[store noteWithID:@"a"] content], @"old");
+}
+
+- (void)testFailedBeginDoesNotRunTransactionBlock {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"old" version:1]] into:store];
+	sqlite3 *other = NULL;
+	XCTAssertEqual(sqlite3_open([path fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "BEGIN IMMEDIATE", NULL, NULL, NULL), SQLITE_OK);
+	__block BOOL ran = NO;
+	NSError *error = nil;
+	XCTAssertFalse([store performTransaction:^(id<NVNotesStoreTransaction> t) {
+		ran = YES;
+		[t removeNoteWithID:@"a"];
+	} error:&error]);
+	XCTAssertFalse(ran);
+	XCTAssertNotNil(error);
+	XCTAssertEqual(sqlite3_exec(other, "ROLLBACK", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertNotNil([store noteWithID:@"a"]);
+	sqlite3_close(other);
+}
+
+- (void)testFailedAccountResetKeepsNotesAndMetadata {
+	NVNotesStore *store = [self openStore];
+	[self put:@[[self serverRecord:@"a" content:@"old" version:1]] into:store];
+	[store setMetadataValue:@"old@example.com" forKey:@"simplenoteAccount"];
+	[store setSyncPoint:@"cv1"];
+	sqlite3 *other = NULL;
+	XCTAssertEqual(sqlite3_open([path fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_clear BEFORE DELETE ON notes BEGIN SELECT RAISE(FAIL, 'clear rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([store resetForAccount:@"new@example.com" error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertNotNil([store noteWithID:@"a"]);
+	XCTAssertEqualObjects([store metadataValueForKey:@"simplenoteAccount"], @"old@example.com");
+	XCTAssertEqualObjects([store syncPoint], @"cv1");
+	sqlite3_close(other);
+}
+
+- (void)testFailedImportMarkerRollsBackRecoveredNotes {
+	NVNotesStore *store = [self openStore];
+	sqlite3 *other = NULL;
+	XCTAssertEqual(sqlite3_open([path fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_marker BEFORE INSERT ON metadata WHEN NEW.key = 'legacyImport' BEGIN SELECT RAISE(FAIL, 'marker rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NVNoteRecord *recovered = [self serverRecord:@"recovered" content:@"local" version:0];
+	NSError *error = nil;
+	XCTAssertFalse([store saveLocalEdits:@[recovered] metadata:@{@"legacyImport": @"1"} error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertNil([store noteWithID:@"recovered"]);
+	XCTAssertNil([store metadataValueForKey:@"legacyImport"]);
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_marker", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([store saveLocalEdits:@[recovered] metadata:@{@"legacyImport": @"1"} error:&error]);
+	XCTAssertNotNil([store noteWithID:@"recovered"]);
+	sqlite3_close(other);
 }
 
 - (void)testBatchedLocalEditsUpdateStoredNotesAndCreateNewOnes {

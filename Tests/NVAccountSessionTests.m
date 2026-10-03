@@ -6,6 +6,7 @@
 #import "NoteObject.h"
 #import "NoteObject_NVRecord.h"
 #import "NVFakeSimplenoteService.h"
+#include <sqlite3.h>
 
 @interface MemoryAccountCredentials : NSObject <NVAccountCredentials>
 @property NSMutableDictionary *tokens;
@@ -92,6 +93,44 @@
     XCTAssertTrue([self switchChoosing:NVAccountSwitchDiscard error:NULL]);
     [self assertOldNoteCannotReachNewAccount];
     XCTAssertEqualObjects([oldServer currentDataOfNote:noteID][@"content"], @"Old note\noriginal");
+}
+
+- (void)testAccountSwitchStopsWhenDirtyEditCannotPersist {
+	[self edit];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_edit BEFORE UPDATE ON notes BEGIN SELECT RAISE(FAIL, 'write rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([self switchChoosing:NVAccountSwitchDiscard error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqual([session notation], original);
+	XCTAssertNotNil([store noteWithID:noteID]);
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_edit", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([original flushAllNoteChangesReturningError:&error], @"%@", error);
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Old note\nunsaved");
+	sqlite3_close(other);
+}
+
+- (void)testFailedResetPreservesOldSessionAndCanRetry {
+	[self edit];
+	NVSyncEngine *oldEngine = [original syncEngine];
+	sqlite3 *other = NULL;
+	NSString *dbPath = [self.temporaryDirectory stringByAppendingPathComponent:@"Notes.sqlite"];
+	XCTAssertEqual(sqlite3_open([dbPath fileSystemRepresentation], &other), SQLITE_OK);
+	XCTAssertEqual(sqlite3_exec(other, "CREATE TRIGGER reject_reset BEFORE DELETE ON notes BEGIN SELECT RAISE(FAIL, 'reset rejected'); END", NULL, NULL, NULL), SQLITE_OK);
+	NSError *error = nil;
+	XCTAssertFalse([self switchChoosing:NVAccountSwitchDiscard error:&error]);
+	XCTAssertNotNil(error);
+	XCTAssertEqual([session notation], original);
+	XCTAssertEqual([original syncEngine], oldEngine);
+	XCTAssertEqualObjects([store metadataValueForKey:@"simplenoteAccount"], @"old@example.com");
+	XCTAssertEqualObjects([[store noteWithID:noteID] content], @"Old note\nunsaved");
+	XCTAssertNotNil([original noteForRecordID:noteID]);
+	XCTAssertEqualObjects([credentials tokenForAccount:@"old@example.com"], @"old-token");
+	XCTAssertEqual(sqlite3_exec(other, "DROP TRIGGER reject_reset", NULL, NULL, NULL), SQLITE_OK);
+	XCTAssertTrue([self switchChoosing:NVAccountSwitchDiscard error:&error], @"%@", error);
+	sqlite3_close(other);
 }
 - (void)testSyncAndSwitchSendsDirtyEditsOnlyToOldAccount {
     [self edit];
@@ -227,5 +266,75 @@
     XCTAssertNil([original syncEngine]);
     XCTAssertFalse([session loadingCredentials]);
     XCTAssertNotNil([store noteWithID:noteID]);
+}
+
+- (void)testStatusOwnerPublishesExpiryOnceAndIgnoresDuplicateOrRetiredEngine {
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    NVSyncEngine *active = [original syncEngine];
+    [session syncEngine:active didChangeStatus:NVSyncStatusSyncing];
+    [session syncEngine:active didChangeStatus:NVSyncStatusIdle];
+    [session syncEngine:active didChangeStatus:NVSyncStatusSignedOut];
+    [session syncEngine:active didChangeStatus:NVSyncStatusSignedOut];
+    XCTAssertEqual([events count], (NSUInteger)3);
+    XCTAssertEqualObjects([events.lastObject userInfo][NVAccountCredentialExpiredKey], @(YES));
+    [session signOut];
+    [session syncEngine:active didChangeStatus:NVSyncStatusSyncing];
+    XCTAssertEqual([events count], (NSUInteger)3);
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testOrdinarySignOutIsSignedOutWithoutExpiryPrompt {
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    [session syncEngine:[original syncEngine] didChangeStatus:NVSyncStatusIdle];
+    [session signOut];
+    XCTAssertEqual([session status], NVSyncStatusSignedOut);
+    XCTAssertEqual([events count], (NSUInteger)2);
+    XCTAssertEqualObjects([events.lastObject userInfo][NVAccountCredentialExpiredKey], @(NO));
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testMissingRestoredCredentialReturnsToSignedOutWithoutExpiryPrompt {
+    [original setSyncEngine:nil];
+    [credentials removeTokenForAccount:@"old@example.com"];
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    [session restoreSignIn];
+    NSPredicate *restored = [NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        return ![(NVAccountSession *)object loadingCredentials];
+    }];
+    [self expectationForPredicate:restored evaluatedWithObject:session handler:nil];
+    [self waitForExpectationsWithTimeout:3 handler:nil];
+    XCTAssertNil([original syncEngine]);
+    XCTAssertEqual([session status], NVSyncStatusSignedOut);
+    XCTAssertEqual([events count], (NSUInteger)2);
+    XCTAssertEqualObjects([events.lastObject userInfo][NVAccountCredentialExpiredKey], @(NO));
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testRejectedCredentialFromActiveEnginePublishesOneExpiry {
+    NVSyncEngine *active = [original syncEngine];
+    NSMutableArray *events = [NSMutableArray array];
+    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:NVSyncStatusDidChangeNotification
+        object:nil queue:nil usingBlock:^(NSNotification *event) { [events addObject:event]; }];
+    [session syncEngine:active didChangeStatus:NVSyncStatusIdle];
+    [oldServer failNextRequestsWithCodes:@[@(NVSimplenoteErrorUnauthorized)]];
+    XCTAssertFalse([active syncOnceReturningError:NULL]);
+    NSPredicate *signedOut = [NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        return [(NVAccountSession *)object status] == NVSyncStatusSignedOut;
+    }];
+    [self expectationForPredicate:signedOut evaluatedWithObject:session handler:nil];
+    [self waitForExpectationsWithTimeout:3 handler:nil];
+    NSUInteger expiries = 0;
+    for (NSNotification *event in events)
+        if ([event.userInfo[NVAccountCredentialExpiredKey] boolValue]) expiries++;
+    XCTAssertEqual(expiries, (NSUInteger)1);
+    [session syncEngine:active didChangeStatus:NVSyncStatusSignedOut];
+    XCTAssertEqual([events count], (NSUInteger)3);
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
 }
 @end

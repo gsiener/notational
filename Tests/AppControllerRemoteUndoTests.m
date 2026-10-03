@@ -43,6 +43,8 @@ static NSMutableArray *KeptControllers;
 											 delegate:delegate];
 	LinkingEditor *editor = [[LinkingEditor alloc] initWithFrame:NSMakeRect(0, 0, 400, 300)];
 	[editor setValue:[GlobalPrefs defaultPrefs] forKey:@"prefsController"];
+	[editor setAllowsUndo:YES];
+	[[note undoManager] setGroupsByEvent:NO]; //the headless test supplies explicit event groups
 	[editor setString:[[note contentString] string]];
 	AppController *app = [AppController alloc];
 	if (!KeptControllers) KeptControllers = [NSMutableArray array];
@@ -128,6 +130,80 @@ static NSMutableArray *KeptControllers;
 	XCTAssertEqualObjects([editor string], @"one local\nTWO");
 	[undo redo];
 	XCTAssertEqualObjects([editor string], @"one local!\nTWO");
+}
+
+- (void)testGroupedTypingUndoBeforeRemoteRebasesAsOneStep {
+	NoteObject *note; LinkingEditor *editor; AppController *app; RemoteUndoNoteDelegate *delegate;
+	[self prepareNote:&note editor:&editor app:&app delegate:&delegate];
+	NSUndoManager *undo = [note undoManager];
+	[undo beginUndoGrouping];
+	[editor insertText:@" local" replacementRange:NSMakeRange(3, 0)];
+	[editor insertText:@"!" replacementRange:NSMakeRange(9, 0)];
+	[undo endUndoGrouping];
+	XCTAssertEqualObjects([editor string], @"one local!\ntwo");
+	[undo undo];
+	XCTAssertEqualObjects([editor string], @"one\ntwo");
+	[undo redo];
+	XCTAssertEqualObjects([editor string], @"one local!\ntwo");
+	[note applyNoteRecord:[self record:@"Title\none local!\nTWO" tags:@[] version:2]];
+	[app contentsUpdatedForNote:note];
+	[undo undo];
+	XCTAssertEqualObjects([editor string], @"one\nTWO");
+	XCTAssertFalse([undo canUndo], @"the two typing changes were one Cocoa Undo group");
+}
+
+- (void)testRebasedUndoSurvivesSwitchingAwayAndBack {
+	NoteObject *note; LinkingEditor *editor; AppController *app; RemoteUndoNoteDelegate *delegate;
+	[self prepareNote:&note editor:&editor app:&app delegate:&delegate];
+	[self typeLocalEditIn:editor note:note];
+	[note applyNoteRecord:[self record:@"Title\none local\nTWO" tags:@[] version:2]];
+	[app contentsUpdatedForNote:note];
+	NoteObject *other = [[NoteObject alloc] initWithNoteRecord:[NVNoteRecord recordWithNoteID:@"other"
+							serverData:@{ @"content": @"Other\nbody", @"tags": @[] } version:1]
+											 delegate:delegate];
+	[app _setCurrentNote:other];
+	[editor setDelegate:nil];
+	[editor setString:[[other contentString] string]];
+	[app _setCurrentNote:note];
+	[editor setString:[[note contentString] string]];
+	[editor setDelegate:app];
+	[[note undoManager] undo];
+	XCTAssertEqualObjects([editor string], @"one\nTWO");
+	XCTAssertEqualObjects([[note contentString] string], [editor string]);
+}
+
+- (void)testLocalEditAfterRebasedUndoKeepsRemoteText {
+	NoteObject *note; LinkingEditor *editor; AppController *app; RemoteUndoNoteDelegate *delegate;
+	[self prepareNote:&note editor:&editor app:&app delegate:&delegate];
+	[self typeLocalEditIn:editor note:note];
+	[note applyNoteRecord:[self record:@"Title\none local\nTWO" tags:@[] version:2]];
+	[app contentsUpdatedForNote:note];
+	NSUndoManager *undo = [note undoManager];
+	[undo undo];
+	[undo beginUndoGrouping];
+	[editor insertText:@" new" replacementRange:NSMakeRange(3, 0)];
+	[undo endUndoGrouping];
+	XCTAssertEqualObjects([editor string], @"one new\nTWO");
+	[undo undo];
+	XCTAssertEqualObjects([editor string], @"one\nTWO");
+}
+
+- (void)testPruningAfterRemoteKeepsRemainingUndoTargetsAligned {
+	NoteObject *note; LinkingEditor *editor; AppController *app; RemoteUndoNoteDelegate *delegate;
+	[self prepareNote:&note editor:&editor app:&app delegate:&delegate];
+	[self typeLocalEditIn:editor note:note];
+	[note applyNoteRecord:[self record:@"Title\none local\nTWO" tags:@[] version:2]];
+	[app contentsUpdatedForNote:note];
+	NSUndoManager *undo = [note undoManager];
+	for (NSUInteger i = 0; i < 40; i++) {
+		[undo beginUndoGrouping];
+		[editor insertText:@"x" replacementRange:NSMakeRange(9 + i, 0)];
+		[undo endUndoGrouping];
+	}
+	for (NSUInteger i = 0; i < 32; i++) [undo undo];
+	XCTAssertEqualObjects([editor string], @"one localxxxxxxxx\nTWO");
+	XCTAssertFalse([undo canUndo]);
+	XCTAssertEqualObjects([[note contentString] string], [editor string]);
 }
 
 - (void)testRemoteInsertionBeforeLocalEditShiftsUndoSafely {

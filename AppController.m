@@ -34,6 +34,7 @@
 #import "BufferUtils.h"
 #import "LinkingEditor.h"
 #import "EmptyView.h"
+#import "NVAccountSession.h"
 #import "DualField.h"
 #import "TitlebarButton.h"
 #import "BookmarksController.h"
@@ -69,6 +70,9 @@
 #define kDualFieldHeight 35.0
 
 #define k_FinderTaggingReset 0
+#define NVEditorUndoMaxStates 33
+#define NVEditorUndoMaxBytes (8 * 1024 * 1024)
+#define NVEditorUndoMaxNotes 8
 
 NSInteger ModFlagger;
 NSInteger popped;
@@ -387,7 +391,7 @@ void outletObjectAwoke(id sender) {
 	 @selector(setTableColumnsShowPreview:sender:),  //when to tell notationcontroller to generate or disable note-body previews
 	 @selector(setConfirmNoteDeletion:sender:),  //whether "delete note" should have an ellipsis
      @selector(setUseFinderTags:),  //whether nvalt should use findertags
-	 @selector(setAutoCompleteSearches:sender:),@selector(setUseETScrollbarsOnLion:sender:), nil];   //when to tell notationcontroller to build its title-prefix connections
+	 @selector(setAutoCompleteSearches:sender:), nil];   //when to tell notationcontroller to build its title-prefix connections
 	
 	[self performSelector:@selector(runDelayedUIActionsAfterLaunch) withObject:nil afterDelay:0.0];
     
@@ -1183,9 +1187,30 @@ terminateApp:
 
 - (void)_setCurrentNote:(NoteObject*)aNote {
 	if (currentNote != aNote) {
-		editorUndoNote = nil;
-		editorUndoStates = nil;
-		editorUndoIndex = 0;
+		if (!editorUndoByNote) editorUndoByNote = [NSMapTable weakToStrongObjectsMapTable];
+		if (!editorUndoRecentNotes) editorUndoRecentNotes = [NSMutableArray array];
+		if (editorUndoNote == currentNote && editorUndoStates) {
+			[editorUndoByNote setObject:@{ @"states": editorUndoStates,
+											  @"index": [NSNumber numberWithInteger:editorUndoIndex] }
+							 forKey:currentNote];
+			[editorUndoRecentNotes removeObjectIdenticalTo:currentNote];
+			[editorUndoRecentNotes addObject:currentNote];
+		}
+		while ([editorUndoRecentNotes count] > NVEditorUndoMaxNotes) {
+			NoteObject *oldest = [editorUndoRecentNotes objectAtIndex:0];
+			[editorUndoByNote removeObjectForKey:oldest];
+			[editorUndoRecentNotes removeObjectAtIndex:0];
+		}
+		NSDictionary *saved = [editorUndoByNote objectForKey:aNote];
+		if (saved) {
+			[editorUndoRecentNotes removeObjectIdenticalTo:aNote];
+			[editorUndoRecentNotes addObject:aNote];
+		}
+		editorUndoStates = [saved objectForKey:@"states"];
+		editorUndoIndex = saved ? [[saved objectForKey:@"index"] integerValue] : 0;
+		editorUndoNote = saved ? aNote : nil;
+		editorUndoGroupClosed = YES;
+		editorUndoNeedsRebuild = NO;
 	}
 	//save range of old current note
 	//we really only want to save the insertion point position if it's currently invisible
@@ -1494,6 +1519,8 @@ terminateApp:
     [self updateWordCount:![prefsController showWordCount]];
 	[textView setHidden:state];
 	[editorStatusView setHidden:!state];
+	[editorStatusView setShowsSignIn:state && [notesTableView numberOfRows] == 0 &&
+		[accountSession status] == NVSyncStatusSignedOut];
 	
 	if (state) {
         [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFinderShouldHide" object:self];
@@ -1563,6 +1590,34 @@ terminateApp:
 }
 
 //from linkingeditor
+- (void)_editorUndoGroupDidClose:(NSNotification *)notification {
+	if ([notification object] == [currentNote undoManager]) {
+		editorUndoGroupClosed = YES;
+		if (editorUndoNeedsRebuild && !rebuildingEditorUndoActions &&
+			[[notification object] groupingLevel] == 0)
+			[self _rebuildSelectedEditorUndoActions];
+	}
+}
+
+- (void)_rebuildSelectedEditorUndoActions {
+	if (!editorUndoNeedsRebuild || rebuildingEditorUndoActions || !currentNote) return;
+	NSUndoManager *manager = [currentNote undoManager];
+	if ([manager groupingLevel] != 0) return;
+	rebuildingEditorUndoActions = YES;
+	[manager removeAllActions];
+	BOOL groupedByEvent = [manager groupsByEvent];
+	[manager setGroupsByEvent:NO];
+	for (NSInteger i = 0; i < editorUndoIndex; i++) {
+		[manager beginUndoGrouping];
+		[manager registerUndoWithTarget:self selector:@selector(_applyRebasedEditorUndoState:)
+							 object:[NSNumber numberWithInteger:i]];
+		[manager endUndoGrouping];
+	}
+	[manager setGroupsByEvent:groupedByEvent];
+	rebuildingEditorUndoActions = NO;
+	editorUndoNeedsRebuild = NO;
+}
+
 - (void)textDidChange:(NSNotification *)aNotification {
 	id textObject = [aNotification object];
     //[self resetModTimers];
@@ -1572,21 +1627,63 @@ terminateApp:
 		NSString *before = [[[currentNote contentString] string] copy];
 		NSString *after = [[textView string] copy];
 		if (currentNote && ![before isEqualToString:after]) {
+			if (!observingEditorUndoGroups) {
+				[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_editorUndoGroupDidClose:)
+									 name:NSUndoManagerDidCloseUndoGroupNotification object:nil];
+				observingEditorUndoGroups = YES;
+			}
 			if (editorUndoNote != currentNote || !editorUndoStates) {
 				editorUndoNote = currentNote;
 				editorUndoStates = [NSMutableArray arrayWithObject:before];
 				editorUndoIndex = 0;
+				editorUndoGroupClosed = YES;
 			}
-			if ([manager isUndoing] && editorUndoIndex > 0 &&
-				[[editorUndoStates objectAtIndex:editorUndoIndex - 1] isEqualToString:after]) {
-				editorUndoIndex--;
-			} else if ([manager isRedoing] && editorUndoIndex + 1 < [editorUndoStates count] &&
-				[[editorUndoStates objectAtIndex:editorUndoIndex + 1] isEqualToString:after]) {
-				editorUndoIndex++;
-			} else if (![manager isUndoing] && ![manager isRedoing]) {
+			if ([manager isUndoing]) {
+				BOOL found = NO;
+				for (NSInteger i = editorUndoIndex - 1; i >= 0; i--) {
+					if ([[editorUndoStates objectAtIndex:i] isEqualToString:after]) {
+						editorUndoIndex = i;
+						found = YES;
+						break;
+					}
+				}
+				if (!found) {
+					editorUndoStates = [NSMutableArray arrayWithObject:after];
+					editorUndoIndex = 0;
+				}
+			} else if ([manager isRedoing]) {
+				BOOL found = NO;
+				for (NSInteger i = editorUndoIndex + 1; i < (NSInteger)[editorUndoStates count]; i++) {
+					if ([[editorUndoStates objectAtIndex:i] isEqualToString:after]) {
+						editorUndoIndex = i;
+						found = YES;
+						break;
+					}
+				}
+				if (!found) {
+					editorUndoStates = [NSMutableArray arrayWithObject:after];
+					editorUndoIndex = 0;
+				}
+			} else {
 				while ([editorUndoStates count] > editorUndoIndex + 1) [editorUndoStates removeLastObject];
-				[editorUndoStates addObject:after];
-				editorUndoIndex++;
+				if (editorUndoGroupClosed || editorUndoIndex == 0) {
+					[editorUndoStates addObject:after];
+					editorUndoIndex++;
+				} else {
+					[editorUndoStates replaceObjectAtIndex:editorUndoIndex withObject:after];
+				}
+				editorUndoGroupClosed = NO;
+				NSUInteger bytes = 0;
+				for (NSString *state in editorUndoStates) bytes += [state length] * sizeof(unichar);
+				while ([editorUndoStates count] > 2 &&
+						([editorUndoStates count] > NVEditorUndoMaxStates || bytes > NVEditorUndoMaxBytes)) {
+					bytes -= [[editorUndoStates objectAtIndex:0] length] * sizeof(unichar);
+					[editorUndoStates removeObjectAtIndex:0];
+					editorUndoIndex--;
+					editorUndoNeedsRebuild = YES;
+				}
+				if (editorUndoNeedsRebuild)
+					[self performSelector:@selector(_rebuildSelectedEditorUndoActions) withObject:nil afterDelay:0];
 			}
 		}
 		[currentNote setContentString:[textView textStorage]];
@@ -1615,6 +1712,7 @@ terminateApp:
 	NSArray *moved = [NVTextMerge updateStorage:[textView textStorage] toContent:content
 									 selectedRanges:[textView selectedRanges]];
 	[textView setSelectedRanges:moved];
+	[textView breakUndoCoalescing];
 	applyingRemoteOrRebasedText = NO;
 	editorUndoIndex = target;
 	[currentNote setContentString:[textView textStorage]];
@@ -1965,16 +2063,10 @@ terminateApp:
 				editorUndoStates = nil;
 				editorUndoIndex = 0;
 			}
-			[manager removeAllActions];
-			BOOL groupedByEvent = [manager groupsByEvent];
-			[manager setGroupsByEvent:NO];
-			for (NSInteger i = 0; i < editorUndoIndex; i++) {
-				[manager beginUndoGrouping];
-				[manager registerUndoWithTarget:self selector:@selector(_applyRebasedEditorUndoState:)
-									 object:[NSNumber numberWithInteger:i]];
-				[manager endUndoGrouping];
-			}
-			[manager setGroupsByEvent:groupedByEvent];
+			//End any active typing group before replacing its range-based actions.
+			while ([manager groupingLevel] > 0) [manager endUndoGrouping];
+			editorUndoNeedsRebuild = YES;
+			[self _rebuildSelectedEditorUndoActions];
 		}
 		//apply only the part that changed (e.g. a line merged in from another device), so the
 		//selection stays with the text the user was looking at (ADR 0001 §8)
@@ -1982,9 +2074,14 @@ terminateApp:
 		NSArray *moved = [NVTextMerge updateStorage:[textView textStorage] toContent:[aNoteObject contentString]
 								  selectedRanges:[textView selectedRanges]];
 		[textView setSelectedRanges:moved];
+		[textView breakUndoCoalescing];
 		applyingRemoteOrRebasedText = NO;
 		[self postTextUpdate];
 		[self updateWordCount:(![prefsController showWordCount])];
+	} else {
+		//NotationController discards stale AppKit actions for a nonselected note.
+		[editorUndoByNote removeObjectForKey:aNoteObject];
+		[editorUndoRecentNotes removeObjectIdenticalTo:aNoteObject];
 	}
 }
 
@@ -2018,8 +2115,12 @@ terminateApp:
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-	//unsynced edits are already saved in the Notes store and are pushed on the next launch,
-	//so there's nothing to wait for
+	NSError *writeError = nil;
+	if (notationController && ![notationController flushAllNoteChangesReturningError:&writeError]) {
+		NVRunAlert(NSAlertStyleWarning, NSLocalizedString(@"Notational couldn't save your notes", nil),
+			[writeError localizedDescription], nil, nil, nil);
+		return NSTerminateCancel;
+	}
 	return NSTerminateNow;
 }
 
@@ -2514,6 +2615,9 @@ terminateApp:
     
     [notesTableView setGridColor:foreground];
     [notesTableView setBackgroundColor:background];
+    NSScrollerKnobStyle knobStyle = [ETScrollView knobStyleForBackgroundColor:background];
+    [notesScrollView setScrollerKnobStyle:knobStyle];
+    [[textView enclosingScrollView] setScrollerKnobStyle:knobStyle];
     [notationController setForegroundTextColor:foreground];
     
     [textView setBackgroundColor:background];

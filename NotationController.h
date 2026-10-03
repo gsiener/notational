@@ -31,7 +31,7 @@
 @class NoteBookmark;
 @class GlobalPrefs;
 
-@class NVNotesStore, NVSyncEngine;
+@class NVNotesStore, NVSyncEngine, NVAccountSession;
 
 @interface NotationController : NSObject <NVNoteDelegate> {
     BOOL resourcesClosed;
@@ -59,6 +59,7 @@
 	int lastLayoutStyleGenerated;
     
     NSMutableSet *unwrittenNotes;
+	NSMutableDictionary *failedTrashEdits;
 	NSTimer *changeWritingTimer;
 	NSUndoManager *undoManager;
 	
@@ -72,10 +73,15 @@
 - (NVNotesStore *)notesStore;
 - (void)setSyncEngine:(NVSyncEngine *)engine;
 - (NVSyncEngine *)syncEngine;
+@property (nonatomic, weak) NVAccountSession *accountSession;
 - (NoteObject *)noteForRecordID:(NSString *)recordID;
 
 - (id)init;
 - (void)flushAllNoteChanges;
+- (BOOL)flushAllNoteChangesReturningError:(NSError **)error;
+- (BOOL)closeAllResourcesReturningError:(NSError **)error;
+- (BOOL)prepareForAccountResetReturningError:(NSError **)error;
+- (void)retireAfterAccountReset;
 - (void)flushEverything;
 
 
