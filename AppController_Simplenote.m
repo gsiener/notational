@@ -7,7 +7,7 @@
 #import "NotationController.h"
 #import "NotationPrefs.h"
 #import "NVArchiving.h"
-#import "NSFileManager+DirectoryLocations.h"
+#import "NSFileManager_NV.h"
 #import "NVNotesStore.h"
 #import "NVNoteRecord.h"
 #import "NVSyncEngine.h"
@@ -32,7 +32,7 @@ static NVSimplenoteAccountWindowController *accountWindow = nil;
 
 + (NSString *)notesStorePath {
 	NSFileManager *fm = [NSFileManager defaultManager];
-	NSString *directory = [fm findOrCreateDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appendPathComponent:@"Notational" error:NULL];
+	NSString *directory = [fm findOrCreateDirectory:NSApplicationSupportDirectory appendingPathComponent:@"Notational"];
 	if (!directory) return nil;
 	NSString *support = [directory stringByDeletingLastPathComponent];
 	NSString *path = [directory stringByAppendingPathComponent:@"Notes.sqlite"];

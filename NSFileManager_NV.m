@@ -279,4 +279,20 @@
 	return [self createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL] ? directory : nil;
 }
 
+- (NSString *)findOrCreateDirectory:(NSSearchPathDirectory)directory appendingPathComponent:(NSString *)component {
+	NSError *error = nil;
+	NSURL *url = [self URLForDirectory:directory inDomain:NSUserDomainMask appropriateForURL:nil create:YES error:&error];
+	if (component) url = [url URLByAppendingPathComponent:component isDirectory:YES];
+	if (!url || ![self createDirectoryAtURL:url withIntermediateDirectories:YES attributes:nil error:&error]) {
+		NSLog(@"Unable to find or create directory: %@", error);
+		return nil;
+	}
+	return [url path];
+}
+
+- (NSString *)applicationSupportDirectory {
+	return [self findOrCreateDirectory:NSApplicationSupportDirectory
+				appendingPathComponent:[[NSBundle mainBundle] infoDictionary][@"CFBundleExecutable"]];
+}
+
 @end

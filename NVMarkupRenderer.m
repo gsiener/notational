@@ -5,7 +5,7 @@
 
 #import "NVMarkupRenderer.h"
 #import "NVTaskPaperMarkdown.h"
-#import "NSFileManager+DirectoryLocations.h"
+#import "NSFileManager_NV.h"
 
 static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 

@@ -171,8 +171,8 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2);
 
 
 
-- (void)setBlorImportAttempted:(BOOL)value;
-- (BOOL)triedToImportBlor;
+- (void)setHelpNotesImportAttempted:(BOOL)value;
+- (BOOL)triedToImportHelpNotes;
 
 - (void)synchronize;
 

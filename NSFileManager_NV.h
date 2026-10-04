@@ -37,5 +37,9 @@
 - (BOOL)deleteFileAtPath:(NSString *)path;
 //the "Notational" folder in the temporary directory, for files handed to other apps; created if need be, nil if it couldn't be
 - (NSString *)temporaryNotesDirectory;
+//the folder in the user's domain, with component appended; created if need be, nil if it couldn't be
+- (NSString *)findOrCreateDirectory:(NSSearchPathDirectory)directory appendingPathComponent:(NSString *)component;
+//Application Support/<executable name>, i.e. ~/Library/Application Support/Notational
+- (NSString *)applicationSupportDirectory;
 
 @end

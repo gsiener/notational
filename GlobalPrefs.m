@@ -38,7 +38,8 @@
 
 #define SEND_CALLBACKS() sendCallbacksForGlobalPrefs(self, _cmd, sender)
 
-static NSString *TriedToImportBlorKey = @"TriedToImportBlor";
+//the key keeps its old name, so existing installs don't get the help notes again
+static NSString *TriedToImportHelpNotesKey = @"TriedToImportBlor";
 static NSString *AutoCompleteSearchesKey = @"AutoCompleteSearches";
 static NSString *NoteAttributesVisibleKey = @"NoteAttributesVisible";
 static NSString *TableFontSizeKey = @"TableFontPointSize";
@@ -143,7 +144,7 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
             [NSNumber numberWithBool:NO], UseSmartInsertDeleteKey,
 			[NSNumber numberWithBool:YES], AutoCompleteSearchesKey,
 			[NSNumber numberWithBool:YES], QuitWhenClosingMainWindowKey, 
-			[NSNumber numberWithBool:NO], TriedToImportBlorKey,
+			[NSNumber numberWithBool:NO], TriedToImportHelpNotesKey,
 			[NSNumber numberWithBool:NO], HorizontalLayoutKey,
 			[NSNumber numberWithBool:YES], MakeURLsClickableKey,
 			[NSNumber numberWithBool:YES], HighlightSearchTermsKey, 
@@ -854,12 +855,12 @@ BOOL ColorsEqualWith8BitChannels(NSColor *c1, NSColor *c2) {
 	return bookmarksController;
 }
 
-- (void)setBlorImportAttempted:(BOOL)value {
-	[defaults setBool:value forKey:TriedToImportBlorKey];
+- (void)setHelpNotesImportAttempted:(BOOL)value {
+	[defaults setBool:value forKey:TriedToImportHelpNotesKey];
 }
 
-- (BOOL)triedToImportBlor {
-	return [defaults boolForKey:TriedToImportBlorKey];
+- (BOOL)triedToImportHelpNotes {
+	return [defaults boolForKey:TriedToImportHelpNotesKey];
 }
 - (void)synchronize {
     [defaults synchronize];

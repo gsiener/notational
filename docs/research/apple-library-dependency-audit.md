@@ -8,6 +8,8 @@ The best immediate opportunity is replacing custom scrollers with AppKit control
 Reducing PTHotKeys is the next candidate, provided a smaller replacement preserves shortcut behavior.
 MultiMarkdown has the largest external build footprint, but a direct Foundation replacement fails the existing fixture's output requirements.
 
+**Update 2026-10-04 (#56):** unused SecurityInterface, SystemConfiguration and IOKit links removed (#51); the random-byte helper now uses `SecRandomCopyBytes` (#53); `NSFileManager+DirectoryLocations` replaced by Foundation (#54); Blor import, IDEA and BrokenMD5 deleted (#42). Scrollers (#46) and PTHotKeys (#44) were done earlier. MultiMarkdown (#47) and removing git submodules (#50) remain.
+
 ## Inventory
 
 The archived app links only system frameworks and libraries. This does not mean the source tree contains no third-party code.

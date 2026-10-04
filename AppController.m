@@ -49,7 +49,6 @@
 #import "ETScrollView.h"
 #import "ETNoteScrollView.h"
 #import "WordCountToken.h"
-#import "NSFileManager+DirectoryLocations.h"
 #import "nvaDevConfig.h"
 #import "NVHereNowSites.h"
 #import "NVHereNowSiteViewer.h"
@@ -380,7 +379,7 @@ void outletObjectAwoke(id sender) {
 	//	NSLog(@"version: %s", PRODUCT_NAME);
 	
 	//import old database(s) here if necessary
-	[AlienNoteImporter importBlorOrHelpFilesIfNecessaryIntoNotation:newNotation];
+	[AlienNoteImporter importHelpNotesIfNecessaryIntoNotation:newNotation];
 	
 //	[newNotation release];
 	if (pathsToOpenOnLaunch) {

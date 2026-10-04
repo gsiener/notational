@@ -94,9 +94,6 @@
 /* No comment provided by engineer. */
 "nvALT should assume the file quotemark%@quotemark was saved with the encoding:" = "Notational should assume the file “%@” was saved with the encoding:";
 
-/* No comment provided by engineer. */
-"Note Importing Cancelled" = "Note Importing Cancelled";
-
 /* Error string returned to indicate that the user cancelled a syncing service operation */
 "Operation cancelled" = "Operation cancelled";
 
@@ -112,9 +109,6 @@
 /* ...from file on disk */
 "Overwrite Note" = "Overwrite Note";
 
-/* No comment provided by engineer. */
-"Please try again." = "Please try again.";
-
 /* prompt for choosing an incompatible text encoding */
 "Please try another encoding." = "Please try another encoding.";
 
@@ -129,9 +123,6 @@
 
 /* replace the file's contents? */
 "Replace its current contents with that of the note?" = "Replace its current contents with that of the note?";
-
-/* No comment provided by engineer. */
-"Sorry, you entered an incorrect passphrase." = "Sorry, you entered an incorrect passphrase.";
 
 /* (notes?) */
 "Stop Exporting" = "Stop Exporting";
@@ -165,9 +156,6 @@
 
 /* placeholder text in search/create field */
 "Search or Create" = "Search or Create";
-
-/* No comment provided by engineer. */
-"You can import your old notes at any time by choosing quotemarkImport...quotemark from the quotemarkNotequotemark menu and selecting your NotationalDatabase.blor file." = "You can import your old notes at any time by choosing “Import…” from the “Note” menu and selecting your NotationalDatabase.blor file.";
 
 /* No comment provided by engineer. */
 "You may need to re-run the Mac OS X installer." = "You may need to re-run the Mac OS X installer.";

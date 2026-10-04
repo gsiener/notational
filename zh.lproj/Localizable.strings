@@ -94,9 +94,6 @@
 /* No comment provided by engineer. */
 "Notational Velocity should assume the file quotemark%@quotemark was saved with the encoding:" = "Notational Velocity 假设文件 “%@” 使用的是下列编码：";
 
-/* No comment provided by engineer. */
-"Note Importing Cancelled" = "导入笔记已取消";
-
 /* Error string returned to indicate that the user cancelled a syncing service operation */
 "Operation cancelled" = "操作已取消";
 
@@ -112,9 +109,6 @@
 /* ...from file on disk */
 "Overwrite Note" = "覆盖笔记";
 
-/* No comment provided by engineer. */
-"Please try again." = "请重试。";
-
 /* prompt for choosing an incompatible text encoding */
 "Please try another encoding." = "请尝试其他编码。";
 
@@ -129,9 +123,6 @@
 
 /* replace the file's contents? */
 "Replace its current contents with that of the note?" = "使用当前内容替换笔记？";
-
-/* No comment provided by engineer. */
-"Sorry, you entered an incorrect passphrase." = "抱歉，您输入的口令不正确。";
 
 /* (notes?) */
 "Stop Exporting" = "停止导出";
@@ -165,9 +156,6 @@
 
 /* placeholder text in search/create field */
 "Search or Create" = "搜索或创建";
-
-/* No comment provided by engineer. */
-"You can import your old notes at any time by choosing quotemarkImport...quotemark from the quotemarkNotequotemark menu and selecting your NotationalDatabase.blor file." = "您可以在任何使用通过“笔记”菜单，“导入…”，并选贼 NotationalDatabase.blor 文件来导入您以前的笔记。";
 
 /* No comment provided by engineer. */
 "You may need to re-run the Mac OS X installer." = "您需要重新运行 Mac OS X 安装程序。";

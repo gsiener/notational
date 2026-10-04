@@ -123,6 +123,12 @@ static NSData *Utf8(NSString *s) {
 	XCTAssertEqual([[Utf8(@"pass") derivedKeyOfLength:32 salt:Utf8(@"salt") iterations:10] length], (NSUInteger)32);
 }
 
+- (void)testRandomDataHasRequestedLengthAndVaries {
+	NSData *first = [NSData randomDataOfLength:256], *second = [NSData randomDataOfLength:256];
+	XCTAssertEqual([first length], (NSUInteger)256);
+	XCTAssertNotEqualObjects(first, second);
+}
+
 #pragma mark Digests and checksums
 
 - (void)testSHA1Digest {

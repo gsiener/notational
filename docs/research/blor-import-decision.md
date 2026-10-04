@@ -1,5 +1,7 @@
 # Blor import decision evidence (issue 42)
 
+**Decision (2026-10-04): retired.** Blor import, `BlorPasswordRetriever`, `idea_ossl.c` and `broken_md5.c` are deleted. A `.blor` file passed to the importer is logged as unsupported and imports nothing, and the file is left untouched. The first-launch help notes still use the old `TriedToImportBlor` defaults key, so existing installs don't get them again.
+
 Status: **decision pending**. Retain the current in-app reader until a product choice and an encrypted fixture establish a safe migration route. This report does not authorize removing import support.
 
 ## What the checkout establishes

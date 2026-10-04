@@ -39,7 +39,8 @@
 	XCTAssertEqualObjects([self importedContentOfFile:@"Shopping list.txt" text:@"eggs\nmilk"], @"Shopping list\neggs\nmilk");
 }
 
-- (void)testInvalidBlorIsNotImportedAsTextAndOriginalIsPreserved {
+- (void)testBlorIsUnsupportedNotImportedAsTextAndOriginalIsPreserved {
+	//Blor import was removed (#42); a .blor file must still not turn into a garbage text note
 	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"NotationalDatabase.blor"];
 	NSData *original = [@"short invalid Blor" dataUsingEncoding:NSUTF8StringEncoding];
 	XCTAssertTrue([original writeToFile:path atomically:YES]);

@@ -11,13 +11,12 @@
 /* NSData_transformations.m */
 
 #import "NSData_transformations.h"
-#include "broken_md5.h"
 
-#include <unistd.h>
 #include <zlib.h>
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonDigest.h>
 #include <CommonCrypto/CommonKeyDerivation.h>
+#include <Security/SecRandom.h>
 
 
 @implementation NSData (NVUtilities)
@@ -130,29 +129,11 @@
 }
 
 + (NSMutableData *)randomDataOfLength:(int)len {
-	NSMutableData *randomData = nil;
-	ssize_t amtRead = 0, oneRead;
-	NSFileHandle *devRandom = [ NSFileHandle fileHandleForReadingAtPath:@"/dev/random" ];
-	
-	if(devRandom != nil) {
-		randomData = [NSMutableData dataWithLength:len];
-		while (amtRead < len) {
-			
-			//read mutable data
-			oneRead = read( [ devRandom fileDescriptor ], [ randomData mutableBytes ],
-							len - amtRead );
-			if (oneRead <= 0 && ( errno != EINTR && errno != EAGAIN ) ) {
-				
-				NSLog(@"random data read error: %s", strerror(errno));
-				randomData = nil;
-				break;
-			}
-			amtRead += oneRead;
-		}
-		[devRandom closeFile];
-	} else
-		NSLog(@"error opening /dev/random");
-	
+	NSMutableData *randomData = [NSMutableData dataWithLength:len];
+	if (SecRandomCopyBytes(kSecRandomDefault, len, [randomData mutableBytes]) != errSecSuccess) {
+		NSLog(@"random data error");
+		return nil;
+	}
 	return randomData;
 }
 
@@ -178,17 +159,6 @@
 	NSMutableData *mutableData = [NSMutableData dataWithLength:CC_SHA1_DIGEST_LENGTH];
 	CC_SHA1([self bytes], (CC_LONG)[self length], [mutableData mutableBytes]);
 	return mutableData;
-}
-
-- (NSData*)BrokenMD5Digest {
-	BrokenMD5_CTX context;
-	NSMutableData *digest = [NSMutableData dataWithLength:16];
-    
-    BrokenMD5Init(&context);
-    BrokenMD5Update(&context, [self bytes], [self length]);
-    BrokenMD5Final([digest mutableBytes], &context);
-	
-	return digest;
 }
 
 - (NSData*)MD5Digest {

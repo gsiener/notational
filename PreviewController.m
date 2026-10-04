@@ -11,7 +11,7 @@
 #import "AppController_Preview.h"
 #import "NVMarkupRenderer.h"
 #import "NoteObject.h"
-#import "NSFileManager+DirectoryLocations.h"
+#import "NSFileManager_NV.h"
 
 #define kDefaultMarkupPreviewVisible @"markupPreviewVisible"
 
@@ -128,8 +128,8 @@ static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 	static NSURL *url = nil;
 	static dispatch_once_t once;
 	dispatch_once(&once, ^{
-		NSString *folder = [[NSFileManager defaultManager] findOrCreateDirectory:NSCachesDirectory inDomain:NSUserDomainMask
-														   appendPathComponent:[[NSBundle mainBundle] bundleIdentifier] ?: @"Notational" error:NULL];
+		NSString *folder = [[NSFileManager defaultManager] findOrCreateDirectory:NSCachesDirectory
+																  appendingPathComponent:[[NSBundle mainBundle] bundleIdentifier] ?: @"Notational"];
 		url = [NSURL fileURLWithPath:[(folder ?: NSTemporaryDirectory()) stringByAppendingPathComponent:@"preview.html"]];
 	});
 	return url;

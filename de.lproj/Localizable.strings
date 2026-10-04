@@ -94,9 +94,6 @@
 /* No comment provided by engineer. */
 "Notational Velocity should assume the file quotemark%@quotemark was saved with the encoding:" = "Notational Velocity soll voraussetzen, dass die Datei “%@” mit folgender Kodierung gespeichert wurde:";
 
-/* No comment provided by engineer. */
-"Note Importing Cancelled" = "Importieren der Notizen abgebrochen";
-
 /* Error string returned to indicate that the user cancelled a syncing service operation */
 "Operation cancelled" = "Vorgang abgebrochen";
 
@@ -112,9 +109,6 @@
 /* ...from file on disk */
 "Overwrite Note" = "Notiz überschreiben";
 
-/* No comment provided by engineer. */
-"Please try again." = "Bitte versuche es erneut.";
-
 /* prompt for choosing an incompatible text encoding */
 "Please try another encoding." = "Please try another encoding.";
 
@@ -129,9 +123,6 @@
 
 /* replace the file's contents? */
 "Replace its current contents with that of the note?" = "Den Inhalt der Datei mit dem der Notiz ersetzen?";
-
-/* No comment provided by engineer. */
-"Sorry, you entered an incorrect passphrase." = "Entschuldigung, aber du hast ein falsches Passwort eingegeben.";
 
 /* (notes?) */
 "Stop Exporting" = "Exportieren stoppen";
@@ -165,9 +156,6 @@
 
 /* placeholder text in search/create field */
 "Search or Create" = "Suchen oder Erstellen";
-
-/* No comment provided by engineer. */
-"You can import your old notes at any time by choosing quotemarkImport...quotemark from the quotemarkNotequotemark menu and selecting your NotationalDatabase.blor file." = "Du kannst deine alten Notizen jederzeit durch wählen des Menüeintrages “Importieren…” hinzufügen und indem du dann die NotationalDatabase.blor Datei auswählst.";
 
 /* No comment provided by engineer. */
 "You may need to re-run the Mac OS X installer." = "Vielleicht muss das Mac OS X Installationsprogramm erneut ausgeführt werden.";

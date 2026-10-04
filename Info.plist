@@ -118,16 +118,6 @@
 				<string>public.plain-text</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>blor</string>
-			</array>
-			<key>CFBundleTypeName</key>
-			<string>Notational Velocity BLOR</string>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
