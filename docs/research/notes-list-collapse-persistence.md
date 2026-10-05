@@ -1,5 +1,7 @@
 # Notes-list collapse persistence (issue #34)
 
+**Resolved 2026-10-04.** UI tests now cover both layouts in CI: a dragged divider survives a relaunch, a list collapsed at quit comes back expanded at its earlier size, and expanding restores the size. They passed on the old code and on the simplified code (CI runs 37259333601 and 37259335108). The app opens with no note shown, and the empty view always expands the list, so the restored collapsed state was undone at once. The `NotesListCollapsed` default (removed from defaults once) and `splitViewIsRestoring` are gone. `restoreSplitViewState` expands a list that NSSplitView restores collapsed, at its saved size. Collapsing still requires an open note, for drags, double-clicks and the menu. Note for future UI tests: on the CI runner, preferences outlive a test, so tests must not assume a starting layout or divider position.
+
 ## Findings from the current code
 
 `AppController` restores the split view after configuring its layout. `NVSplitView` first converts an old `RBSplitView V centralSplitView` or `RBSplitView H centralSplitView` value only when that orientation has no NSSplitView frames. The converted first frame retains the absolute list dimension and marks a negative legacy dimension as collapsed. The keys are separate for side-by-side and stacked layouts.
