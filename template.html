@@ -26,8 +26,62 @@
   </div> <!-- end of #container -->
 
 
-  <script src="{%support%}/jquery.js"></script>    <script>(function($){$('h1,h2,h3,h4').each(function(){$(this).html($(this).text().replace(/([^\\s])\\s+([^\\s]{1,5})\\s*$/,'$1&nbsp;$2'));});$('a[href^=#]').click(function(){if(location.pathname.replace(/^\\//,'')==this.pathname.replace(/^\\//,'')&&location.hostname==this.hostname){var $target=$(this.hash);$target=$target.length&&$target||$('[id='+this.hash.slice(1)+']');if($target.length){var targetOffset=$target.offset().top;$('#contentdiv').animate({scrollTop:targetOffset-40},1000);return false;}}});$('#contentdiv').scroll(function(){if(this.scrollTop>150){if($('#backtotop').length==0)
-$('h1.doctitle').append($('<a href="javascript:void()" id="backtotop" />').text('Back to top').css({'float':'right','display':'none'}).click(function(){$('#contentdiv').animate({scrollTop:0},1000);}));$('#backtotop').fadeIn('slow');}else{$('#backtotop').fadeOut('slow',function(){$(this).remove();});}});})(jQuery);
+  <!-- data-nv-live: this script copes with the preview swapping in new note content without a reload -->
+  <script data-nv-live>
+  (function() {
+    var content = document.getElementById('contentdiv');
+    if (!content) return;
+
+    //keep a heading's short last word from wrapping onto a line by itself
+    function joinLastWords() {
+      document.querySelectorAll('h1, h2, h3, h4').forEach(function(heading) {
+        var node = heading.lastChild;
+        if (node && node.nodeType === Node.TEXT_NODE)
+          node.nodeValue = node.nodeValue.replace(/(\S)\s+(\S{1,5})\s*$/, '$1\u00a0$2');
+      });
+    }
+    joinLastWords();
+    new MutationObserver(joinLastWords).observe(content, {childList: true, subtree: true});
+
+    function scrollContentTo(top) {
+      content.scrollTo({top: Math.max(0, top), behavior: 'smooth'});
+    }
+
+    //in-page links (footnotes, heading anchors) scroll smoothly
+    document.addEventListener('click', function(event) {
+      var link = event.target.closest && event.target.closest('a[href^="#"]');
+      if (!link) return;
+      if (link.id === 'backtotop') {
+        event.preventDefault();
+        scrollContentTo(0);
+        return;
+      }
+      var target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+      if (!target) return;
+      event.preventDefault();
+      if (content.scrollHeight > content.clientHeight)
+        scrollContentTo(target.getBoundingClientRect().top - content.getBoundingClientRect().top + content.scrollTop - 40);
+      else
+        target.scrollIntoView({behavior: 'smooth'});
+    });
+
+    //"Back to top" in the title bar once the note is scrolled down
+    content.addEventListener('scroll', function() {
+      var link = document.getElementById('backtotop');
+      if (content.scrollTop > 150) {
+        var title = document.querySelector('h1.doctitle');
+        if (link || !title) return;
+        link = document.createElement('a');
+        link.id = 'backtotop';
+        link.href = '#';
+        link.textContent = 'Back to top';
+        link.style.cssFloat = 'right';
+        title.appendChild(link);
+      } else if (link) {
+        link.remove();
+      }
+    });
+  })();
   </script>
 </body>
 </html>

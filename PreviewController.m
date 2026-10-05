@@ -107,14 +107,15 @@ static NSString *const ScriptWatchingScript = @"(function() {"
 	"window.addEventListener('load', function() {"
 		"document.removeEventListener('load', watch, true);"
 		"window.removeEventListener('error', watch, true);"
-		"var inline = document.querySelectorAll('script:not([src]):not(#%@)').length;"
+		//a script marked data-nv-live (the app's own template) handles new content itself
+		"var inline = document.querySelectorAll('script:not([src]):not(#%@):not([data-nv-live])').length;"
 		"window.NVPreviewScriptsRan = loaded > 0 || errors < inline;"
 	"});"
 	"})();";
 
 //replaces the content element's HTML and answers true, or answers false when the page must be loaded
 //again: it isn't loaded yet, lacks the element, or has scripts that ran at load and so would not see the
-//new content (the app's own template asks for a jquery.js that isn't there, and its script then throws)
+//new content (scripts marked data-nv-live, like the app template's, don't count: they handle new content)
 static NSString *const ContentUpdateScript = @"(function(elementID, html) {"
 	"var element = document.getElementById(elementID);"
 	"if (!element || document.readyState !== 'complete' || window.NVPreviewScriptsRan !== false) return false;"

@@ -42,7 +42,7 @@
 	waiter = [[PreviewPageLoadWaiter alloc] init];
 	[webView setNavigationDelegate:waiter];
 	renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:nil taskPaperTool:nil];
-	//the app's own template and style; the support self.temporaryDirectory has no jquery.js, as in the app
+	//the app's own template and style
 	[renderer setBundledTemplateFolder:NVTestRepoPath()];
 	[renderer setCustomTemplateFolder:self.temporaryDirectory];
 }
@@ -74,7 +74,8 @@
 
 - (void)testTheAppTemplateUpdatedInPlaceMatchesTheReloadedPage {
 	[self load:[renderer pageForHTML:@"<h1 id=\"one\">One</h1>\n<p>first</p>" title:@"Note"]];
-	NSString *next = @"<h1 id=\"two\">Two</h1>\n<p>second <a href=\"#two\">link</a></p>\n<div class=\"footnotes\"><p>f</p></div>";
+	//the heading's short last word is joined by the template's script, in place as on a reload
+	NSString *next = @"<h1 id=\"two\">Second heading is here</h1>\n<p>second <a href=\"#two\">link</a></p>\n<div class=\"footnotes\"><p>f</p></div>";
 	NSString *elementID = nil;
 	NSString *inner = [renderer contentElementHTMLForHTML:next title:@"Note" elementID:&elementID];
 	XCTAssertNotNil(inner);
@@ -83,6 +84,40 @@
 
 	[self load:[renderer pageForHTML:next title:@"Note"]];
 	XCTAssertEqualObjects([self evaluate:@"document.documentElement.outerHTML"], updated);
+}
+
+#pragma mark The app template's script (#57)
+
+- (NSString *)tallNoteWithFootnote {
+	NSMutableString *html = [NSMutableString stringWithString:@"<h2 id=\"top\">A heading with end</h2>\n<p>See note<a href=\"#fn:1\" id=\"fnref:1\" class=\"footnote\"><sup>1</sup></a></p>\n"];
+	for (int i = 0; i < 80; i++) [html appendString:@"<p>filler paragraph</p>\n"];
+	[html appendString:@"<div class=\"footnotes\"><ol><li id=\"fn:1\"><p>The note.</p></li></ol></div>"];
+	return html;
+}
+
+- (void)testTheAppTemplateScriptRunsAndStillAllowsInPlaceUpdates {
+	[self load:[renderer pageForHTML:[self tallNoteWithFootnote] title:@"Note"]];
+	//it ran: the heading's last short word is joined to the one before
+	XCTAssertEqualObjects([self evaluate:@"document.getElementById('top').textContent"], @"A heading with\u00a0end");
+	//and being data-nv-live, it doesn't force a reload for every edit
+	XCTAssertEqualObjects([self evaluate:@"String(window.NVPreviewScriptsRan)"], @"false");
+}
+
+- (void)testTheAppTemplateScrollsFootnoteLinksItself {
+	[self load:[renderer pageForHTML:[self tallNoteWithFootnote] title:@"Note"]];
+	NSString *click = @"(function() { var e = new MouseEvent('click', {bubbles: true, cancelable: true});"
+		"return document.getElementById('fnref:1').dispatchEvent(e) ? 'default' : 'handled'; })()";
+	XCTAssertEqualObjects([self evaluate:click], @"handled");
+}
+
+- (void)testTheAppTemplateShowsBackToTopOnceScrolled {
+	[self load:[renderer pageForHTML:[self tallNoteWithFootnote] title:@"Note"]];
+	NSString *scrollTo = @"(function(top) { var c = document.getElementById('contentdiv'); c.scrollTop = top;"
+		"c.dispatchEvent(new Event('scroll')); return !!document.getElementById('backtotop'); })(%d)";
+	id shownWhenScrolled = [self evaluate:[NSString stringWithFormat:scrollTo, 500]];
+	XCTAssertEqualObjects(shownWhenScrolled, @YES);
+	id shownAtTop = [self evaluate:[NSString stringWithFormat:scrollTo, 0]];
+	XCTAssertEqualObjects(shownAtTop, @NO);
 }
 
 - (void)testInPlaceUpdateKeepsScrollPosition {
