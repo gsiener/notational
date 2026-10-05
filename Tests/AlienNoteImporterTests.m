@@ -49,4 +49,19 @@
 	XCTAssertEqualObjects([NSData dataWithContentsOfFile:path], original);
 }
 
+- (void)testPDFIsUnsupportedNotImportedAndOriginalIsPreserved {
+	//PDF import was removed (#58); a .pdf file must not turn into a note
+	NSString *path = [self.temporaryDirectory stringByAppendingPathComponent:@"Document.pdf"];
+	NSString *pdf = @"%PDF-1.4\n"
+		@"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+		@"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+		@"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>\nendobj\n"
+		@"trailer\n<< /Root 1 0 R /Size 4 >>\n%%EOF\n";
+	NSData *original = [pdf dataUsingEncoding:NSASCIIStringEncoding];
+	XCTAssertTrue([original writeToFile:path atomically:YES]);
+	AlienNoteImporter *importer = [[AlienNoteImporter alloc] initWithStoragePath:path];
+	XCTAssertNil([importer notesInFile:path]);
+	XCTAssertEqualObjects([NSData dataWithContentsOfFile:path], original);
+}
+
 @end

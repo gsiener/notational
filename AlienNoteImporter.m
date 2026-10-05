@@ -107,33 +107,6 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 	return nil;
 }
 
-+ (NSBundle *)PDFKitBundle {
-	static NSBundle *PDFKitBundle = nil;
-	if (PDFKitBundle == nil) {
-		NSString *PDFKitPath = @"/System/Library/Frameworks/Quartz.framework/Frameworks/PDFKit.framework";
-		if (![[NSFileManager defaultManager] fileExistsAtPath:PDFKitPath]) {
-			NSLog(@"Couldn't find PDFKit.framework");
-			return nil;
-		}
-		PDFKitBundle = [NSBundle bundleWithPath:PDFKitPath];
-		if (![PDFKitBundle load]) {
-			NSLog(@"Couldn't load PDFKit.framework");
-		}
-	}
-	return PDFKitBundle;
-}
-
-+ (Class)PDFDocClass {
-	static Class PDFDocClass = nil;
-	if (PDFDocClass == nil) {
-		PDFDocClass = [[self PDFKitBundle] classNamed:@"PDFDocument"];
-		if (PDFDocClass == nil) {
-			NSLog(@"Couldn't find PDFDocument class in PDFKit.framework");
-		}
-	}
-	return PDFDocClass;
-}
-
 - (NSView*)accessoryView {
 	if (!importAccessoryView) {
 		if (!NVLoadNib(@"ImporterAccessory", self))  {
@@ -318,31 +291,6 @@ NSString *ShouldImportCreationDates = @"ShouldImportCreationDates";
 		
 		if ([path length] > 0 && [attributedStringFromData length] > 0)
 			sourceIdentifierString = path;
-	} else if (fileType == PDF_TYPE_ID || [extension isEqualToString:@"pdf"]) {
-		//try PDFKit loading lazily
-		@try {
-			Class PdfDocClass = [[self class] PDFDocClass];
-			if (PdfDocClass != Nil) {
-				id doc = [[PdfDocClass alloc] initWithURL:[NSURL fileURLWithPath:filename]];
-				if (doc) {
-					//this method reliably crashes in 64-bit Leopard, and sometimes elsewhere as well
-					SEL selectionSelector = NSSelectorFromString(@"selectionForEntireDocument");
-					id sel = ((id (*)(id, SEL))[doc methodForSelector:selectionSelector])(doc, selectionSelector);
-					if (sel) {
-						attributedStringFromData = [[NSMutableAttributedString alloc] initWithAttributedString:[sel attributedString]];
-						//maybe we could check pages and boundsForPage: to try to determine where a line was soft-wrapped in the document?
-					} else {
-						NSLog(@"Couldn't get entire doc selection for PDF");
-					}
-				} else {
-					NSLog(@"Couldn't parse data into PDF");
-				}
-			} else {
-				NSLog(@"No PDFDocument!");
-			}
-		} @catch (NSException *e) {
-			NSLog(@"Error importing PDF %@ (%@, %@)", filename, [e name], [e reason]);
-		}
 	} else if (fileType == TEXT_TYPE_ID || [extension isEqualToString:@"txt"] || [extension isEqualToString:@"text"] ||
 			   [filename UTIOfFileConformsToType:@"public.plain-text"]) {
 		

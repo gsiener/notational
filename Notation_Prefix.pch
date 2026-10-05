@@ -45,7 +45,6 @@ typedef char _COMPILE_ASSERT_SYMBOL(__LINE__, msg) [ ((test) ? 1 : -1) ]
 #define RTF_TYPE_ID 0x52544620
 #define RTFD_TYPE_ID 0x52544644
 #define WORD_DOC_TYPE_ID 0x5738424E
-#define PDF_TYPE_ID 0x50444620
 
 //faux carbon errors
 #define kCoderErr -818

@@ -46,22 +46,6 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>pdf</string>
-			</array>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>PDF </string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.adobe.pdf</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
 				<string>rtf</string>
 				<string>rtx</string>
 			</array>
@@ -202,7 +186,6 @@
 				<string>public.text</string>
 				<string>com.apple.rtfd</string>
 				<string>com.apple.webarchive</string>
-				<string>com.adobe.pdf</string>
 			</array>
 			<key>NSSendTypes</key>
 			<array>
