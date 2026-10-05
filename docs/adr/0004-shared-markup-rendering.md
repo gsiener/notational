@@ -22,3 +22,4 @@ The [audit](../research/apple-library-dependency-audit.md#multimarkdown-keep-unt
 
 A future replacement needs compatibility tests or an explicit decision to remove features.
 The current decision retains a submodule, a build step, a bundled executable, and process invocation.
+[ADR 0010](0010-in-process-multimarkdown-6.md) replaces these with MultiMarkdown 6 compiled into the app; the renderer seam is unchanged.
