@@ -256,8 +256,9 @@
 //a list collapsed at quit comes back expanded, at the size it had: the app opens with no note
 //shown, and the empty view always reveals the list (#34)
 - (void)testACollapsedListReturnsExpandedAtItsSizeAfterRelaunch {
-	[self createNoteTitled:@"Collapsed at quit" body:@"the list is collapsed when the app quits"];
 	[self inBothLayouts:^(NSString *layout) {
+		//the list only collapses while a note is open, and none is after a relaunch
+		[self createNoteTitled:[@"Collapsed at quit in " stringByAppendingString:layout] body:@"the list is collapsed when the app quits"];
 		CGFloat dragged = [self dragDivider];
 		[self toggleNotesList];
 		XCTAssertFalse([self notesListIsExpanded], @"%@: the list didn't collapse", layout);
