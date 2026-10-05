@@ -79,7 +79,8 @@ NSInteger popped;
 BOOL splitViewAwoke;
 
 
-static NSString *const NotesListCollapsedKey = @"NotesListCollapsed";
+//saved whether the list was collapsed; unused since #34, removed from defaults once
+static NSString *const LegacyNotesListCollapsedKey = @"NotesListCollapsed";
 
 @implementation AppController
 
@@ -669,8 +670,8 @@ terminateApp:
     return [splitView isVertical] ? @"centralSplitView V" : @"centralSplitView H";
 }
 
-//restores the divider position (and whether the list was collapsed) saved under the layout's
-//autosave name, first converting what the old RBSplitView saved if that's all there is
+//restores the divider position saved under the layout's autosave name, first converting what
+//the old RBSplitView saved if that's all there is; the list always starts expanded
 - (void)restoreSplitViewState {
     NSString *name = [self splitViewAutosaveNameForCurrentLayout];
     [NVSplitView migrateLegacyStateNamed:@"centralSplitView"
@@ -679,24 +680,20 @@ terminateApp:
                                     size:[splitView frame].size
                         dividerThickness:kSplitViewExpandedDividerThickness
                                 defaults:[NSUserDefaults standardUserDefaults]];
-    splitViewIsRestoring = YES;   //a collapsed list is restored even though no note is open yet
     [splitView setAutosaveName:name];
-    splitViewIsRestoring = NO;
-    //NSSplitView's autosave keeps sizes but not reliably a hidden subview, so collapsing is remembered separately
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:NotesListCollapsedKey] && ![self notesListIsCollapsed]) {
-        lastNotesDimension = [self notesListDimension];
-        [notesSubview setHidden:YES];
-    }
-    notesWasCollapsed = [self notesListIsCollapsed];
-    if (notesWasCollapsed) {
-        [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:LegacyNotesListCollapsedKey];
+    //the app opens with no note shown, and the empty view always shows the list, so a list that
+    //was collapsed at quit comes back expanded at the size it had (#34)
+    if ([self notesListIsCollapsed]) {
         NSRect frame = [notesSubview frame];
         CGFloat size = [splitView isVertical] ? NSWidth(frame) : NSHeight(frame);
-        if (size >= kNotesListMinDimension) lastNotesDimension = size;
-    } else {
-        lastNotesDimension = [self notesListDimension];
+        [self forceNotesListDimension:size >= kNotesListMinDimension ? size : ([splitView isVertical] ? 200.0 : 150.0)];
+        [notesSubview setHidden:NO];
     }
+    [splitView setCustomDividerThickness:kSplitViewExpandedDividerThickness];
     [splitView adjustSubviews];
+    notesWasCollapsed = NO;
+    lastNotesDimension = [self notesListDimension];
 }
 
 //the list was collapsed or expanded, by the menu, a double click on the divider, or dragging it
@@ -708,7 +705,6 @@ terminateApp:
     }
     notesWasCollapsed = collapsed;
     if (splitViewIsChangingLayout) return;
-    [[NSUserDefaults standardUserDefaults] setBool:collapsed forKey:NotesListCollapsedKey];
     if (collapsed) {
         [self setDualFieldIsVisible:NO];
         [splitView setCustomDividerThickness:kSplitViewCollapsedDividerThickness];
@@ -2296,7 +2292,7 @@ terminateApp:
 
 - (BOOL)splitView:(NSSplitView *)sender canCollapseSubview:(NSView *)subview {
 	//only the list collapses, and only once a note is open to take its place
-	return subview == notesSubview && (currentNote != nil || splitViewIsRestoring);
+	return subview == notesSubview && currentNote != nil;
 }
 
 //a double click on the divider collapses or expands the list instead (see below)

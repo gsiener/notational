@@ -122,7 +122,6 @@
     IBOutlet NSMenuItem *savePreviewItem;
     NSInteger currentPreviewMode;
     BOOL splitViewIsChangingLayout;
-    BOOL splitViewIsRestoring;
     BOOL notesWasCollapsed;
     CGFloat lastNotesDimension;   //the list's size to come back to when it is expanded
 }
