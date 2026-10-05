@@ -66,10 +66,26 @@ jobs:
           path: build/TestResults.xcresult
 
   # drive the built app's UI in a throwaway home folder (#31); runs here, never on a desktop
+  # three shards balanced by their CI run times (#68): about a minute of tests each
   ui-tests:
     needs: build
     runs-on: macos-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # the rest, so a new test runs somewhere: today the collapsed-list and sign-in/create flows
+          - shard: 1
+            skip: >-
+              NotationalUIPerformanceTests2500 NotationalUIPerformanceTests10000 NotationalUIPerformanceTests25000
+              NotationalUITests/testSettingsAndColorSchemes NotationalUITests/testExpandingRestoresTheListSize
+              NotationalUITests/testPreviewAndWordCount NotationalUITests/testDividerPositionSurvivesRelaunch
+          - shard: 2
+            tests: testSettingsAndColorSchemes testExpandingRestoresTheListSize
+          - shard: 3
+            tests: testPreviewAndWordCount testDividerPositionSurvivesRelaunch
+    name: ui-tests (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@v6
 
@@ -82,19 +98,20 @@ jobs:
         run: |
           ditto -x -k build/Notational.zip build/app
           export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/app/Notational.app"
+          only=()
+          for t in ${{ matrix.tests }}; do only+=("-only-testing:NotationalUITests/NotationalUITests/$t"); done
+          for t in ${{ matrix.skip }}; do only+=("-skip-testing:NotationalUITests/$t"); done
           xcodebuild test \
             -project UITests/NotationalUITests.xcodeproj \
             -scheme NotationalUITests \
-            -skip-testing:NotationalUITests/NotationalUIPerformanceTests2500 \
-            -skip-testing:NotationalUITests/NotationalUIPerformanceTests10000 \
-            -skip-testing:NotationalUITests/NotationalUIPerformanceTests25000 \
+            "${only[@]}" \
             -derivedDataPath build/DerivedDataUI \
             -resultBundlePath build/UITestResults.xcresult
 
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: ui-test-results
+          name: ui-test-results-${{ matrix.shard }}
           path: build/UITestResults.xcresult
 
   # every green push to master replaces the "Latest build" release's download (#49):
