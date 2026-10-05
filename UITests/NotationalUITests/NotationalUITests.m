@@ -5,6 +5,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import <sqlite3.h>
 
 @interface NotationalUITests : XCTestCase {
 	XCUIApplication *app;
@@ -25,6 +26,7 @@
 	}
 	home = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
 	[[NSFileManager defaultManager] createDirectoryAtPath:home withIntermediateDirectories:YES attributes:nil error:NULL];
+	[self seedStore];
 
 	app = [[XCUIApplication alloc] initWithURL:[NSURL fileURLWithPath:appPath]];
 	//store, caches and the old-database lookup all resolve inside the throwaway home
@@ -36,6 +38,49 @@
 	[app launch];
 	XCTAssertTrue([app.windows[@"Notational"] waitForExistenceWithTimeout:20], @"main window never appeared");
 	XCTAssertFalse(app.windows[@"Simplenote Account"].exists, @"local-only launch opened the account window");
+	//an unreadable store is moved aside and the app starts empty, so check the seeded notes are listed
+	XCTAssertTrue([[self rowTitled:[[[self class] seedNotes] lastObject][0]] waitForExistenceWithTimeout:10], @"the seeded notes aren't listed");
+}
+
+//Notes the flows start from. Typing them with XCUITest takes seconds per note on CI, so they go
+//straight into the store the app opens (the same schema as NVNotesStore, a local-only store).
++ (NSArray *)seedNotes {
+	return @[
+		@[@"Preview note", @"# Heading\n\n- one\n- two\n\nA [link](https://example.com)."],
+		@[@"Layout note", @"some words to count"],
+		@[@"Divider note", @"the divider is dragged"],
+		@[@"Collapse note", @"the list is collapsed"],
+	];
+}
+
+- (void)seedStore {
+	NSString *support = [home stringByAppendingPathComponent:@"Library/Application Support/Notational"];
+	[[NSFileManager defaultManager] createDirectoryAtPath:support withIntermediateDirectories:YES attributes:nil error:NULL];
+	sqlite3 *db = NULL;
+	XCTAssertEqual(sqlite3_open([[support stringByAppendingPathComponent:@"Notes.sqlite"] fileSystemRepresentation], &db), SQLITE_OK);
+	const char *schema =
+		"CREATE TABLE notes (id TEXT PRIMARY KEY NOT NULL, content TEXT NOT NULL, tags TEXT NOT NULL, deleted INTEGER NOT NULL, "
+		"created REAL NOT NULL, modified REAL NOT NULL, server_data TEXT NOT NULL, "
+		"confirmed_version INTEGER NOT NULL, pending INTEGER NOT NULL, revision INTEGER NOT NULL);"
+		"CREATE INDEX notes_pending ON notes (pending) WHERE pending != 0;"
+		"CREATE TABLE metadata (key TEXT PRIMARY KEY NOT NULL, value TEXT);"
+		"PRAGMA user_version = 1;";
+	XCTAssertEqual(sqlite3_exec(db, schema, NULL, NULL, NULL), SQLITE_OK, @"%s", sqlite3_errmsg(db));
+	sqlite3_stmt *insert = NULL;
+	XCTAssertEqual(sqlite3_prepare_v2(db, "INSERT INTO notes VALUES (?, ?, '[]', 0, ?, ?, '{}', 0, 0, 0)", -1, &insert, NULL), SQLITE_OK);
+	NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
+	NSArray *notes = [[self class] seedNotes];
+	for (NSUInteger i = 0; i < [notes count]; i++) {
+		NSString *content = [NSString stringWithFormat:@"%@\n\n%@", notes[i][0], notes[i][1]];
+		sqlite3_bind_text(insert, 1, [[[NSUUID UUID] UUIDString] UTF8String], -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(insert, 2, [content UTF8String], -1, SQLITE_TRANSIENT);
+		sqlite3_bind_double(insert, 3, now - 100 - i);
+		sqlite3_bind_double(insert, 4, now - 100 - i);
+		XCTAssertEqual(sqlite3_step(insert), SQLITE_DONE);
+		sqlite3_reset(insert);
+	}
+	sqlite3_finalize(insert);
+	sqlite3_close(db);
 }
 
 - (void)tearDown {
@@ -100,33 +145,23 @@
 	return [[[self mainWindow].tables.firstMatch descendantsMatchingType:XCUIElementTypeAny] matchingPredicate:match].firstMatch;
 }
 
+//selects a seeded note, the way clicking it in the list does
+- (void)openNoteTitled:(NSString *)title {
+	XCUIElement *row = [self rowTitled:title];
+	XCTAssertTrue([row waitForExistenceWithTimeout:5], @"no note titled %@", title);
+	[row click];
+}
+
 #pragma mark Flows
 
-- (void)testLocalOnlyLaunchOffersExplicitSignIn {
-	XCUIElement *signIn = [self mainWindow].buttons[@"Sign In to Simplenote…"];
-	XCTAssertTrue([signIn waitForExistenceWithTimeout:5]);
-	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
-	[signIn click];
-	XCTAssertTrue([app.windows[@"Simplenote Account"] waitForExistenceWithTimeout:5]);
-	[self dismissAccountWindow];
-}
-
-- (void)testSettingsOpenAndClose {
-	for (int i = 0; i < 3; i++) {
-		[self choose:@"Settings…" inMenu:@"Notational"];
-		//the Settings window is titled after its current pane
-		NSPredicate *notMain = [NSPredicate predicateWithFormat:@"title != 'Notational' AND title != ''"];
-		XCUIElement *settings = [app.windows matchingPredicate:notMain].firstMatch;
-		XCTAssertTrue([settings waitForExistenceWithTimeout:5], @"Settings didn't open");
-		[settings.buttons[XCUIIdentifierCloseWindow] click];
-		XCTAssertTrue([self waitForGone:settings], @"Settings didn't close");
-	}
-	[self assertStillRunning];
-}
-
-- (void)testCreateSearchAndDeleteANote {
+//the only flow that still types: creating a note, finding it again and deleting it
+- (void)testCreateSearchRelaunchAndDeleteANote {
 	[self createNoteTitled:@"UI test note" body:@"written by the UI smoke test"];
 	XCTAssertTrue([[self rowTitled:@"UI test note"] waitForExistenceWithTimeout:5], @"new note isn't in the list");
+
+	//the note survives a relaunch
+	[self relaunch];
+	XCTAssertTrue([[self rowTitled:@"UI test note"] waitForExistenceWithTimeout:5], @"note was lost across a relaunch");
 
 	//search narrows the list to it
 	XCUIElement *window = [self mainWindow];
@@ -141,18 +176,25 @@
 	[self assertStillRunning];
 }
 
-- (void)testLayoutCollapseAndWordCount {
-	[self createNoteTitled:@"Layout note" body:@"some words to count"];
-	[self switchLayout];
-	[self switchLayout];
-	[self toggleNotesList];
-	[self toggleNotesList];
-	[self choose:@"Show Word Count" inMenu:@"View"];
-	[self choose:@"Show Word Count" inMenu:@"View"];
-	[self assertStillRunning];
-}
+//flows that don't need a note, in one launch
+- (void)testSignInSettingsAndColorSchemes {
+	XCUIElement *signIn = [self mainWindow].buttons[@"Sign In to Simplenote…"];
+	XCTAssertTrue([signIn waitForExistenceWithTimeout:5]);
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
+	[signIn click];
+	XCTAssertTrue([app.windows[@"Simplenote Account"] waitForExistenceWithTimeout:5]);
+	[self dismissAccountWindow];
 
-- (void)testColorSchemes {
+	for (int i = 0; i < 3; i++) {
+		[self choose:@"Settings…" inMenu:@"Notational"];
+		//the Settings window is titled after its current pane
+		NSPredicate *notMain = [NSPredicate predicateWithFormat:@"title != 'Notational' AND title != ''"];
+		XCUIElement *settings = [app.windows matchingPredicate:notMain].firstMatch;
+		XCTAssertTrue([settings waitForExistenceWithTimeout:5], @"Settings didn't open");
+		[settings.buttons[XCUIIdentifierCloseWindow] click];
+		XCTAssertTrue([self waitForGone:settings], @"Settings didn't close");
+	}
+
 	for (NSString *scheme in @[@"Low Contrast", @"User Scheme", @"B/W"]) {
 		[app.menuBars.firstMatch.menuBarItems[@"View"] click];
 		XCUIElement *schemes = app.menuBars.firstMatch.menuBarItems[@"View"].menus.menuItems[@"Color Schemes"];
@@ -164,8 +206,9 @@
 	[self assertStillRunning];
 }
 
-- (void)testPreviewRendersAndToggles {
-	[self createNoteTitled:@"Preview note" body:@"# Heading\n\n- one\n- two\n\nA [link](https://example.com)."];
+//the flows that work on one open note: the preview window and the word count
+- (void)testPreviewAndWordCount {
+	[self openNoteTitled:@"Preview note"];
 	[self choose:@"Toggle Preview Window" inMenu:@"Preview"];
 	XCUIElement *preview = app.windows[@"Preview note"];
 	XCTAssertTrue([preview waitForExistenceWithTimeout:10], @"preview window didn't open");
@@ -177,6 +220,10 @@
 	[self choose:@"Lock Note to Preview" inMenu:@"Preview"];
 	[self choose:@"Lock Note to Preview" inMenu:@"Preview"];
 	[self choose:@"Toggle Preview Window" inMenu:@"Preview"];
+
+	[self openNoteTitled:@"Layout note"];
+	[self choose:@"Show Word Count" inMenu:@"View"];
+	[self choose:@"Show Word Count" inMenu:@"View"];
 	[self assertStillRunning];
 }
 
@@ -244,7 +291,7 @@
 }
 
 - (void)testDividerPositionSurvivesRelaunch {
-	[self createNoteTitled:@"Divider note" body:@"the divider is dragged"];
+	[self openNoteTitled:@"Divider note"];
 	[self inBothLayouts:^(NSString *layout) {
 		CGFloat dragged = [self dragDivider];
 		[self relaunch];
@@ -258,7 +305,7 @@
 - (void)testACollapsedListReturnsExpandedAtItsSizeAfterRelaunch {
 	[self inBothLayouts:^(NSString *layout) {
 		//the list only collapses while a note is open, and none is after a relaunch
-		[self createNoteTitled:[@"Collapsed at quit in " stringByAppendingString:layout] body:@"the list is collapsed when the app quits"];
+		[self openNoteTitled:@"Collapse note"];
 		CGFloat dragged = [self dragDivider];
 		[self toggleNotesList];
 		XCTAssertFalse([self notesListIsExpanded], @"%@: the list didn't collapse", layout);
@@ -270,7 +317,7 @@
 }
 
 - (void)testExpandingRestoresTheListSize {
-	[self createNoteTitled:@"Collapse note" body:@"the list is collapsed"];
+	[self openNoteTitled:@"Collapse note"];
 	[self inBothLayouts:^(NSString *layout) {
 		XCUIElement *splitter = [self splitter];
 		CGFloat before = [self notesListSizeAcrossDivider:splitter];
@@ -280,15 +327,6 @@
 		XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:[self splitter]], before, 2.0,
 								   @"%@: expanding didn't restore the list's size", layout);
 	}];
-}
-
-- (void)testRelaunchKeepsNotes {
-	[self createNoteTitled:@"Survives relaunch" body:@"still here"];
-	[app terminate];
-	[app launch];
-	XCTAssertTrue([[self mainWindow] waitForExistenceWithTimeout:20]);
-	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
-	XCTAssertTrue([[self rowTitled:@"Survives relaunch"] waitForExistenceWithTimeout:5], @"note was lost across a relaunch");
 }
 
 @end
