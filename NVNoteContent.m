@@ -9,14 +9,16 @@
 #define MAX_TITLE_LENGTH 60
 
 @interface NVNoteContent () {
-	NSString *string, *prefix, *title, *separator, *body;
+	NSString *string, *prefix, *title, *separator;
+	//the body is the rest of string from here; kept as an offset, not a second copy of it (#66)
+	NSUInteger bodyStart;
 	BOOL titleIsPlaceholder;
 }
 @end
 
 @implementation NVNoteContent
 
-@synthesize title, body, string, titleIsPlaceholder;
+@synthesize title, string, titleIsPlaceholder;
 
 static NSCharacterSet *LineBreaks(void) {
 	static NSCharacterSet *set = nil;
@@ -51,7 +53,7 @@ static NSCharacterSet *LineBreaks(void) {
 		}
 
 		//the separator is the blank space between title and body, line breaks included
-		NSUInteger bodyStart = titleEnd;
+		bodyStart = titleEnd;
 		while (bodyStart < length && [whitespace characterIsMember:[content characterAtIndex:bodyStart]]) bodyStart++;
 		//trailing spaces on the title line belong to the separator, not the title
 		NSUInteger trimmedTitleEnd = titleEnd;
@@ -59,12 +61,20 @@ static NSCharacterSet *LineBreaks(void) {
 			trimmedTitleEnd--;
 		NSString *rawTitle = [content substringWithRange:NSMakeRange(i, trimmedTitleEnd - i)];
 		separator = [[content substringWithRange:NSMakeRange(trimmedTitleEnd, bodyStart - trimmedTitleEnd)] copy];
-		body = [[content substringFromIndex:bodyStart] copy];
 
 		titleIsPlaceholder = ![rawTitle length];
 		title = [(titleIsPlaceholder ? NSLocalizedString(@"Untitled Note", @"Title of a nameless note") : rawTitle) copy];
 	}
 	return self;
+}
+
+- (NSString *)body {
+	return [string substringFromIndex:bodyStart];
+}
+
+- (BOOL)bodyIsEqualToString:(NSString *)other {
+	NSRange range = NSMakeRange(bodyStart, [string length] - bodyStart);
+	return [other length] == range.length && [string compare:other options:NSLiteralSearch range:range] == NSOrderedSame;
 }
 
 - (id)copyWithZone:(NSZone *)zone {
@@ -75,7 +85,7 @@ static NSCharacterSet *LineBreaks(void) {
 	if (!newTitle) newTitle = @"";
 	if (!newBody) newBody = @"";
 	BOOL titleChanged = ![newTitle isEqualToString:title];
-	if (!titleChanged && [newBody isEqualToString:body]) return string;
+	if (!titleChanged && [self bodyIsEqualToString:newBody]) return string;
 
 	NSString *titlePart = (!titleChanged && titleIsPlaceholder) ? @"" : newTitle;
 	NSString *sep = separator;

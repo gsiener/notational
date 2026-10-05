@@ -71,7 +71,7 @@ static NSTimeInterval RecordDateFromAbsoluteTime(CFAbsoluteTime time) {
 	recordContent = split;
 
 	BOOL changed = NO;
-	if (![[split title] isEqualToString:titleOfNote(self)] || ![[split body] isEqualToString:[contentString string]]) {
+	if (![[split title] isEqualToString:titleOfNote(self)] || ![split bodyIsEqualToString:[contentString string]]) {
 		[self updateWithSyncBody:[split body] andTitle:[split title]];
 		changed = YES;
 	}

@@ -18,7 +18,10 @@
 @property (nonatomic, readonly) NSString *title;
 //YES when the title is that placeholder: the content is blank
 @property (nonatomic, readonly) BOOL titleIsPlaceholder;
+//made from -string on each call; the split keeps no copy of its own
 @property (nonatomic, readonly) NSString *body;
+//whether other is the body, without making it
+- (BOOL)bodyIsEqualToString:(NSString *)other;
 //the verbatim content this was split from
 @property (nonatomic, readonly) NSString *string;
 

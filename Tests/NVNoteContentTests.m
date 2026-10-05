@@ -69,4 +69,14 @@
 	XCTAssertEqualObjects([content stringWithTitle:[content title] body:@"typed into an empty note"], @"typed into an empty note");
 }
 
+//the body isn't stored separately (#66): it comes from the content, and is compared without a copy
+- (void)testBodyComesFromTheContent {
+	NVNoteContent *split = [NVNoteContent contentWithString:@"  Title  \n\nbody line\nmore"];
+	XCTAssertEqualObjects([split body], @"body line\nmore");
+	XCTAssertTrue([split bodyIsEqualToString:@"body line\nmore"]);
+	XCTAssertFalse([split bodyIsEqualToString:@"body line\nmor"]);
+	XCTAssertFalse([split bodyIsEqualToString:@"body line\nmore!"]);
+	XCTAssertTrue([[NVNoteContent contentWithString:@"Title"] bodyIsEqualToString:@""]);
+}
+
 @end
