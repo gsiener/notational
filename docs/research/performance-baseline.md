@@ -9,7 +9,7 @@ Measured 2026-10-05 on a synthetic corpus of 2,500, 10,000 and 25,000 notes. The
 3. **Memory.** Every note body is held four times.
 4. **Every sync with changes re-sorts the whole list on the main thread.**
 
-One leak was found and fixed (`FastListDataSource`, 77057f7). The ranked proposals are at the end.
+One leak was found and fixed (`FastListDataSource`, 77057f7). The ranked proposals are at the end. The first five are now fixed; see [After the fixes](#after-the-fixes).
 
 ## Method
 
@@ -200,3 +200,25 @@ Ranked by user-visible effect, then by cost. Gains are estimates from the profil
 | 7 | WebContent memory | 83 MB rising to 150 MB over 30 in-place updates of a 1 MB note | Check whether WebKit takes it back; if not, reload the page after a number of in-place updates | Bounded preview memory for long editing sessions | Small to investigate |
 
 No change proposed for search, sorting, the MultiMarkdown preview, the sync engine's own cost, autosave, here.now or the C search buffers. Each is linear and stays under a frame at today's size, or is off the main thread.
+
+## After the fixes
+
+Proposals 1–5 were fixed on 2026-10-05: #63 (22dc1d3), #64 (56af1f9), #65 (6fc471f), #66 (7e3c472) and #67 (ec768bf). The "after" column comes from a full `scripts/perf.sh` run on ec768bf, on the same machine and corpus. Typing times are per keystroke, from 20 keystrokes each laid out and drawn.
+
+| | Before | After |
+| --- | ---: | ---: |
+| Typing, 100 KB note, `ShowWordCount` off | 10.5 ms | 2.3 ms |
+| Typing, 1 MB note, `ShowWordCount` off | 87 ms | 2.6 ms |
+| Typing, 1 MB note, default settings | 14 ms | 2.7 ms |
+| Typing, 100 KB note / 3 KB note | 2.3 / 1.8 ms | 2.4 / 2.0 ms |
+| Notes list ready at launch, 2,500 / 10,000 / 25,000 notes | 242 / 802 / 1,983 ms | 150 / 510 / 1,297 ms |
+| First sync applied on the main thread, same sizes | 202 / 673 / 1,652 ms | 104 / 381 / 911 ms |
+| Routine sync (20 changes) on the main thread, same sizes | 10 / 37 / 129 ms | 5 / 8 / 12 ms (medians 5 / 6 / 7) |
+| Heap held by the notes list, same sizes | 37 / 119 / 282 MB | 29 / 92 / 220 MB |
+| Heap per note, 2,500 notes | 15.4 KB | 12.2 KB |
+
+Some proposals fell short of their estimates:
+- **#64** saved about 35–45% rather than half, because the synthetic corpus has `@done` lines in many notes. The real account has none, so all of its notes now take the one-search path.
+- **#66** saved 22% of the heap rather than a third. Three copies of each body remain: the content `NVNoteContent` needs to give back an untouched note byte for byte, the note's attributed text, and the search buffer.
+
+Search, sorting, preview and opening the 1 MB note are unchanged, as expected. Proposals 6 and 7 remain open ideas.
