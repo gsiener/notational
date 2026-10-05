@@ -5,7 +5,16 @@ on:
   push:
     branches:
       - master
+    # a change to the docs alone can't break the build (#68)
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/workflows/perf.yml'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/workflows/perf.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,10 +24,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# build, unit tests and UI tests run side by side; only the UI tests wait for the built app (#68)
 jobs:
-  test-and-build:
+  build:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -29,19 +39,49 @@ jobs:
 
       # CFBundleVersion 128.<run>, so downloaded builds can be told apart (#49)
       - name: build app
-        run: scripts/build.sh NV_BUILD_NUMBER=128.${{ github.run_number }}
-
-      # once, with Address Sanitizer: memory errors in the C buffers fail the build (#26)
-      - name: test
-        run: scripts/test.sh
+        run: scripts/build.sh -quiet COMPILER_INDEX_STORE_ENABLE=NO NV_BUILD_NUMBER=128.${{ github.run_number }}
 
       - name: verify app
         run: scripts/verify.sh
 
-      # drive the built app's UI in a throwaway home folder (#31); runs here, never on a desktop
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Notational
+          path: build/Notational.zip
+
+  # once, with Address Sanitizer: memory errors in the C buffers fail the build (#26)
+  unit-tests:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: test
+        run: scripts/test.sh -quiet COMPILER_INDEX_STORE_ENABLE=NO
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-results
+          path: build/TestResults.xcresult
+
+  # drive the built app's UI in a throwaway home folder (#31); runs here, never on a desktop
+  ui-tests:
+    needs: build
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: Notational
+          path: build
+
       - name: UI smoke tests
         run: |
-          export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/Notational.xcarchive/Products/Applications/Notational.app"
+          ditto -x -k build/Notational.zip build/app
+          export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/app/Notational.app"
           xcodebuild test \
             -project UITests/NotationalUITests.xcodeproj \
             -scheme NotationalUITests \
@@ -52,22 +92,15 @@ jobs:
             -resultBundlePath build/UITestResults.xcresult
 
       - uses: actions/upload-artifact@v7
-        with:
-          name: Notational
-          path: build/Notational.zip
-
-      - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: test-results
-          path: |
-            build/TestResults.xcresult
-            build/UITestResults.xcresult
+          name: ui-test-results
+          path: build/UITestResults.xcresult
 
   # every green push to master replaces the "Latest build" release's download (#49):
   # https://github.com/gsiener/notational/releases/download/latest/Notational.zip
   publish-latest:
-    needs: test-and-build
+    needs: [build, unit-tests, ui-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
