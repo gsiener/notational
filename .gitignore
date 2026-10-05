@@ -45,10 +45,7 @@ UserInterfaceState.xcuserstate
 build/*
 *.pbxproj
 *.xcscheme
-<<<<<<< HEAD
-=======
-
-*.pbxproj
 nvalt.taskpaper
-
-*.pbxproj
+# shared schemes are part of the project: CI builds with them (#68)
+!Notation.xcodeproj/xcshareddata/xcschemes/*.xcscheme
+!UITests/NotationalUITests.xcodeproj/xcshareddata/xcschemes/*.xcscheme
