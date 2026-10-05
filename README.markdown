@@ -12,13 +12,12 @@ The [architecture decision records](docs/adr/README.md) explain the app’s desi
 To build locally you only need Xcode:
 
 ```
-git submodule update --init --recursive
 xcodebuild -target Notation -configuration ForBuilding build
 ```
 
 The app lands in `build/ForBuilding/Notational.app`. Encryption, hashing and link
-detection use macOS's built-in CommonCrypto and Foundation APIs; MultiMarkdown is
-compiled from the `MultiMarkdown-4` submodule during the build.
+detection use macOS's built-in CommonCrypto and Foundation APIs; MultiMarkdown 6 is
+compiled into the app from `Vendor/MultiMarkdown-6` (see [ADR 0010](docs/adr/0010-in-process-multimarkdown-6.md)).
 
 When you try to open the application, you will likely be greeted by a warning along the lines of:
 

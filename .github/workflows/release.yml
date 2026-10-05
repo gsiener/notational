@@ -14,11 +14,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
       - name: build app
         run: scripts/build.sh
-      # after the build: the Markup renderer's golden-file tests use the bundled multimarkdown
       - name: test
         run: scripts/test.sh
       - name: verify app

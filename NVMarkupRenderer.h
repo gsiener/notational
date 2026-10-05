@@ -23,14 +23,15 @@ enum {
 - (NSString *)convertText:(NSString *)text error:(NSError **)error;
 @end
 
-//runs a program with the text on standard input and reads the result from standard output
-@interface NVMarkupProcessTool : NSObject <NVMarkupTool>
-+ (NVMarkupProcessTool *)toolWithLaunchPath:(NSString *)launchPath arguments:(NSArray *)arguments;
+//MultiMarkdown 6, compiled into the app (Vendor/MultiMarkdown-6, ADR 0010): smart typography,
+//footnotes and obfuscated email links, as the old multimarkdown executable's defaults. File
+//transclusion and CriticMarkup stay off.
+@interface NVMultiMarkdownTool : NSObject <NVMarkupTool>
 @end
 
 @interface NVMarkupRenderer : NSObject
 
-//the bundled multimarkdown and the native TaskPaper pass; the preview template from the
+//MultiMarkdown and the native TaskPaper pass; the preview template from the
 //application support folder, falling back to the copy in the app
 + (NVMarkupRenderer *)defaultRenderer;
 

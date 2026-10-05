@@ -89,7 +89,8 @@ static NSString *Tabs(NSUInteger count) {
 	body = [body stringByReplacingOccurrencesOfString:DelClose withString:@"</del>*"];
 
 	NSMutableString *result = [NSMutableString stringWithFormat:@"%@\n", [header componentsJoinedByString:@"\n"]];
-	[result appendString:@"<style>.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}</style>\n"];
+	//on lines of its own, so MultiMarkdown 6 keeps it an HTML block rather than wrapping it in a paragraph
+	[result appendString:@"<style>\n.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}\n</style>\n"];
 	[result appendString:body];
 	if (![body length] || ![body hasSuffix:@"\n"]) [result appendString:@"\n"];
 	return result;

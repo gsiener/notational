@@ -6,63 +6,20 @@
 #import "NVMarkupRenderer.h"
 #import "NVTaskPaperMarkdown.h"
 #import "NSFileManager_NV.h"
+#import "libMultiMarkdown.h"
 
-static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
-
-@interface NVMarkupProcessTool () {
-	NSString *launchPath;
-	NSArray *arguments;
-}
-@end
-
-@implementation NVMarkupProcessTool
-
-+ (NVMarkupProcessTool *)toolWithLaunchPath:(NSString *)aLaunchPath arguments:(NSArray *)someArguments {
-	NVMarkupProcessTool *tool = [[self alloc] init];
-	tool->launchPath = [aLaunchPath copy];
-	tool->arguments = [(someArguments ? someArguments : [NSArray array]) copy];
-	return tool;
-}
+@implementation NVMultiMarkdownTool
 
 - (NSString *)convertText:(NSString *)text error:(NSError **)error {
-	NSTask *task = [[NSTask alloc] init];
-	NSPipe *input = [NSPipe pipe], *output = [NSPipe pipe];
-	[task setExecutableURL:[NSURL fileURLWithPath:launchPath]];
-	[task setArguments:arguments];
-	[task setStandardInput:input];
-	[task setStandardOutput:output];
-	[task setStandardError:[NSFileHandle fileHandleWithNullDevice]];
-
-	NSError *launchError = nil;
-	if (![task launchAndReturnError:&launchError]) {
-		if (error) *error = launchError;
+	//the library is built with DISABLE_OBJECT_POOL, so conversions on different threads don't share state
+	char *html = mmd_string_convert([text ? text : @"" UTF8String], EXT_SMART | EXT_NOTES | EXT_OBFUSCATE, FORMAT_HTML, ENGLISH);
+	if (!html) {
+		if (error) *error = [NSError errorWithDomain:@"NVMarkupToolErrorDomain" code:1
+											userInfo:@{NSLocalizedDescriptionKey: @"MultiMarkdown returned nothing"}];
 		return nil;
 	}
-	//write on another thread: a long note can fill the pipe before the tool starts writing its
-	//output, and both sides would then wait on each other
-	NSData *data = [text ? text : @"" dataUsingEncoding:NSUTF8StringEncoding];
-	NSFileHandle *writer = [input fileHandleForWriting];
-	dispatch_group_t group = dispatch_group_create();
-	dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		@try {
-			[writer writeData:data];
-		} @catch (NSException *e) {
-			//the tool exited without reading everything
-		}
-		[writer closeFile];
-	});
-	NSData *result = [[output fileHandleForReading] readDataToEndOfFile];
-	dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-	[task waitUntilExit];
-
-	if ([task terminationStatus] != 0) {
-		if (error) *error = [NSError errorWithDomain:ToolErrorDomain code:[task terminationStatus] userInfo:
-							 [NSDictionary dictionaryWithObject:[NSString stringWithFormat:@"%@ exited with status %d",
-																 [launchPath lastPathComponent], [task terminationStatus]]
-														 forKey:NSLocalizedDescriptionKey]];
-		return nil;
-	}
-	NSString *string = [[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding];
+	NSString *string = [[NSString alloc] initWithUTF8String:html];
+	free(html);
 	return string ? string : @"";
 }
 
@@ -84,9 +41,9 @@ static NSString *const ToolErrorDomain = @"NVMarkupToolErrorDomain";
 	static NVMarkupRenderer *renderer = nil;
 	if (!renderer) {
 		NSString *resources = [[NSBundle mainBundle] resourcePath];
-		NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:[resources stringByAppendingPathComponent:@"multimarkdown"] arguments:nil];
 		//plain Markdown is rendered by MultiMarkdown too, as the preview always did
-		renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:mmd taskPaperTool:[[NVTaskPaperMarkdown alloc] init]];
+		renderer = [[NVMarkupRenderer alloc] initWithMarkdownTool:[[NVMultiMarkdownTool alloc] init]
+													taskPaperTool:[[NVTaskPaperMarkdown alloc] init]];
 		[renderer setCustomTemplateFolder:[[NSFileManager defaultManager] applicationSupportDirectory]];
 		[renderer setBundledTemplateFolder:resources];
 	}

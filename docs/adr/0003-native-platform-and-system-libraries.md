@@ -16,7 +16,7 @@ MultiMarkdown, PTHotKeys, ODBEditor, and legacy import code remain separate comp
 
 ## Consequences
 
-The build needs Xcode and the MultiMarkdown submodule, not Homebrew, Nix, or external OpenSSL.
+The build needs only Xcode: no submodules, Homebrew, Nix, or external OpenSSL. MultiMarkdown 6 is vendored source ([ADR 0010](0010-in-process-multimarkdown-6.md)).
 [scripts/verify.sh](../../scripts/verify.sh) checks architecture, linked libraries, bundled interpreter scripts, and signing.
 That check does not detect statically compiled third-party source. Bundled source must also be audited.
 

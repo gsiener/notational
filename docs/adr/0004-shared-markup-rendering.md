@@ -8,7 +8,7 @@
 
 [NVMarkupRenderer](../../NVMarkupRenderer.h) owns text conversion, TaskPaper preprocessing, template selection, and HTML document assembly.
 Preview and Save HTML use this renderer so their output follows one set of rules.
-Both Markdown menu modes use the bundled MultiMarkdown executable through NVMarkupTool.
+Both Markdown menu modes use MultiMarkdown through NVMarkupTool (since [ADR 0010](0010-in-process-multimarkdown-6.md), compiled into the app rather than a bundled executable).
 The native TaskPaper converter runs before Markdown conversion when needed.
 
 Keep the tool seam because production and test adapters already use it.

@@ -205,51 +205,50 @@
 	XCTAssertNotEqualObjects([renderer templateKey], before);
 }
 
-#pragma mark Process tools
+#pragma mark MultiMarkdown
 
-- (void)testProcessToolPipesTextThroughAProgram {
-	NVMarkupProcessTool *tool = [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/tr" arguments:[NSArray arrayWithObjects:@"a-z", @"A-Z", nil]];
-	XCTAssertEqualObjects([tool convertText:@"hello" error:NULL], @"HELLO");
+- (void)testMultiMarkdownDoesNotIncludeLocalFiles {
+	//transclusion stays off (ADR 0010): a synced note must not pull a file from this Mac into the page
+	NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"nv-transclusion-secret.txt"];
+	XCTAssertTrue([@"SECRET-CONTENTS" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL]);
+	NSString *html = [[[NVMultiMarkdownTool alloc] init] convertText:[NSString stringWithFormat:@"before {{%@}} after", path] error:NULL];
+	[[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+	XCTAssertNotNil(html);
+	XCTAssertEqual([html rangeOfString:@"SECRET-CONTENTS"].location, (NSUInteger)NSNotFound, @"%@", html);
 }
 
-- (void)testProcessToolHandlesTextLargerThanAPipeBuffer {
-	//the old code wrote all input before reading any output, which hangs once both pipes fill
-	NSMutableString *big = [NSMutableString string];
-	while ([big length] < 1024 * 1024) [big appendString:@"line of text that goes on for a while\n"];
-	NVMarkupProcessTool *tool = [NVMarkupProcessTool toolWithLaunchPath:@"/bin/cat" arguments:nil];
-	XCTAssertEqualObjects([tool convertText:big error:NULL], big);
+- (void)testMultiMarkdownLeavesCriticMarkupAsText {
+	NSString *html = [[[NVMultiMarkdownTool alloc] init] convertText:@"a {++b++} c" error:NULL];
+	XCTAssertEqual([html rangeOfString:@"<ins>"].location, (NSUInteger)NSNotFound, @"%@", html);
 }
 
-- (void)testProcessToolReportsAMissingProgram {
-	NSError *error = nil;
-	NVMarkupProcessTool *tool = [NVMarkupProcessTool toolWithLaunchPath:@"/nonexistent/tool" arguments:nil];
-	XCTAssertNil([tool convertText:@"x" error:&error]);
-	XCTAssertNotNil(error);
+- (void)testMultiMarkdownMakesAWholeDocumentFromMetadata {
+	NSString *html = [[[NVMultiMarkdownTool alloc] init] convertText:@"Title: Shopping\n\nEggs" error:NULL];
+	XCTAssertTrue([NVMarkupRenderer isCompleteDocument:html], @"%@", html);
+	XCTAssertTrue([html rangeOfString:@"<title>Shopping</title>"].location != NSNotFound, @"%@", html);
 }
 
-- (void)testProcessToolReportsAFailingProgram {
-	NSError *error = nil;
-	NVMarkupProcessTool *tool = [NVMarkupProcessTool toolWithLaunchPath:@"/usr/bin/false" arguments:nil];
-	XCTAssertNil([tool convertText:@"x" error:&error]);
-	XCTAssertEqual([error code], (NSInteger)1);
+- (void)testMultiMarkdownConvertsOnManyThreadsAtOnce {
+	//the preview renders in the background while Save HTML or Print can render on the main thread
+	NSString *text = [NSString stringWithContentsOfFile:[NVTestFixturesPath(@"Markup") stringByAppendingPathComponent:@"multimarkdown.txt"]
+											   encoding:NSUTF8StringEncoding error:NULL];
+	NVMultiMarkdownTool *tool = [[NVMultiMarkdownTool alloc] init];
+	NSString *expected = [tool convertText:text error:NULL];
+	__block NSUInteger mismatches = 0;
+	NSLock *lock = [[NSLock alloc] init];
+	dispatch_apply(64, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^(size_t i) {
+		if (![[tool convertText:text error:NULL] isEqualToString:expected]) {
+			[lock lock]; mismatches++; [lock unlock];
+		}
+	});
+	XCTAssertEqual(mismatches, (NSUInteger)0);
 }
 
 #pragma mark Golden files (the real tools)
 
-static NSString *const ArchivedMultiMarkdown = @"build/Notational.xcarchive/Products/Applications/Notational.app/Contents/Resources/multimarkdown";
-
-//the multimarkdown binary is built with the app; these run once the app has been built (CI builds it first)
-static NSString *MultiMarkdownPath(void) {
-	NSString *path = [[[NSProcessInfo processInfo] environment] objectForKey:@"NV_MULTIMARKDOWN"];
-	if ([path length]) return path;
-	path = [NVTestRepoPath() stringByAppendingPathComponent:ArchivedMultiMarkdown];
-	return [[NSFileManager defaultManager] isExecutableFileAtPath:path] ? path : nil;
-}
-
 - (NVMarkupRenderer *)realRenderer {
-	NVMarkupProcessTool *mmd = [NVMarkupProcessTool toolWithLaunchPath:MultiMarkdownPath() arguments:nil];
-	NVTaskPaperMarkdown *taskPaperTool = [[NVTaskPaperMarkdown alloc] init];
-	return [[NVMarkupRenderer alloc] initWithMarkdownTool:mmd taskPaperTool:taskPaperTool];
+	return [[NVMarkupRenderer alloc] initWithMarkdownTool:[[NVMultiMarkdownTool alloc] init]
+											taskPaperTool:[[NVTaskPaperMarkdown alloc] init]];
 }
 
 - (void)assertFixture:(NSString *)name {
@@ -261,17 +260,14 @@ static NSString *MultiMarkdownPath(void) {
 }
 
 - (void)testGoldenMultiMarkdown {
-	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
 	[self assertFixture:@"multimarkdown"];
 }
 
 - (void)testGoldenMarkdown {
-	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
 	[self assertFixture:@"markdown"];
 }
 
 - (void)testGoldenTaskPaper {
-	if (!MultiMarkdownPath()) { NSLog(@"skipped: build the app first for the multimarkdown binary"); return; }
 	[self assertFixture:@"taskpaper"];
 }
 

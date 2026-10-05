@@ -2,14 +2,15 @@
 //  NVTaskPaperMarkdownTests.m
 //  The native TaskPaper to Markdown pass (#10/#28). The fixtures under Fixtures/TaskPaper
 //  are exact outputs of the old tp2md.rb, except where it mangled the link of a tag that
-//  ends a @done task (01, 06, 08), which are the corrected output.
+//  ends a @done task (01, 06, 08), which are the corrected output, and the <style> block,
+//  split onto its own lines so MultiMarkdown 6 keeps it an HTML block (#50).
 //
 
 #import <XCTest/XCTest.h>
 #import "NVTestSupport.h"
 #import "NVTaskPaperMarkdown.h"
 
-static NSString *const StyleHeader = @"<style>.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}</style>\n";
+static NSString *const StyleHeader = @"<style>\n.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}\n</style>\n";
 
 @interface NVTaskPaperMarkdownTests : XCTestCase
 @end

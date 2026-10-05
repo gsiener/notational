@@ -14,7 +14,7 @@ Proposed records require a decision before implementation. Recording a proposal 
 | [0007](0007-native-scroll-controls.md) | Replace custom scrollbar rendering | Accepted, implemented |
 | [0008](0008-small-native-hotkey-module.md) | Reduce PTHotKeys to app-specific behavior | Accepted |
 | [0009](0009-here-now-read-only-sites.md) | Read-only here.now Sites in the Notes list | Accepted |
-| [0010](0010-in-process-multimarkdown-6.md) | MultiMarkdown 6, vendored and in-process | Accepted, not yet implemented |
+| [0010](0010-in-process-multimarkdown-6.md) | MultiMarkdown 6, vendored and in-process | Accepted, implemented |
 
 ## Known gaps
 

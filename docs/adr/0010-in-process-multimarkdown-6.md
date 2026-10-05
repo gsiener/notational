@@ -1,6 +1,6 @@
 # ADR 0010: MultiMarkdown 6, vendored and linked in-process
 
-- Status: accepted, not yet implemented ([#50](https://github.com/gsiener/notational/issues/50))
+- Status: accepted, implemented ([#50](https://github.com/gsiener/notational/issues/50))
 - Recorded: 2026-10-04
 - Evidence: [MultiMarkdown decision report](../research/multimarkdown-decision.md) (issue [#47](https://github.com/gsiener/notational/issues/47))
 - Amends: [ADR 0004](0004-shared-markup-rendering.md) (the renderer seam stays; the tool behind it changes)
@@ -22,5 +22,7 @@ Product decisions (owner, 2026-10-04):
 ## Alternatives and consequences
 
 MultiMarkdown 4 vendored gives zero output change but stays on a deprecated parser. cmark-gfm and Foundation lack heading ids, metadata documents and definition lists, so the app would have to own a dialect renderer ([#41](../research/native-markdown-compatibility.md)).
+
+Implementation: sources in [Vendor/MultiMarkdown-6](../../Vendor/MultiMarkdown-6/VENDORED.md), compiled in both targets with per-file flags `-std=gnu99 -DDISABLE_OBJECT_POOL -w -Xanalyzer -analyzer-disable-all-checks`; `NVMultiMarkdownTool` in [NVMarkupRenderer](../../NVMarkupRenderer.h). `scripts/verify.sh` fails if the bundle contains any Mach-O besides the app binary.
 
 Consequences: no build-time parser generation, no helper executable to sign, and about 127k lines of vendored C (mostly a generated scanner). The upgrade path is to re-vendor when MultiMarkdown 7 is stable; on the current fixtures its output matches MMD 6.

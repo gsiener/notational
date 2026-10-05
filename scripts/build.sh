@@ -1,6 +1,6 @@
 #!/bin/sh
 # Archive Notational to build/Notational.xcarchive. CI, the release workflow and install.sh all
-# build through here; the Markup renderer's tests read multimarkdown from this archive.
+# build through here.
 set -eu
 
 cd "$(dirname "$0")/.."
