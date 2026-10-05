@@ -23,6 +23,10 @@
 
 @implementation FastListDataSource
 
+- (void)dealloc {
+	free(objects);
+}
+
 - (const __unsafe_unretained id *)immutableObjects {
 	return (const __unsafe_unretained id *)objects;
 }
