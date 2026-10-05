@@ -16,9 +16,13 @@
 #import "NoteObject_NVRecord.h"
 #import "NVFakeSimplenoteService.h"
 #import "NotationPrefs.h"
+#import "NoteAttributeColumn.h"
+#import "GlobalPrefs.h"
+#import "NotesTableView.h"
+#import "NSCollection_utils.h"
 #include <sqlite3.h>
 
-@interface NotationController (TestAccess)
+@interface NotationController (TestAccess) <NVSyncEngineDelegate>
 - (NSArray *)allNotesForTesting;
 @end
 @implementation NotationController (TestAccess)
@@ -263,6 +267,57 @@
 	controller = nil;
 	[self openController];
 	XCTAssertFalse([[controller notationPrefs] confirmFileDeletion]);
+}
+
+#pragma mark Sorting after a sync (#67)
+
+- (NoteAttributeColumn *)columnFor:(NSString *)identifier sort:(void *)sort reverse:(void *)reverse {
+	NoteAttributeColumn *column = [[NoteAttributeColumn alloc] initWithIdentifier:identifier];
+	[column setSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))sort];
+	[column setReverseSortingFunction:(NSInteger (*)(__unsafe_unretained id *, __unsafe_unretained id *))reverse];
+	return column;
+}
+
+//the order a full sort gives: by title, then stably by the column, as -resortAllNotes does
+- (NSArray *)fullySorted:(NSArray *)notes column:(NoteAttributeColumn *)column {
+	BOOL reversed = [[GlobalPrefs defaultPrefs] tableIsReverseSorted];
+	NSMutableArray *sorted = [notes mutableCopy];
+	__unsafe_unretained id *buffer = NULL;
+	unsigned int size = 0;
+	[sorted sortStableUsingFunction:reversed ? compareTitleStringReverse : compareTitleString usingBuffer:&buffer ofSize:&size];
+	[sorted sortStableUsingFunction:reversed ? [column reverseSortFunction] : [column sortFunction] usingBuffer:&buffer ofSize:&size];
+	free(buffer);
+	return sorted;
+}
+
+//A routine sync moves only the changed notes; the list must end up as a full sort would leave it,
+//whatever changed: dates, titles, or both, and for title and date columns.
+- (void)testChangedNotesLandWhereAFullSortPutsThem {
+	NSMutableArray *ids = [NSMutableArray array];
+	for (NSUInteger i = 0; i < 30; i++)
+		[ids addObject:[server remoteCreateNoteWithContent:[NSString stringWithFormat:@"Note %02lu\nbody", (unsigned long)(i * 7) % 30] tags:nil]];
+	XCTAssertTrue([engine syncOnceReturningError:NULL]);
+	[self openController];
+	NSArray *columns = @[[self columnFor:NoteDateModifiedColumnString sort:compareDateModified reverse:compareDateModifiedReverse],
+						 [self columnFor:NoteTitleColumnString sort:compareTitleString reverse:compareTitleStringReverse]];
+	NSUInteger round = 0;
+	for (NoteAttributeColumn *column in columns) {
+		[controller setSortColumn:column];
+		for (NSUInteger pass = 0; pass < 3; pass++, round++) {
+			NSMutableArray *records = [NSMutableArray array];
+			for (NSUInteger k = 0; k < 4; k++) {
+				NVNoteRecord *record = [store noteWithID:ids[(round * 11 + k * 7) % 30]];
+				//a new date for some, a new title for others, both for the rest
+				if (k % 3 != 1) [record setModificationDate:1600000000 + round * 1000 + k * 37];
+				if (k % 3 != 0) [record setContent:[NSString stringWithFormat:@"Renamed %lu %lu\nbody", (unsigned long)round, (unsigned long)k]];
+				else [record setContent:[[record content] stringByAppendingString:@" more"]];
+				[records addObject:record];
+			}
+			[controller syncEngine:engine didUpdateNotes:records removedNoteIDs:@[]];
+			NSArray *order = [controller allNotesForTesting];
+			XCTAssertEqualObjects(order, [self fullySorted:order column:column], @"%@ round %lu", [column identifier], (unsigned long)round);
+		}
+	}
 }
 
 @end

@@ -137,8 +137,8 @@
 //NVSyncEngineDelegate, on the main thread
 - (void)syncEngine:(NVSyncEngine *)engine didUpdateNotes:(NSArray *)records removedNoteIDs:(NSArray *)noteIDs {
     if (engine != syncEngine || resourcesClosed) return;
-	BOOL listChanged = NO;
-	NSMutableArray *removed = [NSMutableArray array];
+	BOOL listChanged = NO, titlesChanged = NO, notesAddedOrRemoved = NO;
+	NSMutableArray *removed = [NSMutableArray array], *changed = [NSMutableArray array];
 	for (NVNoteRecord *record in records) {
 		NoteObject *note = [notesByRecordID objectForKey:[record noteID]];
 		if (note && [unwrittenNotes containsObject:note]) {
@@ -150,9 +150,11 @@
 			continue;
 		}
 		if (note) {
-			NSString *previousBody = [[[note contentString] string] copy];
+			NSString *previousBody = [[[note contentString] string] copy], *previousTitle = [titleOfNote(note) copy];
 			if ([note applyNoteRecord:record]) {
 				listChanged = YES;
+				if ([changed indexOfObjectIdenticalTo:note] == NSNotFound) [changed addObject:note];
+				if (![previousTitle isEqualToString:titleOfNote(note)]) titlesChanged = YES;
 				//Only the selected editor can rebase its text-system undo actions.
 				//Other notes have no live editor, so discard their now-stale ranges.
 				BOOL selected = [delegate respondsToSelector:@selector(selectedNoteObject)] &&
@@ -166,7 +168,7 @@
 			NoteObject *added = [[NoteObject alloc] initWithNoteRecord:record delegate:self];
 			if (added) {
 				[self _insertNote:added];
-				listChanged = YES;
+				listChanged = notesAddedOrRemoved = YES;
 			}
 		}
 	}
@@ -179,12 +181,15 @@
 		[note disconnectLabels];
 		[self _deleteNote:note];
 		[[prefsController bookmarksController] removeBookmarkForNote:note];
-		listChanged = YES;
+		listChanged = notesAddedOrRemoved = YES;
 	}
 	
 	if (listChanged) {
-		[self updateTitlePrefixConnections];
-		[self resortAllNotes];
+		//a routine cycle changes a few notes: rebuilding the prefix tree and sorting every note each
+		//time cost the main thread more than the changes themselves (#67)
+		if (titlesChanged || notesAddedOrRemoved) [self updateTitlePrefixConnections];
+		if (notesAddedOrRemoved) [self resortAllNotes];
+		else [self _repositionNotes:changed];
 		[self refilterNotes];
 	}
 }
@@ -900,6 +905,45 @@
 		[allNotes sortStableUsingFunction:stringSortFunction usingBuffer:&allNotesBuffer ofSize:&allNotesBufferSize];
 		if (sortFunction != stringSortFunction)
 			[allNotes sortStableUsingFunction:sortFunction usingBuffer:&allNotesBuffer ofSize:&allNotesBufferSize];
+	}
+}
+
+//the order -resortAllNotes gives: by the sort column, then by title (which breaks its own ties)
+static NSInteger CompareForSort(__unsafe_unretained id a, __unsafe_unretained id b,
+								NSInteger (*sortFunction)(__unsafe_unretained id *, __unsafe_unretained id *),
+								NSInteger (*titleFunction)(__unsafe_unretained id *, __unsafe_unretained id *)) {
+	NSInteger result = sortFunction(&a, &b);
+	if (!result && sortFunction != titleFunction) result = titleFunction(&a, &b);
+	return result;
+}
+
+//Puts notes whose sort keys may have changed back in order without sorting every note: the rest stay
+//as they are and each changed note is inserted at its place. If the rest aren't in order (a local edit
+//can change a date without a re-sort), sorts everything, so the result is always what a full sort gives.
+- (void)_repositionNotes:(NSArray *)notes {
+	NoteAttributeColumn *col = sortColumn;
+	if (!col || ![notes count]) return;
+	BOOL reversed = [prefsController tableIsReverseSorted];
+	NSInteger (*sortFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? [col reverseSortFunction] : [col sortFunction]);
+	NSInteger (*titleFunction) (__unsafe_unretained id *, __unsafe_unretained id *) = (reversed ? compareTitleStringReverse : compareTitleString);
+	
+	for (NoteObject *note in notes) [allNotes removeObjectIdenticalTo:note];
+	NSUInteger i, count = [allNotes count];
+	for (i = 1; i < count; i++) {
+		if (CompareForSort([allNotes objectAtIndex:i - 1], [allNotes objectAtIndex:i], sortFunction, titleFunction) > 0) {
+			[allNotes addObjectsFromArray:notes];
+			[self resortAllNotes];
+			return;
+		}
+	}
+	for (NoteObject *note in notes) {
+		NSUInteger low = 0, high = [allNotes count];
+		while (low < high) {
+			NSUInteger middle = (low + high) / 2;
+			if (CompareForSort([allNotes objectAtIndex:middle], note, sortFunction, titleFunction) <= 0) low = middle + 1;
+			else high = middle;
+		}
+		[allNotes insertObject:note atIndex:low];
 	}
 }
 
