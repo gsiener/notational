@@ -10,7 +10,6 @@
 
 @class AppController;
 @class NoteObject;
-@class ETTransparentButton;
 
 @interface PreviewController : NSWindowController <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
 {

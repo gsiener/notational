@@ -99,11 +99,6 @@
 		5C625D3A19DCAB8E00BF0492 /* ServicesMenu.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2128651C1278AF220013820A /* ServicesMenu.strings */; };
 		5C8BCF881DA2617C0036FA7E /* Contact.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 5C8BCF821DA2617C0036FA7E /* Contact.nvhelp */; };
 		5C96F501131C2F9500A2E4AC /* TabClose_Front.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F4FE131C2F9500A2E4AC /* TabClose_Front.tif */; };
-		5C96F6DE131C488B00A2E4AC /* ETTransparentButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */; };
-		5C96F6E9131C48FE00A2E4AC /* ETTransparentButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */; };
-		5C96F709131C49D400A2E4AC /* TransparentButtonFillN.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F703131C49D400A2E4AC /* TransparentButtonFillN.tiff */; };
-		5C96F70B131C49D400A2E4AC /* TransparentButtonLeftN.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F705131C49D400A2E4AC /* TransparentButtonLeftN.tiff */; };
-		5C96F70D131C49D400A2E4AC /* TransparentButtonRightN.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F707131C49D400A2E4AC /* TransparentButtonRightN.tiff */; };
 		5C9C7734131DA04300FB2652 /* WordCountToken.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C7733131DA04300FB2652 /* WordCountToken.m */; };
 		5CA08C2013301D5E004E3250 /* ETContentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA08C1F13301D5E004E3250 /* ETContentView.m */; };
 		5CA10F1A131C297000DE1F91 /* PreviewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA10F19131C297000DE1F91 /* PreviewController.m */; };
@@ -116,9 +111,6 @@
 		5CF33C721308B478002B5499 /* NotesTableHeaderCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CF33C711308B478002B5499 /* NotesTableHeaderCell.m */; };
 		5CF96DA8132EA29D0079B3FD /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5CF96BFD132EA0300079B3FD /* MainMenu.xib */; };
 		5CF96DAA132EA29D0079B3FD /* Acknowledgments.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21813561105AF27400A0AE18 /* Acknowledgments.txt */; };
-		5CF96DC5132EA29D0079B3FD /* TransparentButtonFillP.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F704131C49D400A2E4AC /* TransparentButtonFillP.tiff */; };
-		5CF96DC7132EA29D0079B3FD /* TransparentButtonLeftP.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F706131C49D400A2E4AC /* TransparentButtonLeftP.tiff */; };
-		5CF96DC9132EA29D0079B3FD /* TransparentButtonRightP.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 5C96F708131C49D400A2E4AC /* TransparentButtonRightP.tiff */; };
 		5CF96DD6132EA29D0079B3FD /* IBeamInverted.png in Resources */ = {isa = PBXBuildFile; fileRef = 21DB407D12D5383F0057F52B /* IBeamInverted.png */; };
 		5CF96DD7132EA29D0079B3FD /* ListDividerDrag.png in Resources */ = {isa = PBXBuildFile; fileRef = 216DA1AC12D15F310004B9CE /* ListDividerDrag.png */; };
 		5CF96DD9132EA29D0079B3FD /* TBDownArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 212C6E99110E46F0004DD82C /* TBDownArrow.png */; };
@@ -235,8 +227,6 @@
 		3B4644074CC39710D37701B1 /* DFView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CCEEF1C130B599B00E15B77 /* DFView.m */; };
 		5CBB8A8A6E10E07D5BE12A00 /* PreviewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA10F19131C297000DE1F91 /* PreviewController.m */; };
 		94480AD7E17331C0169A660A /* AppController_Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA10F31131C29E900DE1F91 /* AppController_Preview.m */; };
-		B10E43C63D48CDB7CC363277 /* ETTransparentButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */; };
-		65B786C074C743302FC36A8E /* ETTransparentButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */; };
 		305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C7733131DA04300FB2652 /* WordCountToken.m */; };
 		82684491EE24885225EEBA38 /* ETContentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA08C1F13301D5E004E3250 /* ETContentView.m */; };
 		04678DB8AE6727D0E76E12D6 /* ETScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C2CD036132ED47900CA0D7C /* ETScrollView.m */; };
@@ -656,15 +646,6 @@
 		5C8BCFA41DA2642B0036FA7E /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh; path = zh.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5C91A1851723079B006BF757 /* nvMenuW.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = nvMenuW.png; path = Images/nvMenuW.png; sourceTree = "<group>"; };
 		5C96F4FE131C2F9500A2E4AC /* TabClose_Front.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TabClose_Front.tif; sourceTree = "<group>"; };
-		5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETTransparentButtonCell.m; sourceTree = "<group>"; };
-		5C96F6E7131C48FE00A2E4AC /* ETTransparentButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETTransparentButton.h; sourceTree = "<group>"; };
-		5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ETTransparentButton.m; sourceTree = "<group>"; };
-		5C96F703131C49D400A2E4AC /* TransparentButtonFillN.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonFillN.tiff; sourceTree = "<group>"; };
-		5C96F704131C49D400A2E4AC /* TransparentButtonFillP.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonFillP.tiff; sourceTree = "<group>"; };
-		5C96F705131C49D400A2E4AC /* TransparentButtonLeftN.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonLeftN.tiff; sourceTree = "<group>"; };
-		5C96F706131C49D400A2E4AC /* TransparentButtonLeftP.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonLeftP.tiff; sourceTree = "<group>"; };
-		5C96F707131C49D400A2E4AC /* TransparentButtonRightN.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonRightN.tiff; sourceTree = "<group>"; };
-		5C96F708131C49D400A2E4AC /* TransparentButtonRightP.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = TransparentButtonRightP.tiff; sourceTree = "<group>"; };
 		5C9C7732131DA04200FB2652 /* WordCountToken.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WordCountToken.h; sourceTree = "<group>"; };
 		5C9C7733131DA04300FB2652 /* WordCountToken.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WordCountToken.m; sourceTree = "<group>"; };
 		5CA08C1E13301D5E004E3250 /* ETContentView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETContentView.h; sourceTree = "<group>"; };
@@ -694,7 +675,6 @@
 		5CAB2F901DC799EE000AFED9 /* zh */ = {isa = PBXFileReference; lastKnownFileType = text; name = zh; path = "zh.lproj/How does this thing work?.nvhelp"; sourceTree = "<group>"; };
 		5CBA7A961305E38C004ADEBB /* TagEditingManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TagEditingManager.h; sourceTree = "<group>"; };
 		5CBA7A971305E38C004ADEBB /* TagEditingManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TagEditingManager.m; sourceTree = "<group>"; };
-		5CBD88F0132A84E000FC5A79 /* ETTransparentButtonCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ETTransparentButtonCell.h; sourceTree = "<group>"; };
 		5CCEEF1B130B599B00E15B77 /* DFView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DFView.h; sourceTree = "<group>"; };
 		5CCEEF1C130B599B00E15B77 /* DFView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DFView.m; sourceTree = "<group>"; };
 		5CDBA8E413A5449900E7494E /* it */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = it; path = it.lproj/MarkupPreview.xib; sourceTree = "<group>"; };
@@ -1208,12 +1188,6 @@
 				93B348261371547800658F98 /* HUDIconSave.png */,
 				5C2CC189134989D7006FFE56 /* nvMenuDark.png */,
 				93A158BD133C497400E1E7DA /* Notality.icns */,
-				5C96F703131C49D400A2E4AC /* TransparentButtonFillN.tiff */,
-				5C96F704131C49D400A2E4AC /* TransparentButtonFillP.tiff */,
-				5C96F705131C49D400A2E4AC /* TransparentButtonLeftN.tiff */,
-				5C96F706131C49D400A2E4AC /* TransparentButtonLeftP.tiff */,
-				5C96F707131C49D400A2E4AC /* TransparentButtonRightN.tiff */,
-				5C96F708131C49D400A2E4AC /* TransparentButtonRightP.tiff */,
 				5C96F4FE131C2F9500A2E4AC /* TabClose_Front.tif */,
 				21DB407D12D5383F0057F52B /* IBeamInverted.png */,
 				216DA1AC12D15F310004B9CE /* ListDividerDrag.png */,
@@ -1381,10 +1355,6 @@
 			children = (
 				5C177AE5141EF95200BC0C0A /* ETClipView.h */,
 				5C177AE6141EF95200BC0C0A /* ETClipView.m */,
-				5C96F6E7131C48FE00A2E4AC /* ETTransparentButton.h */,
-				5C96F6E8131C48FE00A2E4AC /* ETTransparentButton.m */,
-				5CBD88F0132A84E000FC5A79 /* ETTransparentButtonCell.h */,
-				5C96F6DD131C488B00A2E4AC /* ETTransparentButtonCell.m */,
 				21918FCF09C49B2500586B15 /* EmptyView.h */,
 				21918FCE09C49B2400586B15 /* EmptyView.m */,
 				5CCEEF1B130B599B00E15B77 /* DFView.h */,
@@ -1661,16 +1631,10 @@
 				5CBA7A911305E2DF004ADEBB /* TagEditingManager.xib in Resources */,
 				5C43669C1DA268500086FF84 /* How does this thing work?.nvhelp in Resources */,
 				5C96F501131C2F9500A2E4AC /* TabClose_Front.tif in Resources */,
-				5C96F709131C49D400A2E4AC /* TransparentButtonFillN.tiff in Resources */,
-				5C96F70B131C49D400A2E4AC /* TransparentButtonLeftN.tiff in Resources */,
-				5C96F70D131C49D400A2E4AC /* TransparentButtonRightN.tiff in Resources */,
 				5C49E365131C5CC500696B68 /* Credits.html in Resources */,
 				5CF96DA8132EA29D0079B3FD /* MainMenu.xib in Resources */,
 				5CF96DAA132EA29D0079B3FD /* Acknowledgments.txt in Resources */,
-				5CF96DC5132EA29D0079B3FD /* TransparentButtonFillP.tiff in Resources */,
-				5CF96DC7132EA29D0079B3FD /* TransparentButtonLeftP.tiff in Resources */,
 				5C43669B1DA268500086FF84 /* Excruciatingly Useful Shortcuts.nvhelp in Resources */,
-				5CF96DC9132EA29D0079B3FD /* TransparentButtonRightP.tiff in Resources */,
 				5CF96DD6132EA29D0079B3FD /* IBeamInverted.png in Resources */,
 				5CF96DD7132EA29D0079B3FD /* ListDividerDrag.png in Resources */,
 				5CF96DD9132EA29D0079B3FD /* TBDownArrow.png in Resources */,
@@ -1856,8 +1820,6 @@
 				5CCEEF1D130B599B00E15B77 /* DFView.m in Sources */,
 				5CA10F1A131C297000DE1F91 /* PreviewController.m in Sources */,
 				5CA10F32131C29E900DE1F91 /* AppController_Preview.m in Sources */,
-				5C96F6DE131C488B00A2E4AC /* ETTransparentButtonCell.m in Sources */,
-				5C96F6E9131C48FE00A2E4AC /* ETTransparentButton.m in Sources */,
 				5C9C7734131DA04300FB2652 /* WordCountToken.m in Sources */,
 				5CA08C2013301D5E004E3250 /* ETContentView.m in Sources */,
 				5C2FAD2B1333970200FBFD34 /* ETScrollView.m in Sources */,
@@ -2019,8 +1981,6 @@
 				3B4644074CC39710D37701B1 /* DFView.m in Sources */,
 				5CBB8A8A6E10E07D5BE12A00 /* PreviewController.m in Sources */,
 				94480AD7E17331C0169A660A /* AppController_Preview.m in Sources */,
-				B10E43C63D48CDB7CC363277 /* ETTransparentButtonCell.m in Sources */,
-				65B786C074C743302FC36A8E /* ETTransparentButton.m in Sources */,
 				305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */,
 				82684491EE24885225EEBA38 /* ETContentView.m in Sources */,
 				04678DB8AE6727D0E76E12D6 /* ETScrollView.m in Sources */,
