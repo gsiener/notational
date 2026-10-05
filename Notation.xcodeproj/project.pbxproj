@@ -392,6 +392,7 @@
 		6B3DC14F62566A0A0F0E8D69 /* AppControllerWordCountTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */; };
 		82726A5705EFE03D8286A08C /* NotesListPreviewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FFBBB45D3D8A54E7BFA75E5 /* NotesListPreviewTests.m */; };
 		5DCFF3CD85E1DD3F055AE9F6 /* AppControllerEditSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 941AE5929370EF681C525D2B /* AppControllerEditSyncTests.m */; };
+		A63D63F0F66934F27AFFABE4 /* HorizontalTypingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C24971A35968F79592AE6682 /* HorizontalTypingTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -902,6 +903,7 @@
 		6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppControllerWordCountTests.m; sourceTree = "<group>"; };
 		0FFBBB45D3D8A54E7BFA75E5 /* NotesListPreviewTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotesListPreviewTests.m; sourceTree = "<group>"; };
 		941AE5929370EF681C525D2B /* AppControllerEditSyncTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppControllerEditSyncTests.m; sourceTree = "<group>"; };
+		C24971A35968F79592AE6682 /* HorizontalTypingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HorizontalTypingTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1377,6 +1379,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				C24971A35968F79592AE6682 /* HorizontalTypingTests.m */,
 				941AE5929370EF681C525D2B /* AppControllerEditSyncTests.m */,
 				0FFBBB45D3D8A54E7BFA75E5 /* NotesListPreviewTests.m */,
 				6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */,
@@ -1826,6 +1829,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A63D63F0F66934F27AFFABE4 /* HorizontalTypingTests.m in Sources */,
 				5DCFF3CD85E1DD3F055AE9F6 /* AppControllerEditSyncTests.m in Sources */,
 				82726A5705EFE03D8286A08C /* NotesListPreviewTests.m in Sources */,
 				6B3DC14F62566A0A0F0E8D69 /* AppControllerWordCountTests.m in Sources */,
