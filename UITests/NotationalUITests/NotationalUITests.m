@@ -26,7 +26,7 @@
 	}
 	home = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
 	[[NSFileManager defaultManager] createDirectoryAtPath:home withIntermediateDirectories:YES attributes:nil error:NULL];
-	[self seedStore];
+	if (![self startsEmpty]) [self seedStore];
 
 	app = [[XCUIApplication alloc] initWithURL:[NSURL fileURLWithPath:appPath]];
 	//store, caches and the old-database lookup all resolve inside the throwaway home
@@ -39,7 +39,7 @@
 	XCTAssertTrue([app.windows[@"Notational"] waitForExistenceWithTimeout:20], @"main window never appeared");
 	XCTAssertFalse(app.windows[@"Simplenote Account"].exists, @"local-only launch opened the account window");
 	//an unreadable store is moved aside and the app starts empty, so check the seeded notes are listed
-	XCTAssertTrue([[self rowTitled:[[[self class] seedNotes] lastObject][0]] waitForExistenceWithTimeout:10], @"the seeded notes aren't listed");
+	if (![self startsEmpty]) XCTAssertTrue([[self rowTitled:[[[self class] seedNotes] lastObject][0]] waitForExistenceWithTimeout:10], @"the seeded notes aren't listed");
 }
 
 //Notes the flows start from. Typing them with XCUITest takes seconds per note on CI, so they go
@@ -51,6 +51,11 @@
 		@[@"Divider note", @"the divider is dragged"],
 		@[@"Collapse note", @"the list is collapsed"],
 	];
+}
+
+//the Sign In button only shows over an empty list, so the test that checks it starts with no notes
+- (BOOL)startsEmpty {
+	return self.invocation.selector == @selector(testLocalOnlyLaunchOffersSignInThenCreateSearchRelaunchAndDeleteANote);
 }
 
 - (void)seedStore {
@@ -154,8 +159,16 @@
 
 #pragma mark Flows
 
-//the only flow that still types: creating a note, finding it again and deleting it
-- (void)testCreateSearchRelaunchAndDeleteANote {
+//the only flow that still types: creating a note, finding it again and deleting it (it also
+//checks the local-only launch on its empty store)
+- (void)testLocalOnlyLaunchOffersSignInThenCreateSearchRelaunchAndDeleteANote {
+	XCUIElement *signIn = [self mainWindow].buttons[@"Sign In to Simplenote…"];
+	XCTAssertTrue([signIn waitForExistenceWithTimeout:5]);
+	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
+	[signIn click];
+	XCTAssertTrue([app.windows[@"Simplenote Account"] waitForExistenceWithTimeout:5]);
+	[self dismissAccountWindow];
+
 	[self createNoteTitled:@"UI test note" body:@"written by the UI smoke test"];
 	XCTAssertTrue([[self rowTitled:@"UI test note"] waitForExistenceWithTimeout:5], @"new note isn't in the list");
 
@@ -177,14 +190,7 @@
 }
 
 //flows that don't need a note, in one launch
-- (void)testSignInSettingsAndColorSchemes {
-	XCUIElement *signIn = [self mainWindow].buttons[@"Sign In to Simplenote…"];
-	XCTAssertTrue([signIn waitForExistenceWithTimeout:5]);
-	XCTAssertFalse(app.windows[@"Simplenote Account"].exists);
-	[signIn click];
-	XCTAssertTrue([app.windows[@"Simplenote Account"] waitForExistenceWithTimeout:5]);
-	[self dismissAccountWindow];
-
+- (void)testSettingsAndColorSchemes {
 	for (int i = 0; i < 3; i++) {
 		[self choose:@"Settings…" inMenu:@"Notational"];
 		//the Settings window is titled after its current pane
