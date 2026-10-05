@@ -141,7 +141,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>128</string>
+	<string>$(NV_BUILD_NUMBER)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>

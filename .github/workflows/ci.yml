@@ -27,8 +27,9 @@ jobs:
           sw_vers
           xcodebuild -version
 
+      # CFBundleVersion 128.<run>, so downloaded builds can be told apart (#49)
       - name: build app
-        run: scripts/build.sh
+        run: scripts/build.sh NV_BUILD_NUMBER=128.${{ github.run_number }}
 
       # once, with Address Sanitizer: memory errors in the C buffers fail the build (#26)
       - name: test
@@ -59,3 +60,35 @@ jobs:
           path: |
             build/TestResults.xcresult
             build/UITestResults.xcresult
+
+  # every green push to master replaces the "Latest build" release's download (#49):
+  # https://github.com/gsiener/notational/releases/download/latest/Notational.zip
+  publish-latest:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: Notational
+          path: build
+
+      - name: publish
+        run: |
+          (cd build && shasum -a 256 Notational.zip > Notational.zip.sha256)
+          notes="Built from ${GITHUB_SHA::7} (CI run ${{ github.run_number }}, CFBundleVersion 128.${{ github.run_number }}).
+          Ad-hoc signed: macOS will warn that it can't verify the developer. See the README to open it."
+          if gh release view latest > /dev/null 2>&1; then
+            # move the tag instead of deleting the release, so the download link never 404s
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
+            gh release edit latest --title "Latest build" --notes "$notes" --prerelease
+            gh release upload latest build/Notational.zip build/Notational.zip.sha256 --clobber
+          else
+            gh release create latest build/Notational.zip build/Notational.zip.sha256 \
+              --target "$GITHUB_SHA" --title "Latest build" --notes "$notes" --prerelease
+          fi

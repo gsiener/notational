@@ -526,15 +526,15 @@ footer { padding: 70px 0 50px; border-top: 1px solid var(--line); }
 		<div class="install">
 			<div class="reveal">
 				<h3>Build from source</h3>
-				<p>All you need is Xcode. The build compiles MultiMarkdown too, and leaves the app in <span class="mono">build/</span>.</p>
-				<div class="code" id="build"><button class="copy" data-copy="build">Copy</button><span class="p">$ </span>git clone --recursive https://github.com/gsiener/notational
+				<p>All you need is Xcode. MultiMarkdown is compiled into the app, and the build leaves it in <span class="mono">build/</span>.</p>
+				<div class="code" id="build"><button class="copy" data-copy="build">Copy</button><span class="p">$ </span>git clone https://github.com/gsiener/notational
 <span class="p">$ </span>cd notational
 <span class="p">$ </span>scripts/install.sh   <span class="c"># builds and copies it to ~/Applications</span></div>
 			</div>
 			<div class="reveal">
 				<h3>First launch</h3>
-				<p>Builds you make yourself aren’t notarised, so macOS may say it can’t check the app. Right-click Notational, choose <b>Open</b>, then confirm. You only need to do this once.</p>
-				<p>Prebuilt downloads will appear on the <a href="https://github.com/gsiener/notational/releases">releases page</a>.</p>
+				<p>Or <a href="https://github.com/gsiener/notational/releases/download/latest/Notational.zip">download the latest build</a> (Apple Silicon, rebuilt from every change that passes the tests). Older builds are on the <a href="https://github.com/gsiener/notational/releases">releases page</a>.</p>
+				<p>Builds aren’t notarised yet, so macOS says it can’t check the app. Try to open Notational once, then go to <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>. You only need to do this once.</p>
 			</div>
 		</div>
 	</div>

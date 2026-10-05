@@ -9,6 +9,8 @@ A native Apple Silicon fork of [nvALT](https://brettterpstra.com/projects/nvalt/
 
 The [architecture decision records](docs/adr/README.md) explain the app’s design and distinguish accepted decisions from proposed changes.
 
+**Download:** [the latest build](https://github.com/gsiener/notational/releases/download/latest/Notational.zip) (Apple Silicon). CI rebuilds it from every push to `master` that passes the tests; the [release page](https://github.com/gsiener/notational/releases/tag/latest) shows which commit it is and has a SHA-256 checksum.
+
 To build locally you only need Xcode:
 
 ```
@@ -21,25 +23,22 @@ compiled into the app from `Vendor/MultiMarkdown-6` (see [ADR 0010](docs/adr/001
 
 When you try to open the application, you will likely be greeted by a warning along the lines of:
 
-- nvALT can't be opened because it is from an unidentified developer
-- nvALT can't be opened because the developer cannot be verified
-- nvALT can't be opened because Apple cannot check it for malicious software
-- Apple could not verify "nvALT.app" is free of malware that may harm your Mac or compromise your privacy
+- Notational can't be opened because it is from an unidentified developer
+- Notational can't be opened because the developer cannot be verified
+- Notational can't be opened because Apple cannot check it for malicious software
+- Apple could not verify "Notational.app" is free of malware that may harm your Mac or compromise your privacy
 
 An application must be signed by an Apple-provided developer certificate to avoid these warnings; these cost $100 / year and I do not have one at this point.
 
 Luckily these warnings can be worked around and should be a one-time-only nuisance.
 
-To open the application:
+To open the application (macOS 15 and later no longer offer right-click → Open for this):
 
-- right click (or control-click) the app and choose `Open`
-- you'll likely have to approve a security warning pop-up
+- try to open Notational once and dismiss the warning
+- open `System Settings` → `Privacy & Security`
+- scroll down and click `Open Anyway` for Notational, then confirm
 
-To make this change permanent, after doing the above:
-
-- open `System Settings`
-- go to the `Privacy & Security` settings
-- scroll down and find the `Open Anyway` button for nvALT
+Signing and notarizing the app, which removes this step, is tracked in [#49](https://github.com/gsiener/notational/issues/49).
 
 For more information, please review Apple's official guidance on this process: <https://support.apple.com/en-us/102445>
 

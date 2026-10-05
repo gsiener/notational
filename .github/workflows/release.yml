@@ -25,7 +25,9 @@ jobs:
           name: Notational
           path: build/Notational.zip
       - name: release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            build/Notational.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shasum -a 256 build/Notational.zip | sed 's#build/##' > build/Notational.zip.sha256
+          gh release create "$GITHUB_REF_NAME" build/Notational.zip build/Notational.zip.sha256 \
+            --repo "$GITHUB_REPOSITORY" --title "Notational $GITHUB_REF_NAME" --generate-notes
