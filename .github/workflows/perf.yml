@@ -41,7 +41,7 @@ jobs:
           scripts/perf-app.sh build/Notational.xcarchive/Products/Applications/Notational.app build/corpus \
             | tee build/perf-app.log
 
-      # each launch test starts from a purged disk cache, so its first launch is cold
+      # the launch test starts from a purged disk cache, so its first launch is cold
       - name: UI performance tests
         run: |
           export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/Notational.xcarchive/Products/Applications/Notational.app"
@@ -53,10 +53,8 @@ jobs:
           for size in 2500 10000 25000; do
             class=NotationalUITests/NotationalUIPerformanceTests$size
             sudo purge
-            ui -only-testing:$class/testLaunch
-            sudo purge
             ui -only-testing:$class/testLaunchUntilListShows
-            ui -only-testing:$class -skip-testing:$class/testLaunch -skip-testing:$class/testLaunchUntilListShows
+            ui -only-testing:$class -skip-testing:$class/testLaunchUntilListShows
           done
 
       - name: results

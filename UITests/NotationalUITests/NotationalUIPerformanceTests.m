@@ -85,15 +85,8 @@
 
 #pragma mark Launch
 
-//launch until the app responds, as XCTest measures it; the workflow purges the disk cache first for a
-//cold launch, and later iterations are warm
-- (void)testLaunch {
-	[self measureWithMetrics:@[[[XCTApplicationLaunchMetric alloc] initWithWaitUntilResponsive:YES]] block:^{
-		[app launch];
-	}];
-}
-
-//launch until the notes list shows its first row
+//Launch until the notes list shows its first row. The workflow purges the disk cache before this test,
+//so the first iteration is a cold launch and the rest are warm.
 - (void)testLaunchUntilListShows {
 	[self measureWithMetrics:@[[XCTClockMetric new]] options:[self manualOptions:5] block:^{
 		[self startMeasuring];

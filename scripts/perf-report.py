@@ -20,12 +20,11 @@ METRICS = OrderedDict([
     ('CPU Time, s', (1000, 'CPU ms')),
     ('Memory Peak Physical, kB', (1 / 1024, 'peak MB')),
     ('Memory Physical, kB', (1 / 1024, 'MB')),
-    ('Duration (AppLaunch), s', (1000, 'launch ms')),
 ])
 
 
 def split_class(cls):
-    m = re.match(r'(\w*PerformanceTests)(\d+)$', cls)
+    m = re.match(r'(\w*?(?:PerformanceTests|App))(\d+)$', cls)
     return (m.group(1), m.group(2)) if m else (cls, None)
 
 
@@ -45,12 +44,14 @@ def main(paths):
         m = MEASURED.search(line)
         if m:
             cls, size = split_class(m.group(1))
-            if m.group(3) not in METRICS:
+            # metrics of the app under a UI test are named "CPU Time (notational), s"
+            metric = re.sub(r' \(notational\)', '', m.group(3))
+            if metric not in METRICS:
                 continue
             values = [float(v) for v in m.group(5).split(',')]
-            measured.setdefault((cls, m.group(2), m.group(3)), {})[size] = (sum(values) / len(values), float(m.group(4)))
+            measured.setdefault((cls, m.group(2), metric), {})[size] = (sum(values) / len(values), float(m.group(4)))
             # the perf workflow purges the disk cache before each launch test, so the first launch is cold
-            if m.group(2).startswith('testLaunch') and cls.startswith('NotationalUI') and m.group(3) in ('Duration (AppLaunch), s', 'Clock Monotonic Time, s'):
+            if m.group(2).startswith('testLaunch') and cls.startswith('NotationalUI') and metric == 'Clock Monotonic Time, s':
                 extra.setdefault((cls, m.group(2), 'first launch (cold)', 'ms'), {})[size] = values[0] * 1000
             continue
         m = NVPERF.match(line.strip())
