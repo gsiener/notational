@@ -389,6 +389,7 @@
 		3C381B6BF41BFBF38D263638 /* NVHereNowPrefsViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E675B7C33055EB3346D7EA4D /* NVHereNowPrefsViewControllerTests.m */; };
 		A83E03C375ED11BA15429697 /* NVPerfCorpus.m in Sources */ = {isa = PBXBuildFile; fileRef = 83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */; };
 		C71849FAF3C7A57120DAB0FC /* PerformanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E194075617CBC17AD32B3BB0 /* PerformanceTests.m */; };
+		6B3DC14F62566A0A0F0E8D69 /* AppControllerWordCountTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -896,6 +897,7 @@
 		B97FC291C6A18E53D55287EF /* NVPerfCorpus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVPerfCorpus.h; sourceTree = "<group>"; };
 		83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVPerfCorpus.m; sourceTree = "<group>"; };
 		E194075617CBC17AD32B3BB0 /* PerformanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerformanceTests.m; sourceTree = "<group>"; };
+		6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppControllerWordCountTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1371,6 +1373,7 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				6CE0E91D3A8A87FB46FDD40E /* AppControllerWordCountTests.m */,
 				E194075617CBC17AD32B3BB0 /* PerformanceTests.m */,
 				83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */,
 				B97FC291C6A18E53D55287EF /* NVPerfCorpus.h */,
@@ -1817,6 +1820,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6B3DC14F62566A0A0F0E8D69 /* AppControllerWordCountTests.m in Sources */,
 				C71849FAF3C7A57120DAB0FC /* PerformanceTests.m in Sources */,
 				A83E03C375ED11BA15429697 /* NVPerfCorpus.m in Sources */,
 				3C381B6BF41BFBF38D263638 /* NVHereNowPrefsViewControllerTests.m in Sources */,

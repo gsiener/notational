@@ -1738,7 +1738,7 @@ terminateApp:
 		}
 		[currentNote setContentString:[textView textStorage]];
 		[self postTextUpdate];
-		[self updateWordCount:(![prefsController showWordCount])];
+		[self scheduleWordCountUpdate];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFindContextShouldUpdate" object:self];
 	}
     
@@ -2717,6 +2717,17 @@ terminateApp:
     
 #pragma mark control/opt key hold down to pop word count/preview window
     
+    //Counting means tokenizing the whole note, too slow to do on every keystroke in a long note (#63):
+    //while typing, count once the typing pauses
+    - (void)scheduleWordCountUpdate {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(updateWordCountAfterTyping) object:nil];
+        [self performSelector:@selector(updateWordCountAfterTyping) withObject:nil afterDelay:0.3];
+    }
+
+    - (void)updateWordCountAfterTyping {
+        [self updateWordCount:![prefsController showWordCount]];
+    }
+
     - (void)updateWordCount:(BOOL)doIt{
         if (doIt) {            
             NSUInteger theCount = [[[textView textStorage] words] count];
