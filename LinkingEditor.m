@@ -78,6 +78,37 @@ CGFloat _perceptualDarkness(NSColor*a);
 //    return NO;
 //}
 
+- (id)initWithFrame:(NSRect)frameRect textContainer:(NSTextContainer *)container {
+	if ((self = [super initWithFrame:frameRect textContainer:container])) [self observeTextStorageEdits];
+	return self;
+}
+
+- (id)initWithCoder:(NSCoder *)coder {
+	if ((self = [super initWithCoder:coder])) [self observeTextStorageEdits];
+	return self;
+}
+
+- (void)observeTextStorageEdits {
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textStorageDidProcessEditing:)
+												 name:NSTextStorageDidProcessEditingNotification object:nil];
+}
+
+- (void)textStorageDidProcessEditing:(NSNotification *)notification {
+	NSTextStorage *storage = [notification object];
+	if (storage != [self textStorage]) return;
+	pendingEditCount++;
+	pendingEditRange = [storage editedRange];
+	pendingChangeInLength = [storage changeInLength];
+}
+
+- (BOOL)takePendingEditRange:(NSRange *)range changeInLength:(NSInteger *)delta {
+	BOOL single = pendingEditCount == 1;
+	if (single && range) *range = pendingEditRange;
+	if (single && delta) *delta = pendingChangeInLength;
+	pendingEditCount = 0;
+	return single;
+}
+
 - (void)awakeFromNib {
 	
     prefsController = [GlobalPrefs defaultPrefs];

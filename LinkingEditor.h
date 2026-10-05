@@ -51,6 +51,11 @@
     NSString *activeParagraphPastCursor;
     NSString *activeParagraphBeforeCursor;
 //    BOOL clipboardHasLink;
+	
+	//the text storage's edits since the last -takePendingEditRange:changeInLength: (#65)
+	NSUInteger pendingEditCount;
+	NSRange pendingEditRange;
+	NSInteger pendingChangeInLength;
 }
 
 @property (readonly) NSString *activeParagraphBeforeCursor;
@@ -77,6 +82,11 @@
 - (void)italic:(id)sender;
 - (void)applyStyleOfTrait:(NSFontTraitMask)trait alternateAttributeName:(NSString*)attrName alternateAttributeValue:(id)value;
 - (id)highlightLinkAtIndex:(NSUInteger)givenIndex;
+
+//What changed in the text since the last call: YES with the edited range (in the text as it is now)
+//and the change in length when that was a single edit, NO when there were none or several. Either
+//way, forgets them. Lets a caller keep a copy of the text up to date without copying all of it (#65).
+- (BOOL)takePendingEditRange:(NSRange *)range changeInLength:(NSInteger *)delta;
 
 - (BOOL)jumpToRenaming;
 - (void)indicateRange:(NSValue*)rangeValue;

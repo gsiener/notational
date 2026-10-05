@@ -1611,6 +1611,8 @@ terminateApp:
 		
 		//restore string
 		[[textView textStorage] setAttributedString:[note contentString]];
+		//the editor now matches the note: the next edit can be copied on its own
+		[textView takePendingEditRange:NULL changeInLength:NULL];
 		[self postTextUpdate];
 		[self updateWordCount:(![prefsController showWordCount])];
 		//[textView setAutomaticallySelectedRange:NSMakeRange(0,0)];
@@ -1736,13 +1738,29 @@ terminateApp:
 					[self performSelector:@selector(_rebuildSelectedEditorUndoActions) withObject:nil afterDelay:0];
 			}
 		}
-		[currentNote setContentString:[textView textStorage]];
+		[self copyEditToCurrentNote];
 		[self postTextUpdate];
 		[self scheduleWordCountUpdate];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"TextFindContextShouldUpdate" object:self];
 	}
     
     
+}
+
+//The note keeps its own copy of the editor's text. Copy only what the last edit changed when the
+//editor knows it was a single edit; copying all of a long note on every keystroke was slow (#65).
+- (void)copyEditToCurrentNote {
+	NSTextStorage *storage = [textView textStorage];
+	NSRange edited;
+	NSInteger delta = 0;
+	if ([textView takePendingEditRange:&edited changeInLength:&delta] && NSMaxRange(edited) <= [storage length] &&
+		(NSInteger)[[currentNote contentString] length] + delta == (NSInteger)[storage length] &&
+		(NSInteger)edited.length >= delta) {
+		[currentNote replaceContentInRange:NSMakeRange(edited.location, edited.length - delta)
+					  withAttributedString:[storage attributedSubstringFromRange:edited]];
+	} else {
+		[currentNote setContentString:storage];
+	}
 }
 
 //The text system keeps replacement ranges in its undo actions. Once a remote edit

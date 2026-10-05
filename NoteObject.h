@@ -172,6 +172,9 @@ NSInteger compareTitleStringReverse(__unsafe_unretained id *a, __unsafe_unretain
 - (void)initContentCacheCString;
 - (void)updateContentCacheCStringIfNecessary;
 - (void)setContentString:(NSAttributedString*)attributedString;
+//as -setContentString: for a text that differs from the current one only in range, which replacement
+//(the new text of that range) takes the place of
+- (void)replaceContentInRange:(NSRange)range withAttributedString:(NSAttributedString*)replacement;
 - (NSAttributedString*)contentString;
 - (NSAttributedString*)printableStringRelativeToBodyFont:(NSFont*)bodyFont;
 - (NSString*)combinedContentWithContextSeparator:(NSString*)sepWContext;

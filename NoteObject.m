@@ -406,6 +406,15 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		[self makeNoteDirtyUpdateTime:updateTime updateFile:YES];
 	}
 }
+- (void)replaceContentInRange:(NSRange)range withAttributedString:(NSAttributedString*)replacement {
+	[contentString replaceCharactersInRange:range withAttributedString:replacement];
+	linksNeedDetecting = NO;
+	[self updateTablePreviewString];
+	contentCacheNeedsUpdate = YES;
+	[delegate note:self attributeChanged:NotePreviewString];
+	[self makeNoteDirtyUpdateTime:YES updateFile:YES];
+}
+
 - (NSAttributedString*)contentString {
 	[self _detectLinksIfNeeded];
 	return contentString;
