@@ -17,7 +17,6 @@
                 <outlet property="completeNoteTitlesButton" destination="175" id="265"/>
                 <outlet property="confirmDeletionButton" destination="172" id="266"/>
                 <outlet property="editingView" destination="268" id="298"/>
-                <outlet property="externalEditorMenuButton" destination="475" id="481"/>
                 <outlet property="fontsColorsView" destination="352" id="370"/>
                 <outlet property="foregroundColorWell" destination="356" id="375"/>
                 <outlet property="generalView" destination="155" id="236"/>
@@ -343,22 +342,6 @@
                         <action selector="changedTabBehavior:" target="-2" id="297"/>
                     </connections>
                 </matrix>
-                <textField verticalHuggingPriority="750" id="394">
-                    <rect key="frame" x="21" y="22" width="134" height="17"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="External Text Editor:" id="395">
-                        <font key="font" metaFont="system"/>
-                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                    <connections>
-                        <binding destination="390" name="hidden" keyPath="values.TextEditor" id="398">
-                            <dictionary key="options">
-                                <string key="NSValueTransformerName">NSIsNil</string>
-                            </dictionary>
-                        </binding>
-                    </connections>
-                </textField>
                 <button id="449">
                     <rect key="frame" x="98" y="174" width="255" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
@@ -419,24 +402,6 @@
                         <action selector="changedRTL:" target="-2" id="461"/>
                     </connections>
                 </button>
-                <popUpButton verticalHuggingPriority="750" id="475">
-                    <rect key="frame" x="157" y="16" width="194" height="26"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="480" id="476">
-                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
-                        <menu key="menu" title="OtherViews" id="477">
-                            <items>
-                                <menuItem title="Item 1" state="on" id="480"/>
-                                <menuItem title="Item 2" id="479"/>
-                                <menuItem title="Item 3" id="478"/>
-                            </items>
-                        </menu>
-                    </popUpButtonCell>
-                    <connections>
-                        <action selector="changedExternalEditorsMenu:" target="-2" id="482"/>
-                    </connections>
-                </popUpButton>
                 <textField verticalHuggingPriority="750" id="483">
                     <rect key="frame" x="18" y="79" width="77" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>

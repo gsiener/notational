@@ -12,7 +12,7 @@ Use NSSplitView for the main split view instead of the former RBSplitView depend
 
 This choice removes external runtime installation and preserves the existing AppKit editing behavior.
 It does not require a SwiftUI rewrite or prohibit all bundled source code.
-MultiMarkdown, PTHotKeys, ODBEditor, and legacy import code remain separate compatibility decisions.
+MultiMarkdown, PTHotKeys, and legacy import code remain separate compatibility decisions. ODBEditor was removed with the external-editor feature (#45).
 
 ## Consequences
 

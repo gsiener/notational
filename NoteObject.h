@@ -29,7 +29,6 @@
 
 @class LabelObject;
 @class NotesTableView;
-@class ExternalEditor;
 @class NVNoteContent;
 
 typedef struct _NoteFilterContext {
@@ -166,8 +165,6 @@ NSInteger compareTitleStringReverse(__unsafe_unretained id *a, __unsafe_unretain
 
 - (OSStatus)exportToDirectoryURL:(NSURL*)directoryURL withFilename:(NSString*)userFilename usingFormat:(int)storageFormat overwrite:(BOOL)overwrite;
 - (NSRange)nextRangeForWords:(NSArray*)words options:(unsigned)opts range:(NSRange)inRange;
-- (void)editExternallyUsingEditor:(ExternalEditor*)ed;
-- (void)abortEditingInExternalEditor;
 
 - (BOOL)_setTitleString:(NSString*)aNewTitle;
 - (void)setTitleString:(NSString*)aNewTitle;

@@ -149,7 +149,6 @@ void outletObjectAwoke(id sender);
 - (BOOL)selectedRowIsHereNowSite;
 - (IBAction)copyNoteLink:(id)sender;
 - (IBAction)exportNote:(id)sender;
-- (IBAction)editNoteExternally:(id)sender;
 - (IBAction)printNote:(id)sender;
 - (IBAction)tagNote:(id)sender;
 - (IBAction)importNotes:(id)sender;

@@ -36,7 +36,6 @@
 #import "NotesTableView.h"
 #import "UnifiedCell.h"
 #import "LabelColumnCell.h"
-#import "ODBEditor.h"
 
 #if __LP64__
 // Needed for compatability with data created by 32bit app
@@ -999,10 +998,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 	return noErr;
 }
 
-- (void)editExternallyUsingEditor:(ExternalEditor*)ed {
-	[[ODBEditor sharedODBEditor] editNote:self inEditor:ed context:nil];
-}
-
 - (void)previewUsingMarked {
 	NSWorkspace * ws = [NSWorkspace sharedWorkspace];
 	NSURL *markedURL = nil;
@@ -1019,31 +1014,6 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		configuration.activates = NO; //andDeactivate:NO
 		[ws openURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:path]] withApplicationAtURL:markedURL configuration:configuration completionHandler:nil];
 	}
-}
-
-- (void)abortEditingInExternalEditor {
-	[[ODBEditor sharedODBEditor] abortAllEditingSessionsForClient:self];
-}
-
--(void)odbEditor:(ODBEditor *)editor didModifyFile:(NSString *)path newFileLocation:(NSString *)newPath  context:(NSDictionary *)context {
-
-	//read path/newPath into NSData and update note contents
-	
-	if ([self updateFromPlainTextData:[NSMutableData dataWithContentsOfFile:path options:NSUncachedRead error:NULL]]) {
-		//reflect the temp file's changes directly back to the notes store and Simplenote
-		[self makeNoteDirtyUpdateTime:YES updateFile:YES];
-		
-		[delegate note:self attributeChanged:NotePreviewString];
-		[delegate noteContentsDidChange:self];
-	} else {
-		NSBeep();
-		NSLog(@"odbEditor:didModifyFile: unable to get data from %@", path);
-	}	
-}
--(void)odbEditor:(ODBEditor *)editor didClosefile:(NSString *)path context:(NSDictionary *)context {
-	//remove the temp file	
-	[[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
-
 }
 
 - (NSRange)nextRangeForWords:(NSArray*)words options:(unsigned)opts range:(NSRange)inRange {

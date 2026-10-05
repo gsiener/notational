@@ -38,7 +38,6 @@
 #import "NoteAttributeColumn.h"
 #import "FrozenNotation.h"
 #import "AlienNoteImporter.h"
-#import "ODBEditor.h"
 #import "BookmarksController.h"
 #import "nvaDevConfig.h"
 #import "NVTheme.h"
@@ -178,7 +177,6 @@
 	}
 	for (NoteObject *note in removed) {
 		[note disconnectLabels];
-		[note abortEditingInExternalEditor];
 		[self _deleteNote:note];
 		[[prefsController bookmarksController] removeBookmarkForNote:note];
 		listChanged = YES;
@@ -255,7 +253,6 @@
 
 - (BOOL)closeAllResourcesReturningError:(NSError **)error {
     if (resourcesClosed) return YES;
-	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
 	if (![self flushAllNoteChangesReturningError:error]) return NO;
 	resourcesClosed = YES;
 	[syncEngine stop];
@@ -264,7 +261,6 @@
 }
 
 - (BOOL)prepareForAccountResetReturningError:(NSError **)error {
-	[allNotes makeObjectsPerformSelector:@selector(abortEditingInExternalEditor)];
 	return [self flushAllNoteChangesReturningError:error];
 }
 
@@ -514,7 +510,6 @@
     //reset linking labels and their notes
     
 	[aNoteObject disconnectLabels];
-	[aNoteObject abortEditingInExternalEditor];
 	
     [self _deleteNote:aNoteObject];
 	[unwrittenNotes removeObject:aNoteObject];

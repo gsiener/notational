@@ -103,9 +103,6 @@
 /* title of button for opening the current note in text edit */
 "Open in TextEdit" = "在 TextEdit 中打开";
 
-/* title of menu item for selecting a different notes folder */
-"Other..." = "其他…";
-
 /* ...from file on disk */
 "Overwrite Note" = "覆盖笔记";
 

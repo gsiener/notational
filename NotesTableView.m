@@ -19,7 +19,6 @@
 #import "AppController_Importing.h"
 #import "FastListDataSource.h"
 #import "NoteAttributeColumn.h"
-#import "ExternalEditorListController.h"
 #import "GlobalPrefs.h"
 #import "NotationPrefs.h"
 #import "NoteObject.h"
@@ -750,9 +749,6 @@ static void _CopyItemWithSelectorFromMenu(NSMenu *destMenu, NSMenu *sourceMenu, 
 	[theMenu addItem:noteLinkItem];
 	
 	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, @selector(exportNote:), target, -1);
-	_CopyItemWithSelectorFromMenu(theMenu, notesMenu, NULL, target, 88);
-	
-	[theMenu setSubmenu:[[ExternalEditorListController sharedInstance] addEditNotesMenu] forItem:[theMenu itemAtIndex:[theMenu numberOfItems] - 1]];
 	
 	[theMenu addItem:[NSMenuItem separatorItem]];
 	

@@ -103,9 +103,6 @@
 /* title of button for opening the current note in text edit */
 "Open in TextEdit" = "Open in TextEdit";
 
-/* title of menu item for selecting a different notes folder */
-"Other..." = "Other…";
-
 /* ...from file on disk */
 "Overwrite Note" = "Overwrite Note";
 

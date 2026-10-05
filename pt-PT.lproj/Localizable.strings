@@ -103,9 +103,6 @@
 /* title of button for opening the current note in text edit */
 "Open in TextEdit" = "Abrir no Editor de Texto";
 
-/* title of menu item for selecting a different notes folder */
-"Other..." = "Outra…";
-
 /* ...from file on disk */
 "Overwrite Note" = "Sobrescrever Nota";
 

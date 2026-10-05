@@ -29,7 +29,6 @@
 #import "NSString_NV.h"
 #import "NSFileManager_NV.h"
 #import "ExporterManager.h"
-#import "ExternalEditorListController.h"
 #import "NSData_transformations.h"
 #import "BufferUtils.h"
 #import "LinkingEditor.h"
@@ -509,7 +508,7 @@ terminateApp:
     if (selector == @selector(connectHereNow:)) return YES;
     if ([self selectionContainsHereNowSite] && (selector == @selector(printNote:) || selector == @selector(deleteNote:) ||
         selector == @selector(exportNote:) || selector == @selector(tagNote:) || selector == @selector(renameNote:) ||
-        selector == @selector(copyNoteLink:) || selector == @selector(editNoteExternally:) || selector == @selector(previewNoteWithMarked:))) return NO;
+        selector == @selector(copyNoteLink:) || selector == @selector(previewNoteWithMarked:))) return NO;
     
     if ((tag == NVMarkupMarkdown) || (tag == NVMarkupMultiMarkdown)) {
         // Allow only one Preview mode to be selected at every one time
@@ -552,8 +551,6 @@ terminateApp:
             [menuItem setTitle:NSLocalizedString(@"Enter Full Screen",@"menu item title for entering fullscreen")];
             
         }
-    } else if (selector == @selector(editNoteExternally:)) {
-        return (numberSelected > 0) && [[menuItem representedObject] canEditAllNotes:[self selectedNotes]];
 	}else if (selector == @selector(previewNoteWithMarked:)){
         BOOL gotMarked=[[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marky"] isFileURL] || [[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2"] isFileURL]
             || [[[NSWorkspace sharedWorkspace]URLForApplicationWithBundleIdentifier:@"com.brettterpstra.marked2.beta"] isFileURL]
@@ -579,7 +576,6 @@ terminateApp:
 							  NSLocalizedString(@"Delete", nil), trailingQualifier]];
 	}
 	
-    [notesMenu setSubmenu:[[ExternalEditorListController sharedInstance] addEditNotesMenu] forItem:[notesMenu itemWithTag:88]];
 	NSMenu *viewMenu = [[[NSApp mainMenu] itemWithTag:VIEW_MENU_ID] submenu];
 	
 	menuIndex = [viewMenu indexOfItemWithTarget:notesTableView andAction:@selector(toggleNoteBodyPreviews:)];
@@ -852,23 +848,6 @@ terminateApp:
 	
 	[notationController synchronizeNoteChanges:nil];
 	[[ExporterManager sharedManager] exportNotes:notes forWindow:window];
-}
-
-- (IBAction)editNoteExternally:(id)sender {
-    if ([self selectionContainsHereNowSite]) return;
-    ExternalEditor *ed = [sender representedObject];
-    if ([ed isKindOfClass:[ExternalEditor class]]) {
-        NSArray *notes = [self selectedNotes];
-        if (kCGEventFlagMaskAlternate == ((NSUInteger)CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSEventModifierFlagDeviceIndependentFlagsMask)) {
-            //allow changing the default editor directly from Notes menu
-            [[ExternalEditorListController sharedInstance] setDefaultEditor:ed];
-        }
-        //save queued changes first so the temporary copy the editor opens is current
-        [notationController synchronizeNoteChanges:nil];
-        [notes makeObjectsPerformSelector:@selector(editExternallyUsingEditor:) withObject:ed];
-    } else {
-        NSBeep();
-    }
 }
 
 - (IBAction)previewNoteWithMarked:(id)sender {

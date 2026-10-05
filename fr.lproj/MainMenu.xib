@@ -126,9 +126,6 @@ CA
                                     <action selector="exportNote:" target="213" id="988"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Edit With" tag="88" id="1303">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="553">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>

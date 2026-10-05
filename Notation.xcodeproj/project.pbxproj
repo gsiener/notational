@@ -152,10 +152,6 @@
 		93B348281371547800658F98 /* HUDIconLock.png in Resources */ = {isa = PBXBuildFile; fileRef = 93B348241371547800658F98 /* HUDIconLock.png */; };
 		93B348291371547800658F98 /* HUDIconPrint.png in Resources */ = {isa = PBXBuildFile; fileRef = 93B348251371547800658F98 /* HUDIconPrint.png */; };
 		93B3482A1371547800658F98 /* HUDIconSave.png in Resources */ = {isa = PBXBuildFile; fileRef = 93B348261371547800658F98 /* HUDIconSave.png */; };
-		93B90E7A1386018200BEC5FB /* ExternalEditorListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E781386018200BEC5FB /* ExternalEditorListController.m */; };
-		93B90E84138601C100BEC5FB /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93B90E7E138601C100BEC5FB /* LICENSE.txt */; };
-		93B90E85138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
-		93B90E86138601C100BEC5FB /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		B683A0D316F1CDA600564A1D /* LinkBack@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C716F1CDA600564A1D /* LinkBack@2x.tif */; };
 		B683A0D416F1CDA600564A1D /* LinkBackPressed@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C816F1CDA600564A1D /* LinkBackPressed@2x.tif */; };
 		B683A0D516F1CDA600564A1D /* SnapBack@2x.tif in Resources */ = {isa = PBXBuildFile; fileRef = B683A0C916F1CDA600564A1D /* SnapBack@2x.tif */; };
@@ -230,9 +226,6 @@
 		305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C7733131DA04300FB2652 /* WordCountToken.m */; };
 		82684491EE24885225EEBA38 /* ETContentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CA08C1F13301D5E004E3250 /* ETContentView.m */; };
 		04678DB8AE6727D0E76E12D6 /* ETScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C2CD036132ED47900CA0D7C /* ETScrollView.m */; };
-		A4F789BE5CA6D7C8315109B3 /* ExternalEditorListController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E781386018200BEC5FB /* ExternalEditorListController.m */; };
-		6A33B6B9602433694C8DB879 /* NSAppleEventDescriptor-Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
-		76F1E05B706E80B7FBE66A37 /* ODBEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = 93B90E82138601C100BEC5FB /* ODBEditor.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc -Wno-deprecated-declarations"; }; };
 		7DD4D25D44CCC50EE6617E21 /* ETClipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C177AE6141EF95200BC0C0A /* ETClipView.m */; };
 		B97B423A52D811D026D2B814 /* NSDataTransformationsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1BC57890100B2ED0B12811AF /* NSDataTransformationsTests.m */; };
 		9174E3E461AA8FA3E52F7F09 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -714,14 +707,6 @@
 		93B348241371547800658F98 /* HUDIconLock.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = HUDIconLock.png; path = Images/HUDIconLock.png; sourceTree = "<group>"; };
 		93B348251371547800658F98 /* HUDIconPrint.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = HUDIconPrint.png; path = Images/HUDIconPrint.png; sourceTree = "<group>"; };
 		93B348261371547800658F98 /* HUDIconSave.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = HUDIconSave.png; path = Images/HUDIconSave.png; sourceTree = "<group>"; };
-		93B90E771386018200BEC5FB /* ExternalEditorListController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExternalEditorListController.h; sourceTree = "<group>"; };
-		93B90E781386018200BEC5FB /* ExternalEditorListController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ExternalEditorListController.m; sourceTree = "<group>"; };
-		93B90E7E138601C100BEC5FB /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
-		93B90E7F138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSAppleEventDescriptor-Extensions.h"; sourceTree = "<group>"; };
-		93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSAppleEventDescriptor-Extensions.m"; sourceTree = "<group>"; };
-		93B90E81138601C100BEC5FB /* ODBEditor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ODBEditor.h; sourceTree = "<group>"; };
-		93B90E82138601C100BEC5FB /* ODBEditor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ODBEditor.m; sourceTree = "<group>"; };
-		93B90E83138601C100BEC5FB /* ODBEditorSuite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ODBEditorSuite.h; sourceTree = "<group>"; };
 		B683A0C716F1CDA600564A1D /* LinkBack@2x.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = "LinkBack@2x.tif"; path = "Images/LinkBack@2x.tif"; sourceTree = "<group>"; };
 		B683A0C816F1CDA600564A1D /* LinkBackPressed@2x.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = "LinkBackPressed@2x.tif"; path = "Images/LinkBackPressed@2x.tif"; sourceTree = "<group>"; };
 		B683A0C916F1CDA600564A1D /* SnapBack@2x.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = "SnapBack@2x.tif"; path = "Images/SnapBack@2x.tif"; sourceTree = "<group>"; };
@@ -994,8 +979,6 @@
 				2155DEA4097B5F0300163A10 /* BufferUtils.h */,
 				2181171109F311110020A252 /* DeletedNoteObject.h */,
 				2181171209F311110020A252 /* DeletedNoteObject.m */,
-				93B90E771386018200BEC5FB /* ExternalEditorListController.h */,
-				93B90E781386018200BEC5FB /* ExternalEditorListController.m */,
 				21A30EA50971D11D0071E9AF /* FastListDataSource.h */,
 				21A30EA60971D11D0071E9AF /* FastListDataSource.m */,
 				2168EC5109E33B0300778D02 /* FrozenNotation.h */,
@@ -1284,7 +1267,6 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
-				93B90E7D138601C100BEC5FB /* ODBEditor */,
 				21F07C7010EDED87004FE56F /* BSJSON */,
 				21F1CD490B3A38CB001FB5F6 /* HotKeys */,
 				211345A10B35D8340081B064 /* Crypto */,
@@ -1372,19 +1354,6 @@
 			);
 			name = "UIElement Subclasses";
 			sourceTree = SOURCE_ROOT;
-		};
-		93B90E7D138601C100BEC5FB /* ODBEditor */ = {
-			isa = PBXGroup;
-			children = (
-				93B90E7E138601C100BEC5FB /* LICENSE.txt */,
-				93B90E7F138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.h */,
-				93B90E80138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m */,
-				93B90E81138601C100BEC5FB /* ODBEditor.h */,
-				93B90E82138601C100BEC5FB /* ODBEditor.m */,
-				93B90E83138601C100BEC5FB /* ODBEditorSuite.h */,
-			);
-			path = ODBEditor;
-			sourceTree = "<group>";
 		};
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
@@ -1672,7 +1641,6 @@
 				93B348281371547800658F98 /* HUDIconLock.png in Resources */,
 				93B348291371547800658F98 /* HUDIconPrint.png in Resources */,
 				93B3482A1371547800658F98 /* HUDIconSave.png in Resources */,
-				93B90E84138601C100BEC5FB /* LICENSE.txt in Resources */,
 				5C43669D1DA268500086FF84 /* This is the title of a note.nvhelp in Resources */,
 				5CE5B0081422795300FB554C /* PTKeyComboPanel.xib in Resources */,
 				5CD1B00714F4593900AC948E /* Add.tiff in Resources */,
@@ -1823,9 +1791,6 @@
 				5C9C7734131DA04300FB2652 /* WordCountToken.m in Sources */,
 				5CA08C2013301D5E004E3250 /* ETContentView.m in Sources */,
 				5C2FAD2B1333970200FBFD34 /* ETScrollView.m in Sources */,
-				93B90E7A1386018200BEC5FB /* ExternalEditorListController.m in Sources */,
-				93B90E85138601C100BEC5FB /* NSAppleEventDescriptor-Extensions.m in Sources */,
-				93B90E86138601C100BEC5FB /* ODBEditor.m in Sources */,
 				5C177AE7141EF95200BC0C0A /* ETClipView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1984,9 +1949,6 @@
 				305F880F8CDB6927E018C07A /* WordCountToken.m in Sources */,
 				82684491EE24885225EEBA38 /* ETContentView.m in Sources */,
 				04678DB8AE6727D0E76E12D6 /* ETScrollView.m in Sources */,
-				A4F789BE5CA6D7C8315109B3 /* ExternalEditorListController.m in Sources */,
-				6A33B6B9602433694C8DB879 /* NSAppleEventDescriptor-Extensions.m in Sources */,
-				76F1E05B706E80B7FBE66A37 /* ODBEditor.m in Sources */,
 				7DD4D25D44CCC50EE6617E21 /* ETClipView.m in Sources */,
 				B97B423A52D811D026D2B814 /* NSDataTransformationsTests.m in Sources */,
 			);

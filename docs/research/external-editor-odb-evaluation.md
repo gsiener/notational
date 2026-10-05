@@ -1,5 +1,7 @@
 # External-editor lifecycle evaluation (issue #45)
 
+**Superseded 2026-10-04:** the owner will never use an external editor, so the whole feature was removed instead of reduced: ODBEditor, `ExternalEditorListController`, the "Edit With" menus, the External Text Editor preference and the note-side editing sessions. This report is kept as history.
+
 ## Evidence and decision
 
 Keep ODB editing for now. `NoteObject` starts sessions and imports modified-file callbacks; `ODBEditor` sends the ODB open event and receives modified and closed events. `ExternalEditorListController` includes BBEdit (`com.barebones.bbedit`) among its compatible editors. The 468-line bundled ODB source therefore serves a live feature, not dead code. No replacement or retirement is approved.
