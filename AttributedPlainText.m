@@ -298,11 +298,33 @@ static BOOL _StringWithRangeIsProbablyObjC(NSString *string, NSRange blockRange)
 	NSString *doneTag = @" @done";
 	NSCharacterSet *newlineSet = [NSCharacterSet newlineCharacterSet];
 	
+	//nothing to strike or unstrike: the usual case, and every note is checked as the list is built (#64)
+	if ([[self string] rangeOfString:doneTag options:NSLiteralSearch range:changedRange].location == NSNotFound &&
+		![self attribute:NVHiddenDoneTagAttributeName existsInRange:changedRange])
+		return;
+	
 	NSRange lineEndRange, scanRange = changedRange;
 	
+	NSString *string = [self string];
 	@try {
 		do {
-			if ((lineEndRange = [[self string] rangeOfCharacterFromSet:newlineSet options:NSLiteralSearch range:scanRange]).location == NSNotFound) {
+			//skip the lines with neither a tag nor an earlier strikethrough: nothing changes there (#64)
+			if (!scanRange.length) break;
+			NSUInteger next = [string rangeOfString:doneTag options:NSLiteralSearch range:scanRange].location;
+			NSRange unmarked;
+			if ([self attribute:NVHiddenDoneTagAttributeName atIndex:scanRange.location longestEffectiveRange:&unmarked inRange:scanRange])
+				next = scanRange.location;
+			else if (NSMaxRange(unmarked) < NSMaxRange(scanRange))
+				next = MIN(next, NSMaxRange(unmarked));
+			if (next == NSNotFound) break;
+			if (next > scanRange.location) {
+				NSRange lastBreak = [string rangeOfCharacterFromSet:newlineSet options:NSLiteralSearch | NSBackwardsSearch
+															  range:NSMakeRange(scanRange.location, next - scanRange.location)];
+				if (lastBreak.location != NSNotFound)
+					scanRange = NSMakeRange(NSMaxRange(lastBreak), NSMaxRange(changedRange) - NSMaxRange(lastBreak));
+			}
+			
+			if ((lineEndRange = [string rangeOfCharacterFromSet:newlineSet options:NSLiteralSearch range:scanRange]).location == NSNotFound) {
 				//no newline; this is the end of the range, so set line-end to an imaginary position there
 				lineEndRange = NSMakeRange(NSMaxRange(scanRange), 1);
 			}
@@ -310,8 +332,9 @@ static BOOL _StringWithRangeIsProbablyObjC(NSString *string, NSRange blockRange)
 			NSRange thisLineRange = NSMakeRange(scanRange.location, lineEndRange.location - scanRange.location);
 			
 			//this detection is improved. Handles @done mid line, allowing @done(date) or @done - date
-            NSRange doneTagFound = [[[self string] substringWithRange:thisLineRange] rangeOfString:doneTag];
+            NSRange doneTagFound = [string rangeOfString:doneTag options:NSLiteralSearch range:thisLineRange];
 			if (doneTagFound.location != NSNotFound) {
+				doneTagFound.location -= thisLineRange.location;
                 
 				//add strikethrough and NVHiddenDoneTagAttributeName attributes, because this line contains @done
 				[self addAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:NSUnderlineStyleSingle],

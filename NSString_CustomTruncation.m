@@ -152,7 +152,9 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 	//upToWidth will be used to manually truncate note-bodies only, and should be the full column width available
 	//intWidth will typically be the width of the tags string or other representation
 	
-	size_t bodyCharCount = (EstimatedCharCountForWidth(upToWidth) * 2) - EstimatedCharCountForWidth(intWidth);
+	size_t bodyChars = EstimatedCharCountForWidth(upToWidth) * 2, intrusionChars = EstimatedCharCountForWidth(intWidth);
+	//an unsigned subtraction would wrap around and copy the whole body (#64)
+	size_t bodyCharCount = bodyChars > intrusionChars ? bodyChars - intrusionChars : 0;
 	bodyCharCount = MIN(bodyCharCount, [bodyText length]);
 	
 	NSMutableString *unattributedPreview = [[NSMutableString alloc] initWithCapacity:bodyCharCount + [self length] + 2];
@@ -201,7 +203,10 @@ static size_t EstimatedCharCountForWidth(float upToWidth) {
 - (NSAttributedString*)attributedSingleLinePreviewFromBodyText:(NSAttributedString*)bodyText upToWidth:(float)upToWidth {
 	
 	//compute the char count for this note based on the width of the title column and the length of the receiver
-	size_t bodyCharCount = EstimatedCharCountForWidth(upToWidth) - [self length];
+	//a title as wide as the column (or a column of width 0, before the window sets it) leaves no room
+	//for the body; an unsigned subtraction would wrap around and copy all of it (#64)
+	size_t columnChars = EstimatedCharCountForWidth(upToWidth);
+	size_t bodyCharCount = columnChars > [self length] ? columnChars - [self length] : 0;
 	bodyCharCount = MIN(bodyCharCount, [bodyText length]);
 	
 	NSString *truncatedBodyString = [[bodyText string] truncatedPreviewStringOfLength:bodyCharCount];
