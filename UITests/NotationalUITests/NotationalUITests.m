@@ -193,39 +193,77 @@
 	return splitter.frame.size.width > splitter.frame.size.height ? list.size.height : list.size.width;
 }
 
-- (void)testDividerPositionSurvivesRelaunch {
-	[self createNoteTitled:@"Divider note" body:@"the divider is dragged"];
+- (XCUIElement *)splitter {
 	XCUIElement *splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
 	XCTAssertTrue([splitter waitForExistenceWithTimeout:5], @"no divider in the main window");
+	return splitter;
+}
+
+//drags the divider 80 points away from the list's edge and returns the list's new size
+- (CGFloat)dragDividerToGrowTheList {
+	XCUIElement *splitter = [self splitter];
 	BOOL stacked = splitter.frame.size.width > splitter.frame.size.height;
 	CGFloat before = [self notesListSizeAcrossDivider:splitter];
-
 	XCUICoordinate *start = [splitter coordinateWithNormalizedOffset:CGVectorMake(0.5, 0.5)];
 	XCUICoordinate *end = [start coordinateWithOffset:stacked ? CGVectorMake(0, 80) : CGVectorMake(80, 0)];
 	[start clickForDuration:0.3 thenDragToCoordinate:end];
 	CGFloat dragged = [self notesListSizeAcrossDivider:splitter];
 	XCTAssertGreaterThan(dragged, before + 40, @"dragging the divider didn't resize the notes list");
-
-	[self relaunch];
-	splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
-	XCTAssertTrue([splitter waitForExistenceWithTimeout:5]);
-	XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:splitter], dragged, 2.0, @"the divider moved back after a relaunch");
+	return dragged;
 }
 
-//(a collapsed list isn't expected to survive a relaunch: when the app opens with no note
-//selected it focuses the search field, and that always reveals the list)
-- (void)testExpandingRestoresTheListSize {
-	[self createNoteTitled:@"Collapse note" body:@"the list is collapsed"];
-	XCUIElement *splitter = [[self mainWindow].splitGroups.firstMatch.splitters elementBoundByIndex:0];
-	XCTAssertTrue([splitter waitForExistenceWithTimeout:5]);
-	CGFloat before = [self notesListSizeAcrossDivider:splitter];
-	[self toggleNotesList];
+- (BOOL)notesListIsExpanded {
 	XCUIElement *bar = app.menuBars.firstMatch;
 	[bar.menuBarItems[@"View"] click];
-	XCUIElement *expand = bar.menuBarItems[@"View"].menus.menuItems[@"Expand Notes List"];
-	XCTAssertTrue([expand waitForExistenceWithTimeout:5], @"the list didn't collapse");
-	[expand click];
-	XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:splitter], before, 2.0, @"expanding didn't restore the list's size");
+	BOOL expanded = bar.menuBarItems[@"View"].menus.menuItems[@"Collapse Notes List"].exists;
+	[[self mainWindow] typeKey:XCUIKeyboardKeyEscape modifierFlags:0];
+	return expanded;
+}
+
+//runs the check in the starting (stacked) layout, then again side by side; each layout
+//keeps its own divider position (#34)
+- (void)inBothLayouts:(void (^)(NSString *layout))check {
+	check(@"stacked");
+	[self choose:@"Switch to Horizontal Layout" inMenu:@"View"];
+	check(@"side by side");
+}
+
+- (void)testDividerPositionSurvivesRelaunch {
+	[self createNoteTitled:@"Divider note" body:@"the divider is dragged"];
+	[self inBothLayouts:^(NSString *layout) {
+		CGFloat dragged = [self dragDividerToGrowTheList];
+		[self relaunch];
+		XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:[self splitter]], dragged, 2.0,
+								   @"%@: the divider moved back after a relaunch", layout);
+	}];
+}
+
+//a list collapsed at quit comes back expanded, at the size it had: the app opens with no note
+//shown, and the empty view always reveals the list (#34)
+- (void)testACollapsedListReturnsExpandedAtItsSizeAfterRelaunch {
+	[self createNoteTitled:@"Collapsed at quit" body:@"the list is collapsed when the app quits"];
+	[self inBothLayouts:^(NSString *layout) {
+		CGFloat dragged = [self dragDividerToGrowTheList];
+		[self toggleNotesList];
+		XCTAssertFalse([self notesListIsExpanded], @"%@: the list didn't collapse", layout);
+		[self relaunch];
+		XCTAssertTrue([self notesListIsExpanded], @"%@: the list is still collapsed after a relaunch", layout);
+		XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:[self splitter]], dragged, 2.0,
+								   @"%@: the list came back at a different size", layout);
+	}];
+}
+
+- (void)testExpandingRestoresTheListSize {
+	[self createNoteTitled:@"Collapse note" body:@"the list is collapsed"];
+	[self inBothLayouts:^(NSString *layout) {
+		XCUIElement *splitter = [self splitter];
+		CGFloat before = [self notesListSizeAcrossDivider:splitter];
+		[self toggleNotesList];
+		XCTAssertFalse([self notesListIsExpanded], @"%@: the list didn't collapse", layout);
+		[self toggleNotesList];
+		XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:[self splitter]], before, 2.0,
+								   @"%@: expanding didn't restore the list's size", layout);
+	}];
 }
 
 - (void)testRelaunchKeepsNotes {
