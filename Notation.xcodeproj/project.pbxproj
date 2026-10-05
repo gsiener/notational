@@ -387,6 +387,8 @@
 		D12684FEC93DC3030CADB5CF /* NVHereNowPrefsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1279DF4C251BF28502280A86 /* NVHereNowPrefsViewController.m */; };
 		EBDE8934A88D5C54D6FCD47B /* NVHereNowPrefsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1279DF4C251BF28502280A86 /* NVHereNowPrefsViewController.m */; };
 		3C381B6BF41BFBF38D263638 /* NVHereNowPrefsViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E675B7C33055EB3346D7EA4D /* NVHereNowPrefsViewControllerTests.m */; };
+		A83E03C375ED11BA15429697 /* NVPerfCorpus.m in Sources */ = {isa = PBXBuildFile; fileRef = 83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */; };
+		C71849FAF3C7A57120DAB0FC /* PerformanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E194075617CBC17AD32B3BB0 /* PerformanceTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -891,6 +893,9 @@
 		9ED6C04A9ACB2B2D0830CC6E /* NVHereNowPrefsViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVHereNowPrefsViewController.h; sourceTree = "<group>"; };
 		1279DF4C251BF28502280A86 /* NVHereNowPrefsViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowPrefsViewController.m; sourceTree = "<group>"; };
 		E675B7C33055EB3346D7EA4D /* NVHereNowPrefsViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVHereNowPrefsViewControllerTests.m; sourceTree = "<group>"; };
+		B97FC291C6A18E53D55287EF /* NVPerfCorpus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NVPerfCorpus.h; sourceTree = "<group>"; };
+		83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NVPerfCorpus.m; sourceTree = "<group>"; };
+		E194075617CBC17AD32B3BB0 /* PerformanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerformanceTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1366,6 +1371,9 @@
 		70BEED5E4095AA602E916BFC /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				E194075617CBC17AD32B3BB0 /* PerformanceTests.m */,
+				83A24596B8B6467D43D3BC87 /* NVPerfCorpus.m */,
+				B97FC291C6A18E53D55287EF /* NVPerfCorpus.h */,
 				E675B7C33055EB3346D7EA4D /* NVHereNowPrefsViewControllerTests.m */,
 				AACD1B978BCDE0FCFB302AD9 /* NSFileManagerNVTests.m */,
 				66869FD235395B6892877FC5 /* NVHereNowMixedListTests.m */,
@@ -1809,6 +1817,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C71849FAF3C7A57120DAB0FC /* PerformanceTests.m in Sources */,
+				A83E03C375ED11BA15429697 /* NVPerfCorpus.m in Sources */,
 				3C381B6BF41BFBF38D263638 /* NVHereNowPrefsViewControllerTests.m in Sources */,
 				EBDE8934A88D5C54D6FCD47B /* NVHereNowPrefsViewController.m in Sources */,
 				5A707FC338C57D5E6E753716 /* zip.c in Sources */,

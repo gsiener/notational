@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		054EB4E39378F075BA6700BA /* NotationalUIPerformanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0300E4329A9C6C1D3C8A128B /* NotationalUIPerformanceTests.m */; };
 		8521057BCBB601CFC48C2E08 /* NotationalUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = D63952ABC690AC1F017A804C /* NotationalUITests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0300E4329A9C6C1D3C8A128B /* NotationalUIPerformanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotationalUIPerformanceTests.m; sourceTree = "<group>"; };
 		D4AD51EF41B3771DFB2E5F06 /* NotationalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D63952ABC690AC1F017A804C /* NotationalUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NotationalUITests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -19,6 +21,7 @@
 		4595B7ABD8E931401A2E24FA /* NotationalUITests */ = {
 			isa = PBXGroup;
 			children = (
+				0300E4329A9C6C1D3C8A128B /* NotationalUIPerformanceTests.m */,
 				D63952ABC690AC1F017A804C /* NotationalUITests.m */,
 			);
 			path = NotationalUITests;
@@ -98,6 +101,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				054EB4E39378F075BA6700BA /* NotationalUIPerformanceTests.m in Sources */,
 				8521057BCBB601CFC48C2E08 /* NotationalUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

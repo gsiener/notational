@@ -9,6 +9,7 @@
 
 @interface NVFakeSimplenoteService () {
 	NSMutableDictionary *versions;     //note id -> NSMutableArray of data dictionaries; index = version - 1
+	NSArray *sortedNoteIDs;            //the index's order; nil after a note is added or purged
 	NSMutableArray *changeLog;         //NVRemoteChange, oldest first
 	NSUInteger changeCounter;
 	NSUInteger forgottenThrough;       //change counters below this are unknown
@@ -71,6 +72,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 	if (!history) {
 		history = [NSMutableArray array];
 		[versions setObject:history forKey:noteID];
+		sortedNoteIDs = nil;
 	}
 	[history addObject:[data copy]];
 	[self recordChangeOfNote:noteID removed:NO];
@@ -81,7 +83,9 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 - (NVIndexPage *)indexPageAfterMark:(NSString *)mark limit:(NSUInteger)limit includeData:(BOOL)includeData error:(NSError **)error {
 	@synchronized(self) {
 		if ([self failIfScheduled:@"index" error:error]) return nil;
-		NSArray *ids = [[versions allKeys] sortedArrayUsingSelector:@selector(compare:)];
+		//sorted once, not per page, so paging through a large account stays cheap (#62)
+		if (!sortedNoteIDs) sortedNoteIDs = [[versions allKeys] sortedArrayUsingSelector:@selector(compare:)];
+		NSArray *ids = sortedNoteIDs;
 		NSUInteger start = mark ? (NSUInteger)[mark integerValue] : 0;
 		NSUInteger end = MIN([ids count], start + MAX(limit, (NSUInteger)1));
 		NSMutableArray *notes = [NSMutableArray array];
@@ -225,6 +229,7 @@ static NSUInteger ChangeCounterOf(NSString *changeVersion) {
 - (void)remotePurgeNote:(NSString *)noteID {
 	@synchronized(self) {
 		[versions removeObjectForKey:noteID];
+		sortedNoteIDs = nil;
 		[self recordChangeOfNote:noteID removed:YES];
 	}
 }

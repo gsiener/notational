@@ -1,0 +1,77 @@
+---
+# Performance baseline (#62), run by hand: the unit performance tests, then the flows only the running
+# app shows (launch, scrolling, moving through notes, typing, memory, leaks) on synthetic corpus stores.
+# Everything runs in a throwaway home folder on the runner; see docs/research/performance-baseline.md.
+name: perf
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: machine
+        run: |
+          sw_vers
+          xcodebuild -version
+          sysctl -n machdep.cpu.brand_string hw.memsize hw.ncpu
+
+      - name: build app
+        run: scripts/build.sh
+
+      - name: unit performance tests
+        run: scripts/perf.sh
+
+      - name: corpus stores
+        run: |
+          TEST_RUNNER_NV_PERF_EXPORT_DIR="$PWD/build/corpus" xcodebuild test -project Notation.xcodeproj \
+            -scheme NotationTests -derivedDataPath build/DerivedDataPerf \
+            -only-testing:NotationTests/PerformanceTestsCorpusExport
+          ls -l build/corpus
+
+      - name: app memory and leaks after launch
+        run: |
+          scripts/perf-app.sh build/Notational.xcarchive/Products/Applications/Notational.app build/corpus \
+            | tee build/perf-app.log
+
+      # each launch test starts from a purged disk cache, so its first launch is cold
+      - name: UI performance tests
+        run: |
+          export TEST_RUNNER_NOTATIONAL_APP="$PWD/build/Notational.xcarchive/Products/Applications/Notational.app"
+          export TEST_RUNNER_NOTATIONAL_CORPUS_DIR="$PWD/build/corpus"
+          ui() {
+            xcodebuild test -project UITests/NotationalUITests.xcodeproj -scheme NotationalUITests \
+              -derivedDataPath build/DerivedDataUI "$@" 2>&1 | tee -a build/perf-ui.log | grep -E "measured|error:|failed" || true
+          }
+          for size in 2500 10000 25000; do
+            class=NotationalUITests/NotationalUIPerformanceTests$size
+            sudo purge
+            ui -only-testing:$class/testLaunch
+            sudo purge
+            ui -only-testing:$class/testLaunchUntilListShows
+            ui -only-testing:$class -skip-testing:$class/testLaunch -skip-testing:$class/testLaunchUntilListShows
+          done
+
+      - name: results
+        if: always()
+        run: |
+          scripts/perf-report.py build/perf.log build/perf-app.log build/perf-ui.log > build/perf-results.md
+          cat build/perf-results.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: perf-results
+          path: |
+            build/perf-results.md
+            build/perf.log
+            build/perf-app.log
+            build/perf-app-leaks-*.txt
+            build/perf-ui.log

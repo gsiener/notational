@@ -45,6 +45,9 @@ jobs:
           xcodebuild test \
             -project UITests/NotationalUITests.xcodeproj \
             -scheme NotationalUITests \
+            -skip-testing:NotationalUITests/NotationalUIPerformanceTests2500 \
+            -skip-testing:NotationalUITests/NotationalUIPerformanceTests10000 \
+            -skip-testing:NotationalUITests/NotationalUIPerformanceTests25000 \
             -derivedDataPath build/DerivedDataUI \
             -resultBundlePath build/UITestResults.xcresult
 
