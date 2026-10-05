@@ -141,9 +141,8 @@ void outletObjectAwoke(id sender);
 - (IBAction)makeActiveAndShowWindow:(id)sender;
 - (IBAction)renameNote:(id)sender;
 - (IBAction)deleteNote:(id)sender;
-- (IBAction)connectHereNow:(id)sender;
-- (IBAction)disconnectHereNow:(id)sender;
-- (IBAction)refreshHereNow:(id)sender;
+//the here.now Sites service, for the Settings pane
+- (NVHereNowSites *)hereNowSites;
 - (IBAction)openSelectedHereNowSite:(id)sender;
 - (BOOL)selectionContainsHereNowSite;
 - (BOOL)selectedRowIsHereNowSite;

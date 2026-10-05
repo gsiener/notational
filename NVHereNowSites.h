@@ -19,7 +19,17 @@ extern NSString *const NVHereNowSitesDidChangeNotification;
 @property(strong) NSDate *createdDate;
 @end
 
-@interface NVHereNowSites : NSObject
+//what the Settings pane (NVHereNowPrefsViewController) needs from the here.now Sites service (NVHereNowSites); tests pass a fake,
+//since connecting with a real key writes to Keychain
+@protocol NVHereNowSettingsSource <NSObject>
+@property(readonly, copy) NSString *status;
+@property(readonly) BOOL connected;
+- (void)connectWithKey:(NSString *)key completion:(void (^)(NSError *))completion;
+- (void)disconnect;
+- (void)refresh;
+@end
+
+@interface NVHereNowSites : NSObject <NVHereNowSettingsSource>
 @property(readonly, copy) NSArray<NVHereNowSite *> *sites;
 @property(readonly, copy) NSString *status;
 @property(readonly) BOOL connected;

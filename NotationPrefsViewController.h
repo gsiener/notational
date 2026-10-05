@@ -3,17 +3,21 @@
 //  Notation
 //
 //  The "Notes" preferences pane: which Simplenote account the notes sync with (and
-//  how that's going), plus Secure Text Entry. Built in code so it needs no localized
+//  how that's going), the here.now connection, plus Secure Text Entry. Built in code so it needs no localized
 //  nibs; the old folder, storage-format, encryption and password controls went away
 //  with the Simplenote-backed store (ADR 0001).
 //
 
 #import <Cocoa/Cocoa.h>
 #import "NVSimplenoteAccountWindowController.h"
+#import "NVHereNowSites.h"
 
 //what the pane needs from the app (AppController in practice)
 @protocol NVNotesPaneAccount <NVSimplenoteAccountDelegate>
 - (IBAction)showSimplenoteAccount:(id)sender;
+@optional
+//when given, the pane shows a here.now section (NVHereNowPrefsViewController)
+- (NVHereNowSites *)hereNowSites;
 @end
 
 @interface NotationPrefsViewController : NSObject

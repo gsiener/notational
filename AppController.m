@@ -504,8 +504,6 @@ terminateApp:
 	NSInteger numberSelected = [notesTableView numberOfSelectedRows];
 	NSInteger tag = [menuItem tag];
     if (selector == @selector(openSelectedHereNowSite:)) return [self selectedRowIsHereNowSite] && numberSelected == 1;
-    if (selector == @selector(refreshHereNow:) || selector == @selector(disconnectHereNow:)) return [hereNowSites connected];
-    if (selector == @selector(connectHereNow:)) return YES;
     if ([self selectionContainsHereNowSite] && (selector == @selector(printNote:) || selector == @selector(deleteNote:) ||
         selector == @selector(exportNote:) || selector == @selector(tagNote:) || selector == @selector(renameNote:) ||
         selector == @selector(copyNoteLink:) || selector == @selector(previewNoteWithMarked:))) return NO;
@@ -3165,14 +3163,7 @@ terminateApp:
     [menu addItem:[NSMenuItem separatorItem]];
     NSMenuItem *open = [menu addItemWithTitle:@"Open here.now Site" action:@selector(openSelectedHereNowSite:) keyEquivalent:@""];
     open.target = self;
-    NSMenuItem *connect = [menu addItemWithTitle:@"Connect here.now…" action:@selector(connectHereNow:) keyEquivalent:@""];
-    connect.target = self;
-    NSMenuItem *refresh = [menu addItemWithTitle:@"Refresh here.now Sites" action:@selector(refreshHereNow:) keyEquivalent:@""];
-    refresh.target = self;
-    NSMenuItem *disconnect = [menu addItemWithTitle:@"Disconnect here.now" action:@selector(disconnectHereNow:) keyEquivalent:@""];
-    disconnect.target = self;
-    NSMenuItem *status = [menu addItemWithTitle:@"here.now: Not connected" action:NULL keyEquivalent:@""];
-    status.tag = 30030; status.enabled = NO;
+    //connecting, refreshing and disconnecting are in Settings ▸ here.now
 }
 
 - (void)hereNowSitesChanged:(NSNotification *)notification {
@@ -3202,31 +3193,9 @@ terminateApp:
     //a refreshed row for the shown Site (renamed, say) updates the header without reloading the page
     NVHereNowSite *shownSite = currentNote ? nil : [self singleSelectedHereNowSite];
     if (shownSite && ![siteViewer isHidden]) [siteViewer showSite:shownSite];
-    NSMenu *menu = [[[NSApp mainMenu] itemWithTag:NOTES_MENU_ID] submenu];
-    [[menu itemWithTag:30030] setTitle:[@"here.now: " stringByAppendingString:hereNowSites.status ?: @"Unknown"]];
 }
 
-- (IBAction)connectHereNow:(id)sender {
-    NSAlert *alert = [NSAlert new];
-    alert.messageText = @"Connect here.now";
-    alert.informativeText = @"Paste a here.now API key. It is stored in Keychain and used only to list Sites.";
-    NSSecureTextField *input = [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 0, 320, 24)];
-    alert.accessoryView = input;
-    [alert addButtonWithTitle:@"Connect"];
-    [alert addButtonWithTitle:@"Cancel"];
-    if ([alert runModal] != NSAlertFirstButtonReturn) return;
-    [hereNowSites connectWithKey:input.stringValue completion:^(NSError *error) {
-        if (error) {
-            NSAlert *failure = [NSAlert new];
-            failure.messageText = @"here.now connection failed";
-            failure.informativeText = error.localizedDescription;
-            [failure beginSheetModalForWindow:self->window completionHandler:nil];
-        }
-    }];
-}
-
-- (IBAction)disconnectHereNow:(id)sender { [hereNowSites disconnect]; }
-- (IBAction)refreshHereNow:(id)sender { [hereNowSites refresh]; }
+- (NVHereNowSites *)hereNowSites { return hereNowSites; }
 - (IBAction)openSelectedHereNowSite:(id)sender {
     if ([notesTableView numberOfSelectedRows] != 1) return;
     NVHereNowSite *site = [mixedList siteAtRow:[notesTableView selectedRow]];

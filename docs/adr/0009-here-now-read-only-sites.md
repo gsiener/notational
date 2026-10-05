@@ -29,7 +29,7 @@ These statements were checked against the public docs on 2026-10-03. No authenti
 - Search cached Site metadata locally; do not imply complete content search.
 - Keep the last complete snapshot marked stale on refresh failure until disconnect, reconnect, or a complete successful refresh.
 
-`NVHereNowSites` owns read-only requests and a separate JSON metadata cache. Its API key lives in a dedicated Keychain service. `NVHereNowMixedList` combines Site rows with visible Notes without inserting a Site into `NVNotesStore` or Simplenote sync. `NVHereNowSiteViewer` owns the embedded web view, its header, and the navigation policy; `AppController` only shows it for a single selected Site and hides it otherwise. The Notes menu supplies connection, disconnection, refresh, and explicit Open commands. The isolated earlier prototype was deleted; it is in git history (commit `c00c582`, `tools/here-now-read-prototype.swift`).
+`NVHereNowSites` owns read-only requests and a separate JSON metadata cache. Its API key lives in a dedicated Keychain service. `NVHereNowMixedList` combines Site rows with visible Notes without inserting a Site into `NVNotesStore` or Simplenote sync. `NVHereNowSiteViewer` owns the embedded web view, its header, and the navigation policy; `AppController` only shows it for a single selected Site and hides it otherwise. Connection, disconnection and refresh live in the here.now section of Settings ▸ Notes (`NVHereNowPrefsViewController`); the Notes menu keeps only the explicit Open command. The isolated earlier prototype was deleted; it is in git history (commit `c00c582`, `tools/here-now-read-prototype.swift`).
 
 ## Validation limits
 
