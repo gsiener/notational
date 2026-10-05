@@ -143,8 +143,8 @@
 
 - (void)testLayoutCollapseAndWordCount {
 	[self createNoteTitled:@"Layout note" body:@"some words to count"];
-	[self choose:@"Switch to Horizontal Layout" inMenu:@"View"];
-	[self choose:@"Switch to Vertical Layout" inMenu:@"View"];
+	[self switchLayout];
+	[self switchLayout];
 	[self toggleNotesList];
 	[self toggleNotesList];
 	[self choose:@"Show Word Count" inMenu:@"View"];
@@ -199,39 +199,54 @@
 	return splitter;
 }
 
-//drags the divider 80 points away from the list's edge and returns the list's new size
-- (CGFloat)dragDividerToGrowTheList {
+//drags the divider 80 points, toward whichever side has room, and returns the list's new size
+//(preferences outlive a test on the CI runner, so the list may start anywhere)
+- (CGFloat)dragDivider {
 	XCUIElement *splitter = [self splitter];
 	BOOL stacked = splitter.frame.size.width > splitter.frame.size.height;
 	CGFloat before = [self notesListSizeAcrossDivider:splitter];
+	CGRect group = [self mainWindow].splitGroups.firstMatch.frame;
+	CGFloat extent = stacked ? group.size.height : group.size.width;
+	CGFloat step = before > extent / 2 ? -80 : 80;
 	XCUICoordinate *start = [splitter coordinateWithNormalizedOffset:CGVectorMake(0.5, 0.5)];
-	XCUICoordinate *end = [start coordinateWithOffset:stacked ? CGVectorMake(0, 80) : CGVectorMake(80, 0)];
+	XCUICoordinate *end = [start coordinateWithOffset:stacked ? CGVectorMake(0, step) : CGVectorMake(step, 0)];
 	[start clickForDuration:0.3 thenDragToCoordinate:end];
 	CGFloat dragged = [self notesListSizeAcrossDivider:splitter];
-	XCTAssertGreaterThan(dragged, before + 40, @"dragging the divider didn't resize the notes list");
+	XCTAssertGreaterThan(fabs(dragged - before), 40, @"dragging the divider didn't resize the notes list (%g → %g)", before, dragged);
 	return dragged;
+}
+
+//switches to the other layout, whichever the app is in
+- (void)switchLayout {
+	XCUIElement *bar = app.menuBars.firstMatch;
+	[bar.menuBarItems[@"View"] click];
+	XCUIElementQuery *items = bar.menuBarItems[@"View"].menus.menuItems;
+	XCUIElement *item = items[@"Switch to Horizontal Layout"].exists ? items[@"Switch to Horizontal Layout"] : items[@"Switch to Vertical Layout"];
+	XCTAssertTrue(item.exists, @"no Switch to … Layout item");
+	[item click];
 }
 
 - (BOOL)notesListIsExpanded {
 	XCUIElement *bar = app.menuBars.firstMatch;
 	[bar.menuBarItems[@"View"] click];
 	BOOL expanded = bar.menuBarItems[@"View"].menus.menuItems[@"Collapse Notes List"].exists;
-	[[self mainWindow] typeKey:XCUIKeyboardKeyEscape modifierFlags:0];
+	[app typeKey:XCUIKeyboardKeyEscape modifierFlags:0];   //closes the open menu
 	return expanded;
 }
 
-//runs the check in the starting (stacked) layout, then again side by side; each layout
-//keeps its own divider position (#34)
+//runs the check in the current layout, then in the other, and switches back so later tests
+//start where they would have; each layout keeps its own divider position (#34)
 - (void)inBothLayouts:(void (^)(NSString *layout))check {
-	check(@"stacked");
-	[self choose:@"Switch to Horizontal Layout" inMenu:@"View"];
-	check(@"side by side");
+	check(@"first layout");
+	[self switchLayout];
+	check(@"other layout");
+	[self switchLayout];
 }
 
 - (void)testDividerPositionSurvivesRelaunch {
 	[self createNoteTitled:@"Divider note" body:@"the divider is dragged"];
 	[self inBothLayouts:^(NSString *layout) {
-		CGFloat dragged = [self dragDividerToGrowTheList];
+		CGFloat dragged = [self dragDivider];
 		[self relaunch];
 		XCTAssertEqualWithAccuracy([self notesListSizeAcrossDivider:[self splitter]], dragged, 2.0,
 								   @"%@: the divider moved back after a relaunch", layout);
@@ -243,7 +258,7 @@
 - (void)testACollapsedListReturnsExpandedAtItsSizeAfterRelaunch {
 	[self createNoteTitled:@"Collapsed at quit" body:@"the list is collapsed when the app quits"];
 	[self inBothLayouts:^(NSString *layout) {
-		CGFloat dragged = [self dragDividerToGrowTheList];
+		CGFloat dragged = [self dragDivider];
 		[self toggleNotesList];
 		XCTAssertFalse([self notesListIsExpanded], @"%@: the list didn't collapse", layout);
 		[self relaunch];
