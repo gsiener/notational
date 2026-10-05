@@ -44,8 +44,6 @@
 - (void)importNotesFromDialogAroundWindow:(NSWindow*)mainWindow receptionDelegate:(id)receiver;
 - (void)importURLInBackground:(NSURL*)aURL linkTitle:(NSString*)linkTitle receptionDelegate:(id)receiver;
 
-+ (NSBundle *)PDFKitBundle;
-+ (Class)PDFDocClass;
 
 - (NSView*)accessoryView;
 - (NSArray*)importedNotes;
